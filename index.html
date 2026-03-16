@@ -10,19 +10,22 @@ body{background:#111;color:#fff;font-family:'PingFang SC','Hiragino Sans GB',Ari
 body.rotated-90{transform:rotate(90deg);transform-origin:center center;width:100vh;height:100vw;position:absolute;top:50%;left:50%;margin-left:-50vh;margin-top:-50vw;}
 body.rotated-180{transform:rotate(180deg);transform-origin:center center;}
 body.rotated-270{transform:rotate(270deg);transform-origin:center center;width:100vh;height:100vw;position:absolute;top:50%;left:50%;margin-left:-50vh;margin-top:-50vw;}
-body.rotated-90 .control, body.rotated-270 .control{width:100%;}
+body.rotated-90 .control, body.rotated-270 .control{width:100%;justify-content:space-between;flex-direction:row;}
+body.rotated-90 .setting-btn-wrap, body.rotated-270 .setting-btn-wrap{position:relative;flex-shrink:0;width:44px;height:52px;order:-1;}
+body.rotated-90 .user-center-wrap, body.rotated-270 .user-center-wrap{position:relative;flex-shrink:0;width:44px;height:52px;order:1;}
+body.rotated-90 .inst-scroll, body.rotated-270 .inst-scroll{flex:1;order:0;}
 body.rotated-90 .piano-container, body.rotated-270 .piano-container{width:100%;}
 body.rotated-90 .music-bar, body.rotated-270 .music-bar{width:100%;}
 body.rotated-90 #layoutToolbar, body.rotated-270 #layoutToolbar{width:100%;}
-body.toolbar-rotated-90 .control{width:52px;height:100%;flex-direction:column;position:fixed;left:0;top:0;border-right:1px solid #2a2a2a;border-bottom:none;padding:8px 0;z-index:30;}
+body.toolbar-rotated-90 .control{width:52px;height:100%;flex-direction:column;position:fixed;left:0;top:0;border-right:1px solid #2a2a2a;border-bottom:none;padding:8px 0;z-index:30;justify-content:space-between;}
 body.toolbar-rotated-180 .control{height:52px;width:100%;flex-direction:row;position:fixed;bottom:0;top:auto;left:0;border-top:1px solid #2a2a2a;border-right:1px solid #2a2a2a;padding:0 8px;z-index:30;}
-body.toolbar-rotated-270 .control{width:52px;height:100%;flex-direction:column;position:fixed;right:0;top:0;border-left:1px solid #2a2a2a;padding:8px 0;z-index:30;}
-body.toolbar-rotated-90 .setting-btn-wrap, body.toolbar-rotated-270 .setting-btn-wrap{width:100%;height:44px;border-right:none;position:sticky;top:0;background:#1a1a1a;}
-body.toolbar-rotated-180 .setting-btn-wrap{width:44px;height:100%;position:sticky;left:0;background:#1a1a1a;border-bottom:none;border-right:1px solid #2a2a2a;}
-body.toolbar-rotated-90 .user-center-wrap, body.toolbar-rotated-270 .user-center-wrap{width:100%;height:44px;position:sticky;bottom:0;background:#1a1a1a;border-top:1px solid #2a2a2a;}
-body.toolbar-rotated-180 .user-center-wrap{width:44px;height:100%;position:sticky;right:0;background:#1a1a1a;border-left:1px solid #2a2a2a;}
-body.toolbar-rotated-90 .inst-scroll, body.toolbar-rotated-270 .inst-scroll{flex-direction:column;height:auto;width:100%;padding:8px 0;overflow-y:auto;overflow-x:hidden;flex:1;}
-body.toolbar-rotated-180 .inst-scroll{flex-direction:row;width:100%;padding:0 8px;height:52px;overflow-x:auto;flex:1;}
+body.toolbar-rotated-270 .control{width:52px;height:100%;flex-direction:column;position:fixed;right:0;top:0;border-left:1px solid #2a2a2a;padding:8px 0;z-index:30;justify-content:space-between;}
+body.toolbar-rotated-90 .setting-btn-wrap, body.toolbar-rotated-270 .setting-btn-wrap{width:100%;height:44px;border-right:none;position:relative;flex-shrink:0;background:#1a1a1a;order:-1;}
+body.toolbar-rotated-180 .setting-btn-wrap{width:44px;height:100%;position:relative;left:0;background:#1a1a1a;border-bottom:none;border-right:1px solid #2a2a2a;order:-1;}
+body.toolbar-rotated-90 .user-center-wrap, body.toolbar-rotated-270 .user-center-wrap{width:100%;height:44px;position:relative;background:#1a1a1a;border-top:1px solid #2a2a2a;flex-shrink:0;order:1;}
+body.toolbar-rotated-180 .user-center-wrap{width:44px;height:100%;position:relative;right:0;background:#1a1a1a;border-left:1px solid #2a2a2a;order:1;}
+body.toolbar-rotated-90 .inst-scroll, body.toolbar-rotated-270 .inst-scroll{flex-direction:column;height:auto;width:100%;padding:8px 0;overflow-y:auto;overflow-x:hidden;flex:1;order:0;}
+body.toolbar-rotated-180 .inst-scroll{flex-direction:row;width:100%;padding:0 8px;height:52px;overflow-x:auto;flex:1;order:0;}
 body.toolbar-rotated-90 .inst-scroll .btn, body.toolbar-rotated-270 .inst-scroll .btn{width:36px;height:36px;padding:0;font-size:11px;border-radius:8px;}
 body.toolbar-rotated-180 .inst-scroll .btn{padding:7px 13px;font-size:13px;border-radius:20px;}
 .control{height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:#1a1a1a;border-bottom:1px solid #2a2a2a;padding:0 8px;overflow:visible;white-space:nowrap;position:relative;}
@@ -75,10 +78,10 @@ body.toolbar-rotated-180 .music-bar{margin-bottom:52px;}
 .key{flex:1;border-radius:0 0 6px 6px;position:relative;}
 .white{background:linear-gradient(to bottom,#f5f5f5,#fff);border:1px solid #bbb;box-shadow:0 2px 4px rgba(0,0,0,.3);}
 .black{position:absolute;width:8%;height:45%;background:linear-gradient(to bottom,#222,#000);z-index:10;border-radius:0 0 5px 5px;transform:translateX(-50%);box-shadow:2px 4px 8px rgba(0,0,0,.6);}
-.key.active{background:#444!important; border-color:#333;}
-.black.active{background:#222!important; border-color:#000;}
-.key.auto-hi{background:#555!important; border-color:#333;}
-.black.auto-hi{background:#111!important; border-color:#000;}
+.key.active{background:#444!important; border:1px solid #333; box-shadow:none;}
+.black.active{background:#222!important; border:1px solid #000; box-shadow:none;}
+.key.auto-hi{background:#555!important; border:1px solid #333; box-shadow:none;}
+.black.auto-hi{background:#111!important; border:1px solid #000; box-shadow:none;}
 
 #layoutToolbar {
   display: none;
@@ -94,6 +97,7 @@ body.toolbar-rotated-180 .music-bar{margin-bottom:52px;}
   width: 100%;
   flex-shrink: 0;
 }
+body.rotated-90 #layoutToolbar, body.rotated-270 #layoutToolbar{width:100%;margin-left:0;margin-right:0;}
 body.toolbar-rotated-90 #layoutToolbar {
   margin-left: 56px;
   width: calc(100% - 56px);
@@ -102,6 +106,9 @@ body.toolbar-rotated-270 #layoutToolbar {
   margin-right: 56px;
   width: calc(100% - 56px);
 }
+body.rotated-90.toolbar-rotated-90 #layoutToolbar, body.rotated-270.toolbar-rotated-90 #layoutToolbar{margin-left:56px;width:calc(100% - 56px);}
+body.rotated-90.toolbar-rotated-270 #layoutToolbar, body.rotated-270.toolbar-rotated-270 #layoutToolbar{margin-right:56px;width:calc(100% - 56px);}
+body.rotated-90.toolbar-rotated-180 #layoutToolbar, body.rotated-270.toolbar-rotated-180 #layoutToolbar{margin-left:0;margin-right:0;width:100%;}
 #layoutToolbar.active {
   display: flex;
 }
@@ -245,18 +252,28 @@ body.toolbar-rotated-270 #layoutToolbar {
 .setting-slider{width:100%;height:4px;background:#333;border-radius:2px;appearance:none;outline:none;}
 .setting-slider::-webkit-slider-thumb{appearance:none;width:16px;height:16px;background:#0099ff;border-radius:50%;cursor:pointer;}
 .setting-value{font-size:11px;color:#666;text-align:right;}
-.modal-title{font-size:14px;font-weight:600;margin-bottom:10px;color:#888;padding-left:4px;}
+.modal-title{font-size:14px;font-weight:600;margin-bottom:10px;color:#888;padding-left:4px;flex-shrink:0;}
 .setting-list{display:flex;flex-direction:column;gap:4px;}
 .setting-btn-text{width:100%;padding:10px;text-align:left;background:transparent;border:none;color:#ddd;font-size:14px;cursor:pointer;border-radius:6px;transition:all 0.15s;}
 .setting-btn-text:active{background:rgba(255,255,255,0.05);}
 .setting-btn-text.active{color:#0099ff;font-weight:600;background:rgba(0,153,255,0.1);}
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:10px;width:100%;border-radius:6px;}
+.setting-label{color:#ddd;font-size:14px;}
+.setting-switch{position:relative;display:inline-block;width:44px;height:24px;}
+.setting-switch input{opacity:0;width:0;height:0;}
+.setting-slider-round{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:#333;transition:0.3s;border-radius:24px;}
+.setting-slider-round:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background-color:#fff;transition:0.3s;border-radius:50%;}
+.setting-switch input:checked + .setting-slider-round{background-color:#0099ff;}
+.setting-switch input:checked + .setting-slider-round:before{transform:translateX(20px);}
 @keyframes modalIn{from{opacity:0;transform:translate(-10px, -10px) scale(.95)}to{opacity:1;transform:none}}
-.song-list{display:flex;flex-direction:column;gap:12px;padding:8px 0;}
-.song-item{padding:0;background:#252525;border:1px solid #333;border-radius:14px;cursor:pointer;transition:all 0.2s;display:flex;flex-direction:row;align-items:stretch;position:relative;overflow:hidden;min-height:70px;}
+.song-list{display:flex;flex-direction:column;gap:12px;padding:8px 0;overflow-y:auto;flex:1;min-height:0;}
+.song-item{padding:0;background:#252525;border:1px solid #333;border-radius:14px;cursor:pointer;transition:all 0.2s;display:flex;flex-direction:row;align-items:stretch;position:relative;overflow:visible;min-height:70px;}
 .song-item:active{background:#2a2a2a;}
 .song-item.selected{border-color:#0099ff;background:rgba(0,153,255,0.12);}
-.song-info{flex:1;display:flex;flex-direction:column;gap:4px;min-width:0;padding:14px 16px;justify-content:center;}
+.song-info{flex:1;display:flex;flex-direction:column;gap:4px;min-width:0;padding:14px 16px;justify-content:center;overflow:hidden;border-radius:14px 0 0 14px;}
 .song-name{font-size:16px;color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.song-item.tupu-item .song-info{justify-content:flex-start;padding-top:18px;padding-bottom:18px;}
+.song-item.tupu-item .song-name{font-size:19px;}
 .song-meta{font-size:12px;color:#999;display:flex;flex-direction:row;gap:12px;align-items:center;}
 .item-actions{display:flex;flex-direction:column;width:70px;border-left:1px solid #333;}
 .item-actions button{flex:1;background:#333;border:none;color:#eee;font-size:12px;cursor:pointer;white-space:nowrap;transition:all 0.15s;display:flex;align-items:center;justify-content:center;padding:0;}
@@ -265,17 +282,17 @@ body.toolbar-rotated-270 #layoutToolbar {
 .item-actions .del-opt{color:#ff5555;background:#3a2525;}
 .item-actions .del-opt:active{background:#4a2a2a;}
 
-.add-btn{margin-top:10px;width:100%;padding:12px;background:#1a1a1a;border:1px dashed #444;border-radius:10px;color:#666;font-size:15px;cursor:pointer;touch-action:manipulation;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.add-btn{margin-top:10px;width:100%;padding:12px;background:#1a1a1a;border:1px dashed #444;border-radius:10px;color:#666;font-size:15px;cursor:pointer;touch-action:manipulation;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:6px;flex-shrink:0;}
 .add-btn:active,.add-btn:hover{border-color:#0099ff;color:#0099ff;}
-.modal-cancel{margin-top:10px;width:100%;padding:11px;background:#2a2a2a;border:1px solid #333;border-radius:10px;color:#888;font-size:15px;cursor:pointer;touch-action:manipulation;transition:all 0.15s;}
+.modal-cancel{margin-top:10px;width:100%;padding:11px;background:#2a2a2a;border:1px solid #333;border-radius:10px;color:#888;font-size:15px;cursor:pointer;touch-action:manipulation;transition:all 0.15s;flex-shrink:0;}
 .modal-cancel:active{background:#333;color:#fff;}
 
-.song-modal{width:300px;max-width:95%;}
-.song-tabs{display:flex;gap:4px;margin-bottom:10px;border-bottom:1px solid #333;padding-bottom:8px;}
+.song-modal{width:300px;max-width:95%;max-height:calc(100vh - 24px);display:flex;flex-direction:column;}
+.song-tabs{display:flex;gap:4px;margin-bottom:10px;border-bottom:1px solid #333;padding-bottom:8px;flex-shrink:0;}
 .song-tab{flex:1;padding:8px 4px;background:transparent;border:none;color:#888;font-size:13px;cursor:pointer;border-radius:6px;transition:all 0.15s;}
 .song-tab:hover{background:#2a2a2a;}
 .song-tab.active{background:#0099ff;color:#fff;}
-.song-tab-content{min-height:150px;}
+.song-tab-content{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
 .coming-soon{text-align:center;color:#666;padding:40px 20px;font-size:14px;}
 .tupu-speed-setting{display:flex;align-items:center;gap:8px;padding:10px;background:#1a1a1a;border-radius:8px;margin-bottom:10px;}
 .tupu-speed-setting label{font-size:13px;color:#aaa;}
@@ -311,10 +328,26 @@ body.toolbar-rotated-270 #layoutToolbar {
 .tupu-global-row label{font-size:11px;color:#888;min-width:32px;}
 .tupu-global-row input[type="range"]{flex:1;height:3px;}
 .tupu-global-row span{font-size:11px;color:#0099ff;min-width:32px;text-align:right;}
+.tupu-mask-props{background:#1a1a1a;border-radius:8px;padding:10px;margin-top:10px;}
+.tupu-mask-props h4{font-size:12px;color:#0099ff;margin:0 0 10px 0;}
+.tupu-prop-row{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+.tupu-prop-row:last-child{margin-bottom:0;}
+.tupu-prop-row label{font-size:11px;color:#888;min-width:32px;}
+.tupu-prop-row input[type="number"]{flex:1;background:#2a2a2a;border:1px solid #444;border-radius:4px;color:#fff;font-size:11px;padding:4px 6px;text-align:right;}
+.tupu-prop-row span{font-size:11px;color:#666;}
 .tupu-btn-small{flex:1;padding:8px;background:#2a2a2a;border:1px solid #444;border-radius:6px;color:#aaa;font-size:12px;cursor:pointer;}
 .tupu-btn-small:hover{background:#333;color:#fff;}
 
 .tupu-edit-modal{padding:15px;}
+.tupu-edit-nav{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:15px;flex-shrink:0;}
+.tupu-nav-btn{background:#2a2a2a;color:#888;border:1px solid #333;border-radius:8px;padding:8px 14px;font-size:18px;cursor:pointer;line-height:1;}
+.tupu-nav-btn:hover{background:#333;color:#fff;}
+.tupu-nav-btn:disabled{opacity:0.4;cursor:not-allowed;}
+.tupu-action-btn{background:#2a2a2a;color:#888;border:1px solid #333;border-radius:8px;padding:8px 14px;font-size:20px;cursor:pointer;line-height:1;}
+.tupu-action-btn:hover{background:#333;color:#fff;}
+.tupu-delete-btn{background:#aa2222;color:#fff;border:none;}
+.tupu-delete-btn:hover{background:#cc3333;}
+#tupuNavInfo{color:#888;font-size:13px;min-width:60px;text-align:center;}
 .tupu-edit-content{display:flex;flex:1;gap:15px;min-height:0;}
 .tupu-edit-left{width:200px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;overflow-y:auto;}
 .tupu-edit-right{flex:1;display:flex;flex-direction:column;min-height:0;}
@@ -453,6 +486,22 @@ body.toolbar-rotated-270 #layoutToolbar {
 .virtual-key{position:fixed;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;cursor:pointer;user-select:none;z-index:1000;transition:transform 0.1s;text-shadow:0 1px 2px rgba(0,0,0,0.5);background:transparent;--vk-bg:rgba(0,153,255,0.6);}
 .virtual-key::before{content:'';position:absolute;inset:0;border-radius:50%;filter:blur(8px);background:var(--vk-bg);z-index:-1;}
 .virtual-key.dragging{opacity:0.8;}
+#recFloatBtn{position:fixed;z-index:2000;width:64px;height:64px;border-radius:50%;border:none;cursor:pointer;user-select:none;touch-action:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-weight:600;color:#fff;box-shadow:0 4px 20px rgba(0,0,0,.6);}
+#recFloatBtn.idle{background:radial-gradient(circle at 35% 35%,rgba(255,255,255,.2),transparent 60%),rgba(0,153,255,.8);}
+#recFloatBtn.recording{background:radial-gradient(circle at 35% 35%,rgba(255,255,255,.2),transparent 60%),rgba(210,40,40,.9);animation:recPulse 1s ease-in-out infinite;}
+#recFloatBtn:active{transform:scale(.92);}
+#recFloatBtn .ri{font-size:22px;line-height:1;}
+#recFloatBtn .rl{font-size:9px;letter-spacing:.5px;opacity:.9;}
+@keyframes recPulse{0%,100%{box-shadow:0 4px 20px rgba(210,40,40,.5),0 0 0 0 rgba(210,40,40,.4);}50%{box-shadow:0 4px 20px rgba(210,40,40,.8),0 0 0 10px rgba(210,40,40,0);}}
+.rec-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#252525;border:1px solid #333;border-radius:10px;cursor:pointer;min-height:52px;}
+.rec-item:active{background:#2a2a2a;}
+.rec-item.selected{border-color:#0099ff;}
+.rec-item-info{flex:1;min-width:0;}
+.rec-item-name{font-size:15px;color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rec-item-meta{font-size:11px;color:#666;margin-top:2px;}
+.rec-item-acts{display:flex;gap:6px;flex-shrink:0;}
+.rec-item-acts button{background:#333;border:none;color:#aaa;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:13px;}
+.rec-item-acts button:active{background:#0099ff;color:#fff;}
 </style>
 
 <style>
@@ -564,7 +613,8 @@ body.toolbar-rotated-270 #layoutToolbar {
 <div class="music-bar">
   <button class="music-btn" id="musicBtn">🎵</button>
   <div class="score-wrap" id="scoreWrap">
-    <canvas id="scoreCanvas"></canvas>
+    <canvas id="scoreBgCanvas" style="position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
+    <canvas id="scoreCanvas" style="z-index:1;"></canvas>
     <div class="layout-drag-hint" id="layoutDragHint">布局模式里可以左右拖动琴键位置，点击布局模式恢复正常模式</div>
   </div>
   <button class="play-btn" id="playBtn">▶</button>
@@ -581,6 +631,13 @@ body.toolbar-rotated-270 #layoutToolbar {
       <button class="setting-btn-text" id="layoutBtn">布局模式</button>
       <button class="setting-btn-text" id="keybindingBtn">按键设置</button>
       <button class="setting-btn-text" id="virtualKeyBtn">虚拟按键</button>
+      <div class="setting-row">
+        <span class="setting-label">琴键提示</span>
+        <label class="setting-switch">
+          <input type="checkbox" id="keyHintToggle" checked>
+          <span class="setting-slider-round"></span>
+        </label>
+      </div>
       <button class="setting-btn-text" id="feedbackBtn">反馈建议</button>
     </div>
   </div>
@@ -639,15 +696,19 @@ body.toolbar-rotated-270 #layoutToolbar {
     <div class="song-tab-content" id="jianpuContent">
       <div class="modal-title" style="font-size:12px;color:#666;font-weight:normal;">提示：<br>挪动滚动栏，进入跟弹模式</div>
       <div class="song-list" id="songList"></div>
-      <button class="add-btn" id="addSongBtn">＋ 添加自定义歌曲</button>
+      <button class="add-btn" id="addSongBtn">&#65291;自定义</button>
     </div>
     <div class="song-tab-content" id="tupuContent" style="display:none;">
       <div class="modal-title" style="font-size:12px;color:#666;font-weight:normal;">提示：<br>上传图片图谱，逐行播放</div>
       <div class="song-list" id="tupuList"></div>
-      <button class="add-btn" id="addTupuBtn">＋ 添加自定义图谱</button>
+      <button class="add-btn" id="addTupuBtn">&#65291;自定义</button>
     </div>
-    <div class="song-tab-content" id="recordContent" style="display:none;">
-      <div class="coming-soon">录制功能开发中...</div>
+    <div class="song-tab-content" id="recordContent" style="display:none;flex-direction:column;gap:8px;padding:4px 0;">
+      <div class="song-list" id="recordList"></div>
+      <div style="display:flex;gap:6px;margin-top:4px;">
+        <button class="add-btn" id="addRecBtn" style="flex:1;margin-top:0;">&#65291;自定义</button>
+        <button class="add-btn" id="startRecordBtn" style="flex:1;margin-top:0;border-color:#0099ff;color:#0099ff;">&#127897; 录制</button>
+      </div>
     </div>
     <div class="song-tab-content" id="staffContent" style="display:none;">
       <div class="coming-soon">五线谱功能开发中...</div>
@@ -683,20 +744,48 @@ body.toolbar-rotated-270 #layoutToolbar {
   </div>
 </div>
 
+<!-- 录制保存/编辑弹窗 -->
+<div class="edit-overlay" id="recEditOverlay">
+  <div class="edit-modal" style="max-height:100vh;overflow-y:auto;">
+    <h3 id="recEditTitle">保存录制</h3>
+    <label>曲目名称</label>
+    <input type="text" id="recEditName" placeholder="例：我的演奏">
+    <label style="margin-top:12px;">录制内容</label>
+    <textarea id="recEditScore" style="min-height:120px;font-size:11px;line-height:1.6;font-family:monospace;" placeholder="钢琴|C4|320ms|0ms_钢琴|G4|280ms|500ms"></textarea>
+    <div style="font-size:10px;color:#555;margin-top:6px;line-height:1.5;">
+      格式：<b style="color:#aaa">乐器|音域|按住时长ms|时间节点ms</b>，用 <b style="color:#aaa">_</b> 分隔音符。<br>
+      多轨道：每行一个轨道，播放时所有轨道同时从头开始，实现多乐器合奏效果。<br>
+      时间节点为该音符相对于本轨道起点的绝对毫秒时刻，同一时刻的多个音可同时触发。
+    </div>
+    <label style="margin-top:12px;">播放速度倍率</label>
+    <input type="number" id="recEditSpeed" value="1" min="0.25" max="4" step="0.25" style="width:80px;">
+    <div class="row">
+      <button class="cancel-btn" id="recEditCancel">取消</button>
+      <button class="ok-btn" id="recEditOk">保存</button>
+    </div>
+  </div>
+</div>
+
 <div class="edit-overlay" id="tupuEditOverlay">
   <div class="edit-modal tupu-edit-modal">
-    <h3 id="tupuEditTitle">编辑图谱</h3>
+    <div class="tupu-edit-nav">
+      <button class="tupu-nav-btn" id="tupuPrevBtn">◀</button>
+      <span id="tupuNavInfo">1 / 1</span>
+      <button class="tupu-nav-btn" id="tupuNextBtn">▶</button>
+      <button class="tupu-action-btn" id="tupuAddBtn">＋</button>
+      <button class="tupu-action-btn tupu-delete-btn" id="tupuDeleteBtn">－</button>
+    </div>
     <div class="tupu-edit-content">
       <div class="tupu-edit-left">
+        <div class="tupu-settings">
+          <div class="tupu-row">
+            <label>名称：</label>
+            <input type="text" id="tupuName" placeholder="例：小星星">
+          </div>
+        </div>
         <div class="tupu-speed-setting">
           <label>播放速度 (BPM)：</label>
           <input type="number" id="tupuSpeed" min="30" max="240" step="1" value="80">
-        </div>
-        <div class="tupu-settings">
-          <div class="tupu-row">
-            <label>图谱名称：</label>
-            <input type="text" id="tupuName" placeholder="例：小星星">
-          </div>
         </div>
         <div class="tupu-controls">
           <input type="file" id="tupuImageInput" accept="image/*" style="display:none;">
@@ -715,13 +804,36 @@ body.toolbar-rotated-270 #layoutToolbar {
           </div>
           <div class="tupu-global-row">
             <label>高度</label>
-            <input type="range" id="globalHeight" min="10" max="200" value="60" step="1">
-            <span id="globalHeightVal">60px</span>
+            <input type="range" id="globalHeight" min="1" max="50" value="10" step="0.5">
+            <span id="globalHeightVal">10%</span>
           </div>
           <div class="tupu-global-row">
-            <label>缝隙</label>
-            <input type="range" id="globalGap" min="0" max="80" value="10" step="1">
-            <span id="globalGapVal">10px</span>
+            <label>间距</label>
+            <input type="range" id="globalGap" min="0" max="20" value="2" step="0.5">
+            <span id="globalGapVal">2%</span>
+          </div>
+        </div>
+        <div class="tupu-mask-props" id="maskPropsPanel" style="display:none;">
+          <h4>选中遮罩属性</h4>
+          <div class="tupu-prop-row">
+            <label>左边</label>
+            <input type="number" id="maskLeftPct" min="0" max="100" step="0.01" value="0">
+            <span>%</span>
+          </div>
+          <div class="tupu-prop-row">
+            <label>右边</label>
+            <input type="number" id="maskRightPct" min="0" max="100" step="0.01" value="100">
+            <span>%</span>
+          </div>
+          <div class="tupu-prop-row">
+            <label>上边</label>
+            <input type="number" id="maskTopPct" min="0" max="100" step="0.01" value="0">
+            <span>%</span>
+          </div>
+          <div class="tupu-prop-row">
+            <label>下边</label>
+            <input type="number" id="maskBottomPct" min="0" max="100" step="0.01" value="100">
+            <span>%</span>
           </div>
         </div>
       </div>
@@ -748,6 +860,17 @@ body.toolbar-rotated-270 #layoutToolbar {
   </div>
 </div>
 
+<div class="modal-overlay" id="appConfirmOverlay" style="z-index:9999;">
+  <div class="modal" style="min-width:220px;">
+    <div class="modal-title" id="appConfirmTitle">确认</div>
+    <div id="appConfirmContent" style="font-size:13px;color:#ddd;line-height:1.6;margin-bottom:16px;"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="cancel-btn" id="appConfirmCancel" style="flex:1;">取消</button>
+      <button class="ok-btn" id="appConfirmOk" style="flex:1;">确定</button>
+    </div>
+  </div>
+</div>
+
 <div id="keybindingOverlay">
   <div class="keybinding-modal">
     <div id="keybindingBody" class="keybinding-body"></div>
@@ -760,6 +883,32 @@ body.toolbar-rotated-270 #layoutToolbar {
 </div>
 
 <script>
+// Global custom confirm - replaces window.confirm() for WebView compatibility
+window.appConfirm = function(msg, onOk, onCancel) {
+  var ov  = document.getElementById('appConfirmOverlay');
+  var txt = document.getElementById('appConfirmContent');
+  var ok  = document.getElementById('appConfirmOk');
+  var cn  = document.getElementById('appConfirmCancel');
+  if (!ov || !txt || !ok || !cn) {
+    // Fallback to native confirm if elements missing (shouldn't happen)
+    if (window.confirm(msg)) { if (onOk) onOk(); } else { if (onCancel) onCancel(); }
+    return;
+  }
+  txt.textContent = msg;
+  ov.classList.add('show');
+  function cleanup() { ov.classList.remove('show'); ok.onclick = null; cn.onclick = null; }
+  ok.onclick = function() { cleanup(); if (onOk) onOk(); };
+  cn.onclick = function() { cleanup(); if (onCancel) onCancel(); };
+};
+// Also expose showAppAlert globally for use before window.onload
+window.showAppAlert = window.showAppAlert || function(msg) {
+  var ov  = document.getElementById('msgOverlay');
+  var txt = document.getElementById('msgContent');
+  var ok  = document.getElementById('msgOk');
+  if (ov && txt) { txt.textContent = msg; ov.classList.add('show'); }
+  if (ok) ok.onclick = function() { ov.classList.remove('show'); };
+};
+
   var coverSupport = 'CSS' in window && typeof CSS.supports === 'function' && (CSS.supports('top: env(a)') ||
 
 CSS.supports('top: constant(a)'))
@@ -771,6 +920,7 @@ document.write(
 (coverSupport ? ', viewport-fit=cover' : '') + '" />')
 let audioCtx = null;
 let currentInst = "piano";
+let keyHintEnabled = true;
 const INST_LIST = [
   {v:"piano",t:"钢琴"},{v:"guitar",t:"吉他"},{v:"violin",t:"小提琴"},{v:"cello",t:"大提琴"},
   {v:"xiao",t:"箫"},{v:"dizi",t:"笛子"},{v:"guzheng",t:"古筝"},{v:"erhu",t:"二胡"},
@@ -791,6 +941,7 @@ let playSpeed = 1.0;
 let isMutedTemporarily = false;
 
 let isDraggingScore = false;
+let wasTupuScrolling = false;
 let dragStartX = 0;
 let dragStartOffX = 0;
 
@@ -829,7 +980,8 @@ const DEFAULT_PC_KEY_MAP = {
   },
   'control': {
     'prevOctave': ['KeyA'],
-    'nextOctave': ['KeyL']
+    'nextOctave': ['KeyL'],
+    'playPause': ['Space']
   },
   'fixed': {
     'octave5': {
@@ -1053,40 +1205,38 @@ function buildTokensAndNotes(song, addDelay = false) {
 }
 
 function updateTupuScale(){
-  if (!currentTupu || !currentTupu.img || !currentTupu.masks) return;
+  if (!currentTupu || !currentTupu.scaledMasks) return;
   
   const canvasHeight = canvas.height;
-  let totalWidth = 0;
-  const scaledMasks = [];
+  if (canvasHeight <= 0) return;
   
-  currentTupu.masks.forEach(mask => {
-    const srcX = mask.left || 0;
-    const srcY = mask.top || 0;
-    const srcWidth = mask.width || currentTupu.img.width;
-    const srcHeight = mask.height || 0;
-    
-    if (srcHeight <= 0) return;
-    
-    const maskScaleRatio = canvasHeight / srcHeight;
-    const scaledMaskWidth = srcWidth * maskScaleRatio;
-    
-    scaledMasks.push({
-      srcX: srcX,
-      srcY: srcY,
-      srcWidth: srcWidth,
-      srcHeight: srcHeight,
-      x: totalWidth,
-      width: scaledMaskWidth,
-      height: canvasHeight
+  let currentX = 0;
+  let hasValidMask = false;
+  
+  currentTupu.scaledMasks.forEach((pageMasks) => {
+    pageMasks.forEach((mask) => {
+      const srcHeight = mask.srcHeight;
+      if (!srcHeight || srcHeight <= 0) return;
+      
+      hasValidMask = true;
+      const maskScaleRatio = canvasHeight / srcHeight;
+      const scaledMaskWidth = mask.srcWidth * maskScaleRatio;
+      
+      mask.x = currentX;
+      mask.width = scaledMaskWidth;
+      mask.height = canvasHeight;
+      currentX += scaledMaskWidth;
     });
-    totalWidth += scaledMaskWidth;
   });
   
-  currentTupu.scaledMasks = scaledMasks;
-  currentTupu.totalWidth = totalWidth;
-  
-  canvas.width = totalWidth;
-  canvas.style.width = totalWidth + "px";
+  if (hasValidMask) {
+    currentTupu.totalWidth = currentX;
+    canvas.width = currentX;
+    canvas.style.width = currentX + "px";
+  } else {
+    canvas.width = scoreWrap ? scoreWrap.clientWidth : 100;
+    canvas.style.width = canvas.width + "px";
+  }
 }
 
 function getScoreMetrics() {
@@ -1097,26 +1247,144 @@ function getScoreMetrics() {
   return { fontSize, gap };
 }
 
+function drawRainbowGridBackground() {
+  // Draw onto the fixed background canvas (does NOT scroll with content)
+  var bgCanvas = document.getElementById('scoreBgCanvas');
+  if (!bgCanvas || !scoreWrap) return;
+  var bctx = bgCanvas.getContext('2d');
+  if (!bctx) return;
+  var scoreW = scoreWrap.clientWidth;
+  var h = scoreWrap.offsetHeight || 34;
+  // Sync bg canvas pixel dimensions to scoreWrap
+  if (bgCanvas.width !== scoreW)  bgCanvas.width  = scoreW;
+  if (bgCanvas.height !== h)      bgCanvas.height = h;
+  // Use bctx as ctx for the drawing code below
+  var ctx = bctx;
+  var w = scoreW;
+
+  // --- Cyberpunk grid background (fixed, does not scroll) ---
+
+  // 1. Deep dark base
+  ctx.fillStyle = '#04040f';
+  ctx.fillRect(0, 0, w, h);
+
+  // 2. Subtle radial glow at center
+  var grd = ctx.createRadialGradient(scoreW / 2, h / 2, 0, scoreW / 2, h / 2, Math.max(scoreW, h) * 0.7);
+  grd.addColorStop(0, 'rgba(0, 220, 255, 0.07)');
+  grd.addColorStop(0.5, 'rgba(160, 0, 255, 0.04)');
+  grd.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, scoreW, h);
+
+  // 3. Grid cell size: aim for ~18-24px cells, snapped to integer
+  var cellSize = Math.max(14, Math.round(Math.min(scoreW, h * 3) / 28));
+
+  // 4. Minor grid lines (thin, dark cyan)
+  ctx.lineWidth = 0.5;
+  ctx.strokeStyle = 'rgba(0, 255, 240, 0.10)';
+  ctx.beginPath();
+  for (var x = 0; x <= scoreW; x += cellSize) {
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, h);
+  }
+  for (var y = 0; y <= h; y += cellSize) {
+    ctx.moveTo(0, y);
+    ctx.lineTo(scoreW, y);
+  }
+  ctx.stroke();
+
+  // 5. Major grid lines every 4 cells (brighter cyan with magenta accent)
+  var majorStep = cellSize * 4;
+  ctx.lineWidth = 1;
+  // Horizontal major — cyan
+  ctx.strokeStyle = 'rgba(0, 230, 255, 0.32)';
+  ctx.beginPath();
+  for (var y = 0; y <= h; y += majorStep) {
+    ctx.moveTo(0, y);
+    ctx.lineTo(scoreW, y);
+  }
+  ctx.stroke();
+  // Vertical major — magenta/purple
+  ctx.strokeStyle = 'rgba(180, 0, 255, 0.28)';
+  ctx.beginPath();
+  for (var x = 0; x <= scoreW; x += majorStep) {
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, h);
+  }
+  ctx.stroke();
+
+  // 6. Intersection dots at major crossings
+  var dotR = Math.max(1, cellSize * 0.08);
+  ctx.fillStyle = 'rgba(0, 255, 240, 0.55)';
+  for (var xi = 0; xi <= scoreW; xi += majorStep) {
+    for (var yi = 0; yi <= h; yi += majorStep) {
+      ctx.beginPath();
+      ctx.arc(xi, yi, dotR, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // 7. Horizontal scan-line glow strips (subtle)
+  var scanH = Math.max(2, Math.round(h * 0.12));
+  var scanGrd = ctx.createLinearGradient(0, h * 0.35, 0, h * 0.35 + scanH);
+  scanGrd.addColorStop(0, 'rgba(0, 220, 255, 0)');
+  scanGrd.addColorStop(0.5, 'rgba(0, 220, 255, 0.06)');
+  scanGrd.addColorStop(1, 'rgba(0, 220, 255, 0)');
+  ctx.fillStyle = scanGrd;
+  ctx.fillRect(0, h * 0.35, scoreW, scanH);
+
+  // 8. Top & bottom edge neon lines
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = 'rgba(0, 230, 255, 0.5)';
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(scoreW, 0); ctx.stroke();
+  ctx.strokeStyle = 'rgba(160, 0, 255, 0.5)';
+  ctx.beginPath(); ctx.moveTo(0, h - 1); ctx.lineTo(scoreW, h - 1); ctx.stroke();
+
+  // 9. Fixed playhead line at 1/3 width — always visible regardless of content scroll
+  var playheadBgX = Math.round(scoreW / 3);
+  // Outer glow
+  ctx.save();
+  ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
+  ctx.shadowBlur = 6;
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([5, 4]);
+  ctx.beginPath(); ctx.moveTo(playheadBgX, 0); ctx.lineTo(playheadBgX, h); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
 function drawTupuScore() {
-  if (!ctx || !currentTupu || !currentTupu.img || !currentTupu.scaledMasks) return;
+  if (!ctx || !currentTupu || !currentTupu.scaledMasks) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   
-  currentTupu.scaledMasks.forEach((mask) => {
-    ctx.save();
-    
-    ctx.drawImage(
-      currentTupu.img,
-      mask.srcX, mask.srcY, mask.srcWidth, mask.srcHeight,
-      mask.x, 0, mask.width, mask.height
-    );
-    
-    ctx.restore();
+  if (canvas.width <= 0 || canvas.height <= 0) return;
+  
+  currentTupu.scaledMasks.forEach((pageMasks) => {
+    pageMasks.forEach((mask) => {
+      const img = currentTupu.pageImgs[mask.pageIdx];
+      if (!img) return;
+      ctx.save();
+      ctx.drawImage(
+        img,
+        mask.srcX, mask.srcY, mask.srcWidth, mask.srcHeight,
+        mask.x, 0, mask.width, mask.height
+      );
+      ctx.restore();
+    });
   });
 }
 
 function drawScore() {
   if (!ctx) return;
-  if (!tokens || tokens.length === 0) return;
+  // Sync canvas height to scoreWrap (prevents white canvas on resize/fullscreen) — DO NOT REMOVE
+  if (scoreWrap) {
+    const _wh = scoreWrap.offsetHeight || 34;
+    if (canvas.height !== _wh) { canvas.height = _wh; canvas.style.height = _wh + "px"; }
+  }
+  // Always refresh fixed background (fixes distortion on resize)
+  drawRainbowGridBackground();
+  if (!tokens || tokens.length === 0) { ctx.clearRect(0,0,canvas.width,canvas.height); return; }
   
   const { fontSize, gap } = getScoreMetrics();
   
@@ -1195,6 +1463,883 @@ function drawScore() {
   });
 }
 
+
+// ─── 多轨录制播放系统 ───────────────────────────────────────────────
+
+var _TRACK_COLORS = ['#4fc3f7','#81c784','#ffb74d','#f06292','#ce93d8'];
+
+
+var _INST_EN = {
+  '\u94a2\u7434':'piano','\u5409\u4ed6':'guitar','\u5c0f\u63d0\u7434':'violin','\u5927\u63d0\u7434':'cello',
+  '\u7b2d':'xiao','\u7b1b\u5b50':'dizi','\u53e4\u7b5d':'guzheng','\u4e8c\u80e1':'erhu',
+  '\u7435\u7436':'pipa','\u9f13':'drum','\u67b6\u5b50\u9f13':'drumkit','\u949f\u58f0':'bell',
+  '\u5520\u5443':'suona','\u8d1d\u65af':'bass','\u8428\u514b\u65af':'saxophone'
+};
+
+var _OCT_COLORS = [
+  '#a855f7','#6366f1','#3b82f6','#22c55e','#eab308','#f97316','#ef4444'
+];
+// Note name -> color: C=red, D=orange, E=yellow, F=green, G=cyan, A=blue, B=violet
+var _NOTE_COLORS = {
+  'C':'#ef4444', 'C#':'#f97316',
+  'D':'#f97316', 'D#':'#eab308',
+  'E':'#eab308',
+  'F':'#22c55e', 'F#':'#06b6d4',
+  'G':'#06b6d4', 'G#':'#3b82f6',
+  'A':'#3b82f6', 'A#':'#8b5cf6',
+  'B':'#8b5cf6'
+};
+// CDEFGAB -> red, orange, yellow, green, cyan, blue, violet
+var _SCALE_COLORS = ['#ef4444','#f97316','#eab308','#22c55e','#06b6d4','#3b82f6','#8b5cf6'];
+var _SCALE_NAMES  = ['C','D','E','F','G','A','B'];
+function _noteOctColor(note) {
+  var name = note.replace(/[0-9#]/g, '').replace(/#/,'');
+  // Extract base note name (C, D, E, F, G, A, B) ignoring sharps for color
+  var base = note.match(/^([A-G])/);
+  var idx  = base ? _SCALE_NAMES.indexOf(base[1]) : 3;
+  return _SCALE_COLORS[Math.max(0, Math.min(6, idx))];
+}
+
+// Rotate a hex color's hue by `deg` degrees, return new hex
+function _rotateHue(hex, deg) {
+  // Parse hex
+  var r = parseInt(hex.slice(1,3),16)/255;
+  var g = parseInt(hex.slice(3,5),16)/255;
+  var b = parseInt(hex.slice(5,7),16)/255;
+  // RGB → HSL
+  var max=Math.max(r,g,b), min=Math.min(r,g,b), h2=0, s2=0, l2=(max+min)/2;
+  if(max!==min){
+    var d=max-min;
+    s2=l2>0.5?d/(2-max-min):d/(max+min);
+    if(max===r) h2=(g-b)/d+(g<b?6:0);
+    else if(max===g) h2=(b-r)/d+2;
+    else h2=(r-g)/d+4;
+    h2=h2/6;
+  }
+  // Rotate hue
+  h2 = ((h2*360 + deg) % 360 + 360) % 360 / 360;
+  // HSL → RGB
+  function hue2rgb(p,q,t){if(t<0)t+=1;if(t>1)t-=1;if(t<1/6)return p+(q-p)*6*t;if(t<1/2)return q;if(t<2/3)return p+(q-p)*(2/3-t)*6;return p;}
+  var r2,g2,b2;
+  if(s2===0){r2=g2=b2=l2;}else{
+    var q2=l2<0.5?l2*(1+s2):l2+s2-l2*s2, p2=2*l2-q2;
+    r2=hue2rgb(p2,q2,h2+1/3);
+    g2=hue2rgb(p2,q2,h2);
+    b2=hue2rgb(p2,q2,h2-1/3);
+  }
+  var toHex=function(v){var s=Math.round(v*255).toString(16);return s.length===1?'0'+s:s;};
+  return '#'+toHex(r2)+toHex(g2)+toHex(b2);
+}
+
+function _parseRecTrack(str) {
+  return str.trim().split('_').filter(Boolean).map(function(seg) {
+    var p = seg.split('|');
+    return {
+      inst:   p[0] || '\u94a2\u7434',
+      note:   p[1] || 'C4',
+      holdMs: parseInt((p[2]||'200ms').replace('ms',''))||200,
+      atMs:   parseInt((p[3]||'0ms').replace('ms',''))||0
+    };
+  });
+}
+
+// ── measure canvas for text width ──────────────────────────────────
+var _mC = document.createElement('canvas');
+var _mX = _mC.getContext('2d');
+
+function _textWidth(note, fs) {
+  _mX.font = 'bold ' + fs + 'px "PingFang SC",Arial,sans-serif';
+  return _mX.measureText(note).width;
+}
+
+// ── hit effects ─────────────────────────────────────────────────────
+var _hitFx = [];
+
+// ── play state ──────────────────────────────────────────────────────
+var _recPlayState = null;
+
+// Called by startNote hook to check timing accuracy
+// Called with (note, instEn, nowMs) — instEn is the actual instrument played
+window._checkRecHit = function(note, instEn, nowMs) {
+  // Only triggers when rec is actively playing (not paused, not finished)
+  if (!_recPlayState || _recPlayState.paused || _recPlayState.finished) return;
+  var elapsed = (nowMs - _recPlayState.startTime) * _recPlayState.speed;
+
+  _recPlayState.tracks.forEach(function(track, ti) {
+    track.notes.forEach(function(n, ni) {
+      // Must match BOTH note and instrument
+      if (n.note !== note) return;
+      var nInstEn = _INST_EN[n.inst] || n.inst; // convert Chinese inst name to English
+      if (nInstEn !== instEn) return;
+      // Timing window: note must be coming up or just started
+      var diff = elapsed - n.atMs;
+      if (diff < -300 || diff > n.holdMs + 300) return;
+      var absDiff = Math.abs(diff);
+      // Tier thresholds: 0-40% = gold(1), 40-55% = blue(2), 55-70% = green(3)
+      // Base window is holdMs with a minimum floor
+      var base  = Math.max(100, n.holdMs);
+      var g40 = base * 0.40;
+      var g55 = base * 0.55;
+      var g70 = base * 0.70;
+      var tier = absDiff <= g40 ? 1 : absDiff <= g55 ? 2 : absDiff <= g70 ? 3 : 0;
+      if (!tier) return;
+      
+      var noteKey = ti + '-' + ni;
+      if (_recPlayState.scoredNotes[noteKey]) return;
+      
+      var h = canvas ? canvas.height : 170;
+      var scale = h / (_recPlayState.baseLaneH * 5);
+      var bh   = Math.round(_recPlayState.baseBlockH * scale);
+      var base_bw = bh * 1.5; // Base width (1:1.5 ratio with bh)
+      var hold_bw = (n._hold_bw || 0) * scale; // Extra width from hold time
+      var bw   = base_bw + hold_bw; // Total width
+      var laneH = h / 5;
+      var lane  = (ti * 3 + ni) % 5;
+      var x     = n._x * scale;
+      var y     = lane * laneH + (laneH - bh) / 2;
+      _hitFx.push({ x:x, y:y, bw:bw, bh:bh, tier:tier, t0:performance.now() });
+      
+      // Calculate score
+      var scoreMultiplier = tier === 1 ? 1 : tier === 2 ? 0.8 : 0.6;
+      var noteScore = _recPlayState.perNoteScore * scoreMultiplier;
+      _recPlayState.currentScore += noteScore;
+      _recPlayState.scoredNotes[noteKey] = true;
+      
+      // Add effect text
+      var text = tier === 1 ? 'Perfect' : tier === 2 ? 'Great' : 'Right';
+      var col  = tier === 1 ? '#ffd700' : tier === 2 ? '#4fc3f7' : '#4caf50';
+      _recPlayState.effectTexts.push({
+        text: text,
+        col: col,
+        t0: performance.now()
+      });
+    });
+  });
+};
+
+function startRecordPlay(recObj) {
+  // Stop ALL other playback modes before starting recording playback
+  stopRecordPlay();
+  // Stop jianpu auto-scroll (scrollRAF loop)
+  if (typeof cancelAnimationFrame !== 'undefined' && typeof scrollRAF !== 'undefined') {
+    cancelAnimationFrame(scrollRAF);
+  }
+  if (typeof isScrolling !== 'undefined') isScrolling = false;
+  if (typeof stopAutoPlay === 'function') try { stopAutoPlay(); } catch(e) {}
+  // Stop tupu scrolling
+  if (typeof stopTupuScrolling === 'function') try { stopTupuScrolling(); } catch(e) {}
+  // Stop any active notes from previous playback
+  if (typeof activeNodes !== 'undefined') {
+    activeNodes.forEach(function(v, k) {
+      if (k === 'auto' || String(k).indexOf('rec_') === 0) {
+        try { stopNote(k); } catch(e) {}
+      }
+    });
+  }
+  if (!recObj || !recObj.display) return;
+  var lines = recObj.display.split('\n').filter(function(s){ return s.trim(); });
+  if (!lines.length) return;
+
+  var speed  = parseFloat(recObj.speed) || 1;
+  var tracks = lines.map(function(line, i) {
+    return { notes: _parseRecTrack(line), idx: i };
+  });
+
+  var totalDur = 0;
+  tracks.forEach(function(t) {
+    t.notes.forEach(function(n) {
+      totalDur = Math.max(totalDur, n.atMs + n.holdMs + 800);
+    });
+  });
+
+  // 同类录制切换保持高度，否则默认 5×34=170px
+  var keepRec = (_scoreBarType === 'rec');
+  var targetH = keepRec ? (scoreWrap ? scoreWrap.offsetHeight || 170 : 170) : 170;
+  if (scoreWrap) scoreWrap.style.setProperty('--score-height', targetH + 'px');
+  _scoreBarType = 'rec';
+  if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (canvas) { canvas.height = targetH; canvas.style.height = targetH + 'px'; }
+  drawRainbowGridBackground();
+
+  var h         = targetH;
+  var LANE_COUNT = 5;
+  var laneH     = h / LANE_COUNT;
+
+  // Base block dimensions (fixed ratio 1:1.5 for width:height)
+  // Base values for 170px total height (5 lanes * 34px each)
+  var baseBlockH = 25; // Base block height (fixed)
+  var baseBlockW = baseBlockH * 1.5; // Base block width (ratio 1:1.5)
+  
+  var PX_PER_MS = 0.18; // Base pixel per ms, speed is handled in elapsed
+  var scoreW    = scoreWrap ? scoreWrap.clientWidth : 300;
+  var fixedX    = scoreW / 3;
+
+  // Pre-compute per-note geometry (base values, will be scaled during draw)
+  var totalNotes = 0;
+  tracks.forEach(function(t) {
+    totalNotes += t.notes.length;
+    t.notes.forEach(function(n) {
+      n._x     = n.atMs * PX_PER_MS;
+      n._base_bw = baseBlockW; // Base width (1:2 ratio)
+      n._hold_bw = n.holdMs * PX_PER_MS; // Extra width from hold time
+      n._bw     = n._base_bw + n._hold_bw; // Total base width
+      n._color    = _noteOctColor(n.note);
+      n._adjColor = _rotateHue(n._color, 10);
+    });
+  });
+
+  var perNoteScore = totalNotes > 0 ? 100 / totalNotes : 0;
+
+  var totalW = fixedX + 100;
+  tracks.forEach(function(t) {
+    t.notes.forEach(function(n) {
+      totalW = Math.max(totalW, n._x + n._bw + 200);
+    });
+  });
+
+  // Store base total width for scaling
+  var baseTotalW = totalW;
+
+  if (canvas) {
+    canvas.width  = Math.ceil(totalW);
+    canvas.style.width  = Math.ceil(totalW) + 'px';
+    canvas.style.left   = fixedX + 'px';
+    canvasOffX = fixedX;
+  }
+
+  _recPlayState = {
+    tracks: tracks, totalDur: totalDur,
+    PX_PER_MS: PX_PER_MS, totalW: totalW, speed: speed,
+    startTime: performance.now(), raf: null,
+    scheduled: {}, fixedX: fixedX,
+    baseLaneH: 34, baseBlockH: 25, baseFs: 14,
+    baseTotalW: baseTotalW,
+    laneH: laneH, fs: 14, blockH: 25,
+    paused: false, pausedElapsed: 0, pausedAt: undefined,
+    recObj: recObj,
+    totalNotes: totalNotes,
+    perNoteScore: perNoteScore,
+    currentScore: 0,
+    effectTexts: [],
+    scoredNotes: {}
+  };
+  _hitFx = [];
+
+  playBtn.classList.add("on");
+  playBtn.textContent = '\u23f8';
+  _startRingLoop();
+  _recLoop();
+}
+
+function _recLoop() {
+  if (!_recPlayState) return;
+  _recPlayState.raf = requestAnimationFrame(function(now) {
+    if (!_recPlayState) return;
+    if (_recPlayState.paused) return; // frozen
+    var elapsed = (now - _recPlayState.startTime) * _recPlayState.speed;
+    _recPlayState.pausedElapsed = elapsed;
+
+    // Schedule notes
+    _recPlayState.tracks.forEach(function(track, ti) {
+      track.notes.forEach(function(n, ni) {
+        var key = ti + '-' + ni;
+        if (_recPlayState.scheduled[key]) return;
+        // Fire sound when block left edge is within 60ms of the playhead (accounts for rAF latency)
+        if (elapsed >= n.atMs - 60) {
+          _recPlayState.scheduled[key] = true;
+          var instEn = _INST_EN[n.inst] || n.inst;
+          // Delay slightly if we're early so sound lands at visual crossing
+          var fireDelay = Math.max(0, (n.atMs - elapsed) / _recPlayState.speed);
+          (function(k, note, inst, hms, sp, delay) {
+            setTimeout(function(){
+              if (!_recPlayState || _recPlayState.paused) return;
+              startNote('rec_' + k, note, inst);
+              setTimeout(function(){ try{ stopNote('rec_' + k); }catch(e){} }, hms / sp);
+            }, delay);
+          })(key, n.note, instEn, n.holdMs, _recPlayState.speed, fireDelay);
+        }
+      });
+    });
+
+    // Scroll - scale both scroll position and block positions to keep sync
+    var scoreW = scoreWrap ? scoreWrap.clientWidth : 300;
+    var fixedX = scoreW / 3;
+    var currentH = scoreWrap ? scoreWrap.offsetHeight : 170;
+    var scale = currentH / (_recPlayState.baseLaneH * 5);
+    var nowX = elapsed * 0.18 * scale;
+    canvasOffX = fixedX - nowX;
+    if (canvas) canvas.style.left = canvasOffX + 'px';
+    
+    // Update canvas height and width based on current scoreWrap height
+    var scaledTotalW = Math.ceil(_recPlayState.baseTotalW * scale);
+    if (canvas) {
+      if (canvas.height !== currentH) {
+        canvas.height = currentH;
+        canvas.style.height = currentH + 'px';
+      }
+      if (canvas.width !== scaledTotalW) {
+        canvas.width = scaledTotalW;
+        canvas.style.width = scaledTotalW + 'px';
+      }
+    }
+
+    drawRecordScore(elapsed, now);
+
+    if (elapsed < _recPlayState.totalDur) {
+      _recLoop();
+    } else {
+      // Playback finished: keep canvas, set state to finished for replay
+      _recPlayState.finished = true;
+      _recPlayState.paused   = true;
+      playBtn.classList.remove("on");
+      playBtn.textContent = '\u25b6';
+    }
+  });
+}
+
+function pauseRecordPlay() {
+  if (!_recPlayState || _recPlayState.paused) return;
+  cancelAnimationFrame(_recPlayState.raf);
+  // Stop ALL currently playing rec notes immediately
+  _recPlayState.tracks.forEach(function(t, ti) {
+    t.notes.forEach(function(n, ni) {
+      try { stopNote('rec_' + ti + '-' + ni); } catch(e) {}
+    });
+  });
+  _recPlayState.paused       = true;
+  _recPlayState.pausedAt     = performance.now();
+  // Enter follow mode: user must play correct note to advance
+  _recPlayState.followMode   = true;
+  // Build follow index: find the next note at or after current elapsed
+  var elapsed = _recPlayState.pausedElapsed || 0;
+  _recPlayState.followIdx    = 0;
+  outer: for (var ti = 0; ti < _recPlayState.tracks.length; ti++) {
+    for (var ni = 0; ni < _recPlayState.tracks[ti].notes.length; ni++) {
+      var n = _recPlayState.tracks[ti].notes[ni];
+      if (n.atMs >= elapsed) {
+        _recPlayState.followIdx = { ti: ti, ni: ni };
+        break outer;
+      }
+    }
+  }
+  // Flatten all notes sorted by atMs for follow mode
+  var allNotes = [];
+  _recPlayState.tracks.forEach(function(t, ti) {
+    t.notes.forEach(function(n, ni) {
+      allNotes.push({ note: n.note, atMs: n.atMs, holdMs: n.holdMs, ti: ti, ni: ni,
+                      inst: n.inst });
+    });
+  });
+  allNotes.sort(function(a, b) { return a.atMs - b.atMs; });
+  _recPlayState.followNotes  = allNotes;
+  // Start from the note at/after current elapsed
+  _recPlayState.followPos    = 0;
+  for (var i = 0; i < allNotes.length; i++) {
+    if (allNotes[i].atMs >= elapsed) { _recPlayState.followPos = i; break; }
+    _recPlayState.followPos = i + 1;
+  }
+  playBtn.classList.remove("on");
+  playBtn.textContent = '\u25b6';
+  drawRecordScore(elapsed, performance.now());
+}
+
+function resumeRecordPlay() {
+  if (!_recPlayState || !_recPlayState.paused) return;
+  if (_recPlayState.finished) {
+    // Replay from start
+    var obj = _recPlayState.recObj;
+    stopRecordPlay();
+    startRecordPlay(obj);
+    return;
+  }
+  // Exit follow mode
+  _recPlayState.followMode   = false;
+  _recPlayState.followNotes  = null;
+  // Shift startTime forward by pause duration so elapsed stays continuous
+  var pauseDur = performance.now() - _recPlayState.pausedAt;
+  _recPlayState.startTime += pauseDur;
+  _recPlayState.pausedAt  = undefined;
+  _recPlayState.paused    = false;
+  playBtn.classList.add("on");
+  playBtn.textContent = '\u23f8';
+  _startRingLoop();
+  _recLoop();
+}
+
+function stopRecordPlay() {
+  if (!_recPlayState) return;
+  cancelAnimationFrame(_recPlayState.raf);
+  _recPlayState.tracks.forEach(function(t, ti) {
+    t.notes.forEach(function(n, ni) {
+      try { stopNote('rec_' + ti + '-' + ni); } catch(e) {}
+    });
+  });
+  _recPlayState = null;
+  _hitFx = [];
+  _stopRingLoop();
+  if (typeof playBtn !== 'undefined') { playBtn.classList.remove("on"); playBtn.textContent = '\u25b6'; }
+  if (canvas) { canvas.style.left = '20px'; canvasOffX = 20; }
+  if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawRainbowGridBackground();
+}
+
+// ── Key-edge anticipation rings ─────────────────────────────────────
+// Drawn on the piano container overlay, NOT on the score canvas.
+// We use a separate <canvas> overlay on top of the piano container.
+var _ringCanvas = null;
+var _ringCtx    = null;
+var _ringRAF    = null;
+
+function _ensureRingCanvas() {
+  var existing = document.getElementById('_recRingCanvas');
+  if (existing) { _ringCanvas = existing; _ringCtx = existing.getContext('2d');
+    // Ensure it's on documentElement
+    if (existing.parentNode !== document.documentElement) document.documentElement.appendChild(existing);
+    return; }
+  var c = document.createElement('canvas');
+  c.id = '_recRingCanvas';
+  // Fixed positioning covers the entire viewport, correctly tracking all elements
+  c.style.cssText = 'position:fixed;left:0;top:0;width:100vw;height:100vh;pointer-events:none;z-index:5000;';
+  // Append to <html> not <body>, so position:fixed is relative to true viewport
+  // (CSS: position:fixed inside transformed element uses that element as container)
+  document.documentElement.appendChild(c);
+  _ringCanvas = c; _ringCtx = c.getContext('2d');
+}
+
+function _startRingLoop() {
+  if (_ringRAF) return;
+  _ensureRingCanvas();
+  function loop() {
+    _drawRings();
+    _ringRAF = requestAnimationFrame(loop);
+  }
+  _ringRAF = requestAnimationFrame(loop);
+}
+
+function _stopRingLoop() {
+  cancelAnimationFrame(_ringRAF);
+  _ringRAF = null;
+  if (_ringCanvas && _ringCtx) {
+    _ringCtx.clearRect(0, 0, _ringCanvas.width, _ringCanvas.height);
+  }
+}
+
+function _drawRings() {
+  if (!_ringCanvas || !_ringCtx || !_recPlayState || !keyHintEnabled) { _stopRingLoop(); return; }
+  var cont = document.getElementById('container');
+  if (!cont) return;
+
+  // Canvas is position:fixed, so it covers the full viewport
+  // Use CSS pixel viewport size - works correctly even with body CSS transform rotation
+  var vw = document.documentElement.clientWidth  || window.innerWidth;
+  var vh = document.documentElement.clientHeight || window.innerHeight;
+  if (_ringCanvas.width !== vw)  _ringCanvas.width  = vw;
+  if (_ringCanvas.height !== vh) _ringCanvas.height = vh;
+  _ringCtx.clearRect(0, 0, vw, vh);
+
+  if (_recPlayState.paused) return;
+
+  var elapsed = (performance.now() - _recPlayState.startTime) * _recPlayState.speed;
+
+  _recPlayState.tracks.forEach(function(track) {
+    track.notes.forEach(function(n) {
+      var ahead = n.atMs - elapsed;
+      if (ahead < 0 || ahead > 500) return;
+      var prog = 1 - (ahead / 500); // 0=far away, 1=exactly now
+
+      // Show ring only on keys in rows matching this note's instrument
+      var nInstEn = _INST_EN[n.inst] || n.inst;
+      var allKeys = cont.querySelectorAll('[data-note="' + n.note + '"]');
+      // Filter: prefer rows whose rowInstMap matches; fall back to all visible if none match
+      var matchKeys = Array.prototype.filter.call(allKeys, function(k) {
+        var row = k.closest('.octave-row');
+        if (!row) return true;
+        var ri = parseInt(row.dataset.rowIdx);
+        var rowInst = (typeof rowInstMap !== 'undefined' && rowInstMap[ri]) || null;
+        return !rowInst || rowInst === nInstEn;
+      });
+      var keys = matchKeys.length ? matchKeys : allKeys;
+      keys.forEach(function(key) {
+        var kr = key.getBoundingClientRect();
+        var kx = kr.left, ky = kr.top, kw = kr.width, kh = kr.height;
+        if (kw <= 0 || kh <= 0) return;
+        // Skip keys scrolled completely out of view
+        if (kr.bottom < 0 || kr.top > vh || kr.right < 0 || kr.left > vw) return;
+
+        var maxExpand = Math.min(kw * 0.9, 28);
+        var expand = (1 - prog) * maxExpand;
+
+        // Outer glow (blurry halo)
+        var oe = expand + 5;
+        _ringCtx.strokeStyle = 'rgba(255,255,255,' + (0.12 + prog * 0.18) + ')';
+        _ringCtx.lineWidth = 5 + (1 - prog) * 3;
+        _ringCtx.shadowColor = 'rgba(255,255,255,1)';
+        _ringCtx.shadowBlur  = 8 + (1 - prog) * 6;
+        _ringCtx.beginPath();
+        _ringCtx.roundRect
+          ? _ringCtx.roundRect(kx - oe, ky - oe, kw + oe*2, kh + oe*2, Math.min(10, (kh + oe*2) * 0.2))
+          : _ringCtx.rect(kx - oe, ky - oe, kw + oe*2, kh + oe*2);
+        _ringCtx.stroke();
+        _ringCtx.shadowBlur = 0;
+
+        // Inner crisp ring
+        _ringCtx.strokeStyle = 'rgba(255,255,255,' + (0.45 + prog * 0.50) + ')';
+        _ringCtx.lineWidth = 1.5;
+        _ringCtx.beginPath();
+        var r = Math.min(6, kh * 0.15);
+        _ringCtx.roundRect
+          ? _ringCtx.roundRect(kx - expand, ky - expand, kw + expand*2, kh + expand*2, r)
+          : _ringCtx.rect(kx - expand, ky - expand, kw + expand*2, kh + expand*2);
+        _ringCtx.stroke();
+      });
+    });
+  });
+  _ringCtx.globalAlpha = 1;
+  _ringCtx.shadowBlur = 0;
+}
+
+var _jianpuRingRAF = null;
+
+function _startJianpuRingLoop() {
+  if (_jianpuRingRAF) return;
+  _ensureRingCanvas();
+  function loop() {
+    _drawJianpuRings();
+    _jianpuRingRAF = requestAnimationFrame(loop);
+  }
+  _jianpuRingRAF = requestAnimationFrame(loop);
+}
+
+function _stopJianpuRingLoop() {
+  cancelAnimationFrame(_jianpuRingRAF);
+  _jianpuRingRAF = null;
+  if (_ringCanvas && _ringCtx) {
+    _ringCtx.clearRect(0, 0, _ringCanvas.width, _ringCanvas.height);
+  }
+}
+
+function _drawJianpuRings() {
+  if (!_ringCanvas || !_ringCtx || !currentSong || !keyHintEnabled || !isScrolling) { _stopJianpuRingLoop(); return; }
+  var cont = document.getElementById('container');
+  if (!cont) return;
+
+  var vw = document.documentElement.clientWidth  || window.innerWidth;
+  var vh = document.documentElement.clientHeight || window.innerHeight;
+  if (_ringCanvas.width !== vw)  _ringCanvas.width  = vw;
+  if (_ringCanvas.height !== vh) _ringCanvas.height = vh;
+  _ringCtx.clearRect(0, 0, vw, vh);
+
+  var notes = currentSong.autoNotes;
+  if (!notes || notes.length === 0) return;
+
+  for (var i = 0; i < notes.length; i++) {
+    var n = notes[i];
+    var ahead = n.startTime - currentPlayTime;
+    if (ahead < 0 || ahead > 500) continue;
+    var prog = 1 - (ahead / 500);
+
+    if (n.n === "R") continue;
+
+    var allKeys = cont.querySelectorAll('[data-note="' + n.n + '"]');
+    var visibleKeys = Array.prototype.filter.call(allKeys, function(k) {
+      var kr = k.getBoundingClientRect();
+      return kr.width > 0 && kr.height > 0 && kr.bottom > 0 && kr.top < vh && kr.right > 0 && kr.left < vw;
+    });
+
+    visibleKeys.forEach(function(key) {
+      var kr = key.getBoundingClientRect();
+      var kx = kr.left, ky = kr.top, kw = kr.width, kh = kr.height;
+      if (kw <= 0 || kh <= 0) return;
+
+      var maxExpand = Math.min(kw * 0.9, 28);
+      var expand = (1 - prog) * maxExpand;
+
+      var oe = expand + 5;
+      _ringCtx.strokeStyle = 'rgba(255,255,255,' + (0.12 + prog * 0.18) + ')';
+      _ringCtx.lineWidth = 5 + (1 - prog) * 3;
+      _ringCtx.shadowColor = 'rgba(255,255,255,0.6)';
+      _ringCtx.shadowBlur  = 8 + (1 - prog) * 6;
+      _ringCtx.beginPath();
+      _ringCtx.roundRect
+        ? _ringCtx.roundRect(kx - oe, ky - oe, kw + oe*2, kh + oe*2, Math.min(10, (kh + oe*2) * 0.2))
+        : _ringCtx.rect(kx - oe, ky - oe, kw + oe*2, kh + oe*2);
+      _ringCtx.stroke();
+      _ringCtx.shadowBlur = 0;
+
+      _ringCtx.strokeStyle = 'rgba(255,255,255,' + (0.45 + prog * 0.50) + ')';
+      _ringCtx.lineWidth = 1.5;
+      _ringCtx.beginPath();
+      var r = Math.min(6, kh * 0.15);
+      _ringCtx.roundRect
+        ? _ringCtx.roundRect(kx - expand, ky - expand, kw + expand*2, kh + expand*2, r)
+        : _ringCtx.rect(kx - expand, ky - expand, kw + expand*2, kh + expand*2);
+      _ringCtx.stroke();
+    });
+  }
+  _ringCtx.globalAlpha = 1;
+  _ringCtx.shadowBlur = 0;
+}
+
+// ── Main draw function ───────────────────────────────────────────────
+function drawRecordScore(elapsedMs, nowPerf) {
+  if (!ctx || !canvas || !_recPlayState) return;
+  ctx.globalAlpha = 1.0;
+  var h          = canvas.height;
+  var w          = canvas.width;
+  var LANE_COUNT = 5;
+  
+  // Dynamic scaling based on current height
+  var scale = h / (_recPlayState.baseLaneH * LANE_COUNT);
+  var laneH = h / LANE_COUNT;
+  var blockH = Math.round(_recPlayState.baseBlockH * scale);
+  var fs = Math.round(_recPlayState.baseFs * scale);
+  var baseHighlightW = Math.round(scale);
+  var base_bw = blockH * 1.5;
+  var radius = Math.min(3, blockH / 3);
+  var halfBlockH = blockH / 2;
+  var shimmerH = blockH * 0.55;
+  var shimmerH2 = blockH * 0.5;
+
+  ctx.clearRect(0, 0, w, h);
+
+  // Draw rainbow grid background (fixed, doesn't scroll)
+  drawRainbowGridBackground();
+
+  // Hit effects - draw first so they appear behind blocks
+  var nowT = nowPerf || performance.now();
+  _hitFx = _hitFx.filter(function(fx) {
+    var age  = nowT - fx.t0;
+    var DUR  = 650;
+    if (age > DUR) return false;
+    var prog = age / DUR;
+    var col  = fx.tier === 1 ? '#ffd700' : fx.tier === 2 ? '#4fc3f7' : '#4caf50';
+    var nRip = 4 - fx.tier; // tier1=3, tier2=2, tier3=1
+
+    // Block scale animation: grow then shrink
+    var scaleProg = prog < 0.25 ? (prog / 0.25) : (1 - (prog - 0.25) / 0.75);
+    var scale = 1 + scaleProg * 0.4; // max scale 1.4
+    var sw = fx.bw * scale;
+    var sh = fx.bh * scale;
+    var sx = fx.x - (sw - fx.bw) / 2;
+    var sy = fx.y - (sh - fx.bh) / 2;
+
+    // Draw scaled block with glow
+    ctx.fillStyle = col;
+    ctx.globalAlpha = 0.5 * (1 - prog * 0.3);
+    ctx.shadowColor = col;
+    ctx.shadowBlur = 10 * scaleProg;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(sx, sy, sw, sh, 4);
+    else ctx.rect(sx, sy, sw, sh);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    for (var r = 0; r < nRip; r++) {
+      var rp  = (prog + r / nRip) % 1.0;
+      var exp = rp * 16;
+      ctx.strokeStyle = col;
+      ctx.globalAlpha = (1 - rp) * 0.88;
+      ctx.lineWidth   = Math.max(0.5, 2 - rp * 1.5);
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(fx.x - exp, fx.y - exp, fx.bw + exp*2, fx.bh + exp*2, 6);
+      else ctx.rect(fx.x - exp, fx.y - exp, fx.bw + exp*2, fx.bh + exp*2);
+      ctx.stroke();
+    }
+    // Center fill
+    var fa = Math.max(0, 0.5 - prog * 0.7);
+    if (fa > 0) {
+      ctx.fillStyle = col; ctx.globalAlpha = fa;
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(fx.x, fx.y, fx.bw, fx.bh, 4);
+      else ctx.rect(fx.x, fx.y, fx.bw, fx.bh);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1.0;
+    
+    return true;
+  });
+
+  // Lane dividers
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  for (var i = 1; i < LANE_COUNT; i++) {
+    ctx.beginPath(); ctx.moveTo(0, i * laneH); ctx.lineTo(w, i * laneH); ctx.stroke();
+  }
+
+  // Playhead is drawn on the fixed background canvas (drawRainbowGridBackground).
+  // We only keep scoreW / fixedX for score text positioning below.
+  var scoreW = scoreWrap ? scoreWrap.clientWidth : 300;
+  var fixedX = scoreW / 3;
+
+  // Note blocks - scale positions based on current height
+  ctx.font = 'bold ' + fs + 'px "PingFang SC",Arial,sans-serif';
+  ctx.textBaseline = 'middle';
+
+  _recPlayState.tracks.forEach(function(track, ti) {
+    track.notes.forEach(function(n, ni) {
+      var lane     = (ti * 3 + ni) % LANE_COUNT;
+      var x        = n._x * scale;
+      var hold_bw  = (n._hold_bw || 0) * scale;
+      var bw       = base_bw + hold_bw;
+      var laneTop  = lane * laneH;
+      var by       = laneTop + (laneH - blockH) / 2;
+      var radius   = Math.min(3, blockH / 3);
+      var isActive = (elapsedMs >= n.atMs && elapsedMs < n.atMs + n.holdMs);
+      var isPast   = elapsedMs > n.atMs + n.holdMs;
+      // Follow mode: highlight recently-hit blocks
+      var followKey = ti + '-' + ni;
+      if (!isActive && _recPlayState.followHits && _recPlayState.followHits[followKey]) {
+        var hitAge = (nowPerf || performance.now()) - _recPlayState.followHits[followKey];
+        if (hitAge < 600) isActive = true; // show as active for 600ms after correct hit
+      }
+
+      // Block fill
+      var baseAlpha = isActive ? 0.92 : isPast ? 0.22 : 0.60;
+      var hGrd = ctx.createLinearGradient(x, by, x + bw, by);
+      hGrd.addColorStop(0,   n._color);
+      hGrd.addColorStop(0.6, n._color);
+      hGrd.addColorStop(1,   n._adjColor || n._color);
+      ctx.globalAlpha = baseAlpha;
+      ctx.fillStyle = hGrd;
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(x, by, bw, blockH, radius);
+      else ctx.rect(x, by, bw, blockH);
+      ctx.fill();
+      
+      // Left and right edge highlight bars
+      ctx.globalAlpha = baseAlpha * 1.2;
+      ctx.fillStyle = n._adjColor || n._color;
+      ctx.fillRect(x, by, baseHighlightW, blockH);
+      ctx.fillRect(x + bw - baseHighlightW, by, baseHighlightW, blockH);
+      ctx.globalAlpha = 1.0;
+
+      // Inner highlight: top edge shimmer
+      if (!isPast) {
+        var shimmer = ctx.createLinearGradient(x, by, x, by + shimmerH2);
+        var sA = isActive ? 0.40 : 0.18;
+        shimmer.addColorStop(0,   'rgba(255,255,255,' + sA + ')');
+        shimmer.addColorStop(1,   'rgba(255,255,255,0)');
+        ctx.fillStyle = shimmer;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(x, by, bw, shimmerH, [radius, radius, 0, 0]);
+        else ctx.rect(x, by, bw, shimmerH);
+        ctx.fill();
+      }
+
+      // Active outline
+      if (isActive) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.88)'; ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(x, by, bw, blockH, radius);
+        else ctx.rect(x, by, bw, blockH);
+        ctx.stroke();
+      }
+
+      // Label — clip to block, perfectly centered
+      ctx.font = 'bold ' + fs + 'px "PingFang SC",Arial,sans-serif';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#fff';
+      ctx.globalAlpha = isActive ? 1.0 : isPast ? 0.5 : 0.92;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x + baseHighlightW + 2, by, bw - baseHighlightW - 4, blockH);
+      ctx.clip();
+      ctx.fillText(n.note, x + baseHighlightW + 4, by + halfBlockH);
+      ctx.restore();
+      ctx.globalAlpha = 1.0;
+    });
+  });
+
+  // Draw score and effect texts in top-right corner of visible area
+  // Calculate font size with min/max limits
+  var defaultScoreH = 34;
+  var minFs = defaultScoreH * 0.7;
+  var maxFs = laneH;
+  var scoreFs = Math.min(maxFs, Math.max(minFs, fs));
+  var effectFs = Math.min(maxFs * 1.3, Math.max(minFs * 1.3, scoreFs * 1.3));
+  
+  // Calculate position in canvas coordinates (visible area right edge)
+  var visibleRightX = scoreW - canvasOffX;
+  var textX = Math.max(10, Math.min(w - 10, visibleRightX - 10));
+  
+  // Check if playback finished - trigger score animation
+  if (_recPlayState.finished && !_recPlayState.scoreAnimStart) {
+    _recPlayState.scoreAnimStart = performance.now();
+  }
+  
+  // Score animation when finished
+  var scoreAnimFs = scoreFs;
+  var scoreAnimX = textX;
+  var scoreAnimY = 3;
+  var scoreAnimAlpha = 0.95;
+  
+  if (_recPlayState.scoreAnimStart) {
+    var animElapsed = (nowPerf || performance.now()) - _recPlayState.scoreAnimStart;
+    var animDur = 900;
+    var animProg = Math.min(1, animElapsed / animDur);
+    var easeOut = 1 - Math.pow(1 - animProg, 3);
+    // Target: absolute visual center of scoreWrap (canvas coords = visual - canvasOffX)
+    var targetX = scoreW / 2 - canvasOffX; // maps to visual center horizontally
+    var targetY = h / 2;                    // vertical center
+    var targetFs = scoreFs * 1.5;
+    // Animate from top-right corner to center
+    scoreAnimX = textX + (targetX - textX) * easeOut;
+    scoreAnimY = 3 + (targetY - 3) * easeOut;
+    scoreAnimFs = scoreFs + (targetFs - scoreFs) * easeOut;
+    scoreAnimAlpha = 0.95;
+    // Hide effect texts during animation
+    _recPlayState.effectTexts = [];
+  }
+  
+  // Draw score text
+  var scoreText = 'SCORE:' + Math.round(_recPlayState.currentScore);
+  ctx.save();
+  ctx.font = 'bold italic ' + scoreAnimFs + 'px Arial, sans-serif';
+  // Use center alignment when animation is done (text centered on target)
+  var isAnimDone = _recPlayState.scoreAnimStart &&
+      ((nowPerf || performance.now()) - _recPlayState.scoreAnimStart >= 900);
+  ctx.textBaseline = isAnimDone ? 'middle' : 'top';
+  ctx.textAlign = isAnimDone ? 'center' : 'right';
+  ctx.fillStyle = '#ffd700';
+  ctx.globalAlpha = scoreAnimAlpha;
+  ctx.shadowColor = '#ff8c00';
+  ctx.shadowBlur = 6 + scoreAnimFs * 0.1;
+  ctx.fillText(scoreText, scoreAnimX, scoreAnimY);
+  ctx.restore();
+  
+  // Measure score text width for effect positioning
+  ctx.font = 'bold italic ' + scoreFs + 'px Arial, sans-serif';
+  var scoreWidth = ctx.measureText(scoreText).width;
+
+  // Draw effect texts in top-right corner (left of score)
+  if (_recPlayState.effectTexts && !_recPlayState.scoreAnimStart) {
+    var nowT2 = nowPerf || performance.now();
+    _recPlayState.effectTexts = _recPlayState.effectTexts.filter(function(effect) {
+      var age = nowT2 - effect.t0;
+      var DUR = 800;
+      if (age > DUR) return false;
+      var prog = age / DUR;
+      var textAlpha = 1 - prog * 0.8;
+      var fontSize = effectFs;
+      var yOffset = prog * (scoreFs * 1.5);
+      
+      if (textAlpha > 0) {
+        ctx.save();
+        ctx.font = 'bold italic ' + fontSize + 'px Arial, sans-serif';
+        ctx.textBaseline = 'top';
+        ctx.textAlign = 'right';
+        ctx.fillStyle = effect.col;
+        ctx.globalAlpha = textAlpha;
+        ctx.shadowColor = effect.col;
+        ctx.shadowBlur = 8;
+        ctx.fillText(effect.text, textX - scoreWidth - 15, 3 + yOffset);
+        ctx.restore();
+      }
+      return true;
+    });
+  }
+}
+
 function startScrollingSync() {
   if(!currentSong) return;
   
@@ -1221,6 +2366,7 @@ function startScrollingSync() {
   playSpeed = 1.0;
 
   drawScore();
+  if (keyHintEnabled) _startJianpuRingLoop();
 
   let lastHighlightIdx = -1;
   let lastCanvasOffX = canvasOffX;
@@ -1361,6 +2507,12 @@ function playAutoNote(an) {
     if (!isMuted && !isMutedTemporarily) {
       startNote("auto", an.n);
       visibleKeys.forEach(k => k.classList.add("auto-hi"));
+      var holdMs = an.durationMs || 200;
+      setTimeout(function() {
+        visibleKeys.forEach(function(k) {
+          k.classList.remove("auto-hi");
+        });
+      }, holdMs);
     }
   }
 }
@@ -1373,6 +2525,7 @@ function pauseAutoPlay() {
   container.querySelectorAll(".auto-hi").forEach(k => k.classList.remove("auto-hi"));
   playBtn.textContent = "▶";
   drawScore();
+  _stopJianpuRingLoop();
 }
 
 function stopAutoPlay() {
@@ -1386,6 +2539,7 @@ function stopAutoPlay() {
   stopNote("auto");
   playBtn.textContent = "▶";
   drawScore();
+  _stopJianpuRingLoop();
 }
 
 function clearAutoPlayInterval() {
@@ -1769,7 +2923,8 @@ function startNote(tid, ns, overrideInst){
   initAudio(); 
   const freq = getFreq(ns);
   stopNote(tid);
-  const volume = (tid === "auto") ? (isMuted || isMutedTemporarily ? 0 : 1) : 1;
+  const isAutoOrRec = (tid === "auto") || String(tid).startsWith("rec_");
+  const volume = isAutoOrRec ? (isMuted || isMutedTemporarily ? 0 : 1) : 1;
   
   if (volume > 0) {
     // 支持每行独立乐器覆盖
@@ -1780,8 +2935,51 @@ function startNote(tid, ns, overrideInst){
   }
 
   // 跟弹模式：只有用户手动弹奏才触发，排除自动播放(auto)和测试音(test)
-  const isUserPlay = (tid !== "auto" && tid !== "test");
-  if(isUserPlay && isFollowing && currentSong && currentSong.autoNotes) {
+  const isUserPlay = (tid !== "auto" && tid !== "test" && !String(tid).startsWith("rec_") && !String(tid).startsWith("vk_"));
+  if(isUserPlay && window._REC && window._REC.active) window._REC.onPress(tid, ns, overrideInst || currentInst);
+  if(isUserPlay && window._checkRecHit) window._checkRecHit(ns, overrideInst || currentInst, performance.now());
+  // ── Rec follow mode: user plays correct note to advance rec score ──
+  if (isUserPlay && typeof _recPlayState !== "undefined" && _recPlayState &&
+      _recPlayState.paused && _recPlayState.followMode && _recPlayState.followNotes) {
+    var fn = _recPlayState.followNotes;
+    var fp = _recPlayState.followPos;
+    if (fp < fn.length) {
+      var expected = fn[fp];
+      if (expected.note === ns) {
+        // Correct note: mark it scheduled, advance elapsed to its atMs, scroll canvas
+        var key = expected.ti + '-' + expected.ni;
+        _recPlayState.scheduled[key] = true;
+        // Highlight this block in follow mode
+        if (!_recPlayState.followHits) _recPlayState.followHits = {};
+        _recPlayState.followHits[key] = performance.now();
+        // Update pausedElapsed to this note's time so display advances
+        _recPlayState.pausedElapsed = expected.atMs + (expected.holdMs || 0);
+        // Update startTime so if user resumes, playback continues from here
+        _recPlayState.startTime = performance.now() - _recPlayState.pausedElapsed / _recPlayState.speed;
+        _recPlayState.pausedAt  = performance.now();
+        // Advance follow pointer (skip to next distinct note time)
+        _recPlayState.followPos = fp + 1;
+        // Scroll canvas to show this note at playhead
+        var scoreW2 = scoreWrap ? scoreWrap.clientWidth : 300;
+        var fixedX2 = scoreW2 / 3;
+        var currentH2 = scoreWrap ? scoreWrap.offsetHeight : 170;
+        var scale2 = currentH2 / (_recPlayState.baseLaneH * 5);
+        var nowX2 = _recPlayState.pausedElapsed * 0.18 * scale2;
+        canvasOffX = fixedX2 - nowX2;
+        if (canvas) canvas.style.left = canvasOffX + 'px';
+        // Play the note sound
+        var instEn2 = (typeof _INST_EN !== 'undefined' && _INST_EN[expected.inst]) || expected.inst;
+        startNote('rec_' + key, expected.note, instEn2);
+        (function(k2, hms2, sp2) {
+          setTimeout(function() { try { stopNote('rec_' + k2); } catch(e) {} }, hms2 / sp2);
+        })(key, expected.holdMs || 200, _recPlayState.speed);
+        // Redraw score at new position
+        drawRecordScore(_recPlayState.pausedElapsed, performance.now());
+      }
+    }
+  }
+
+  if(isUserPlay && isFollowing && currentSong && currentSong.autoNotes && (typeof _recPlayState === "undefined" || !_recPlayState)) {
     const notes = currentSong.autoNotes;
     // currentFollowIdx 指向当前需要弹的音符，只有弹对才推进
     if(currentFollowIdx < notes.length) {
@@ -1882,6 +3080,7 @@ function stopNote(tid){
     d.nodes.forEach(n=>{try{n.stop(now + release + 0.1);}catch(e){}});
   }catch(e){}
   activeNodes.delete(tid);
+  if(tid!=="auto"&&tid!=="test"&&window._REC&&window._REC.active) window._REC.onRelease(tid);
 }
 
 // 获取某个琴键元素所在行的乐器配置
@@ -1914,6 +3113,283 @@ function highlightSameRowNote(keyEl, noteStr, add) {
   });
 }
 
+
+
+var _INST_ZH_MAP = {
+  piano:'\u94a2\u7434',guitar:'\u5409\u4ed6',violin:'\u5c0f\u63d0\u7434',cello:'\u5927\u63d0\u7434',
+  xiao:'\u7b2d',dizi:'\u7b1b\u5b50',guzheng:'\u53e4\u7b5d',erhu:'\u4e8c\u80e1',
+  pipa:'\u7435\u7436',drum:'\u9f13',drumkit:'\u67b6\u5b50\u9f13',bell:'\u949f\u58f0',
+  suona:'\u5520\u5443',bass:'\u8d1d\u65af',saxophone:'\u8428\u514b\u65af'
+};
+
+// Note name -> octave number for rainbow color
+function _noteToOctave(note) {
+  var m = note.match(/(\d)/);
+  return m ? parseInt(m[1]) : 4;
+}
+// Rainbow 7 colors by octave 1-7 (low->high: violet->red)
+var _RAINBOW = [
+  '#9b59b6', // 1 - violet
+  '#3498db', // 2 - blue
+  '#1abc9c', // 3 - teal
+  '#2ecc71', // 4 - green
+  '#f1c40f', // 5 - yellow
+  '#e67e22', // 6 - orange
+  '#e74c3c'  // 7 - red
+];
+function _noteColor(note) {
+  var oct = _noteToOctave(note);
+  return _RAINBOW[Math.max(0, Math.min(6, oct - 1))];
+}
+
+// ====================================================================
+//  Recording system
+// ====================================================================
+(function() {
+  var customRecordings = [];
+  try { customRecordings = JSON.parse(localStorage.getItem('pianoRecordings')||'[]'); } catch(e){}
+  function saveRecs(){ try{ localStorage.setItem('pianoRecordings', JSON.stringify(customRecordings)); }catch(e){} }
+
+  window._REC = {
+    active: false,
+    events: [],
+    pending: {},
+    startAt: 0,
+    onPress: function(tid, note, instEn) {
+      if (this.pending[tid]) return;
+      this.pending[tid] = {
+        note: note,
+        instEn: instEn,
+        instZh: _INST_ZH_MAP[instEn] || instEn,
+        pressAt: performance.now()
+      };
+    },
+    onRelease: function(tid) {
+      var p = this.pending[tid];
+      if (!p) return;
+      var now = performance.now();
+      this.events.push({
+        note:   p.note,
+        instEn: p.instEn,
+        instZh: p.instZh,
+        holdMs: Math.max(1, Math.round(now - p.pressAt)),
+        atMs:   Math.round(p.pressAt - this.startAt)
+      });
+      delete this.pending[tid];
+    }
+  };
+
+  function eventsToTrack(events) {
+    var sorted = events.slice().sort(function(a,b){ return a.atMs - b.atMs; });
+    return sorted.map(function(e) {
+      return e.instZh + '|' + e.note + '|' + e.holdMs + 'ms|' + e.atMs + 'ms';
+    }).join('_');
+  }
+
+  // ── Render record list (same style as song-item) ──────────────────
+  function renderRecList() {
+    var list = document.getElementById('recordList');
+    if (!list) return;
+    list.innerHTML = '';
+    // "无" 选项
+    var noneEl = document.createElement('div');
+    noneEl.className = 'song-item';
+    noneEl.style.minHeight = 'auto';
+    noneEl.style.padding = '10px 16px';
+    noneEl.innerHTML = '<div class="song-info" style="padding:0;"><div class="song-name">无</div></div>';
+    noneEl.onclick = function() {
+      if (typeof stopRecordPlay === 'function') stopRecordPlay();
+      if (typeof _stopRingLoop === 'function') _stopRingLoop();
+      document.getElementById('modalOverlay').classList.remove('show');
+    };
+    list.appendChild(noneEl);
+    if (!customRecordings.length) {
+      var empty = document.createElement('div');
+      empty.style.cssText = 'color:#555;font-size:13px;text-align:center;padding:20px 0;';
+      empty.textContent = '还没有录制记录';
+      list.appendChild(empty);
+      return;
+    }
+    customRecordings.forEach(function(rec, idx) {
+      var el = document.createElement('div');
+      el.className = 'song-item';
+      var trackCount = (rec.display||'').split('\n').filter(function(s){ return s.trim(); }).length;
+      var noteCount = 0;
+      (rec.display||'').split('\n').forEach(function(l){ noteCount += l.trim().split('_').filter(Boolean).length; });
+      el.innerHTML =
+        '<div class="song-info">' +
+          '<div class="song-name">' + rec.name + '</div>' +
+          '<div class="song-meta"><span>' + trackCount + '\u8f68</span><span>' + noteCount + '\u4e2a\u97f3\u7b26</span><span>' + (rec.date||'') + '</span></div>' +
+        '</div>' +
+        '<div class="item-actions">' +
+          '<button class="edit-opt">\u7f16\u8f91</button>' +
+          '<button class="del-opt">\u5220\u9664</button>' +
+        '</div>';
+      // Click item body -> play immediately
+      el.querySelector('.song-info').onclick = function() {
+        document.getElementById('modalOverlay').classList.remove('show');
+        if (typeof startRecordPlay === 'function') startRecordPlay(rec);
+      };
+      (function(recIdx) {
+        var editBtn = el.querySelector('.edit-opt');
+        if (editBtn) {
+          editBtn.onclick = function(e) {
+            if (e && e.stopPropagation) e.stopPropagation();
+            if (e && e.preventDefault) e.preventDefault();
+            openRecEdit(recIdx);
+            return false;
+          };
+        }
+      })(idx);
+      (function(recIdx, recName) {
+        var delBtn = el.querySelector('.del-opt');
+        if (delBtn) {
+          delBtn.onclick = function(e) {
+            if (e && e.stopPropagation) e.stopPropagation();
+            if (e && e.preventDefault) e.preventDefault();
+            customRecordings.splice(recIdx, 1);
+            saveRecs();
+            renderRecList();
+            return false;
+          };
+        }
+      })(idx, rec.name);
+      list.appendChild(el);
+    });
+  }
+  window._renderRecList = renderRecList;
+
+  // ── Open record edit overlay ──────────────────────────────────────
+  function openRecEdit(idx, events) {
+    var overlay = document.getElementById('recEditOverlay');
+    var isNew   = (idx === -1);
+    document.getElementById('recEditTitle').textContent = isNew ? '\u4fdd\u5b58\u5f55\u5236' : '\u7f16\u8f91\u5f55\u5236';
+    document.getElementById('recEditName').value  = isNew ? '' : customRecordings[idx].name;
+    document.getElementById('recEditSpeed').value = isNew ? '1' : (customRecordings[idx].speed||1);
+    document.getElementById('recEditScore').value = isNew ? eventsToTrack(events||[]) : (customRecordings[idx].display||'');
+    overlay._editIdx   = idx;
+    overlay._newEvents = events || null;
+    overlay.classList.add('show');
+  }
+  window._openRecEdit = openRecEdit;
+
+  // ── Event delegation ──────────────────────────────────────────────
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    var tgt = e.target;
+
+    if (tgt.id === 'startRecordBtn') {
+      document.getElementById('modalOverlay').classList.remove('show');
+      createRecFloat();
+      return;
+    }
+    if (tgt.dataset && tgt.dataset.tab === 'record') {
+      setTimeout(renderRecList, 50);
+      return;
+    }
+    if (tgt.id === 'recEditOk') {
+      var overlay = document.getElementById('recEditOverlay');
+      var name    = document.getElementById('recEditName').value.trim() || '\u672a\u547d\u540d\u5f55\u5236';
+      var display = document.getElementById('recEditScore').value.trim();
+      var speed   = parseFloat(document.getElementById('recEditSpeed').value) || 1;
+      var idx2    = overlay._editIdx;
+      var dateStr = new Date().toLocaleDateString('zh-CN');
+      if (idx2 === -1) {
+        customRecordings.push({ key: Date.now(), name:name, display:display, speed:speed, date:dateStr });
+      } else {
+        customRecordings[idx2].name    = name;
+        customRecordings[idx2].display = display;
+        customRecordings[idx2].speed   = speed;
+      }
+      saveRecs();
+      overlay.classList.remove('show');
+      overlay._editIdx = undefined;
+      renderRecList();
+      return;
+    }
+    if (tgt.id === 'recEditCancel') {
+      var overlay2 = document.getElementById('recEditOverlay');
+      overlay2.classList.remove('show');
+      overlay2._editIdx = undefined;
+      return;
+    }
+  });
+
+  // ── Float record button ───────────────────────────────────────────
+  var recFloat = null, rfDrag = false, rfDX = 0, rfDY = 0, rfSX = 0, rfSY = 0;
+
+  function createRecFloat() {
+    if (recFloat) return;
+    recFloat = document.createElement('button');
+    recFloat.id = 'recFloatBtn';
+    recFloat.className = 'idle';
+    recFloat.innerHTML = '<span class="ri">&#127897;</span><span class="rl">\u5f55\u5236</span>';
+    recFloat.style.right  = '16px';
+    recFloat.style.bottom = '80px';
+    document.body.appendChild(recFloat);
+
+    recFloat.addEventListener('click', function() { if (!rfDrag) toggleRec(); });
+
+    function dStart(e) {
+      rfDrag = false;
+      var t  = e.touches ? e.touches[0] : e;
+      rfDX   = parseFloat(recFloat.style.right)  || 16;
+      rfDY   = parseFloat(recFloat.style.bottom) || 80;
+      rfSX   = t.clientX; rfSY = t.clientY;
+      document.addEventListener('mousemove', dMove);
+      document.addEventListener('mouseup',   dEnd);
+      document.addEventListener('touchmove', dMove, {passive:false});
+      document.addEventListener('touchend',  dEnd);
+    }
+    function dMove(e) {
+      var t  = e.touches ? e.touches[0] : e;
+      var dx = t.clientX - rfSX, dy = t.clientY - rfSY;
+      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) rfDrag = true;
+      if (!rfDrag) return;
+      if (e.preventDefault) e.preventDefault();
+      recFloat.style.right  = Math.max(0, Math.min(window.innerWidth  - 64, rfDX - dx)) + 'px';
+      recFloat.style.bottom = Math.max(0, Math.min(window.innerHeight - 64, rfDY - dy)) + 'px';
+      recFloat.style.left = ''; recFloat.style.top = '';
+    }
+    function dEnd() {
+      document.removeEventListener('mousemove', dMove);
+      document.removeEventListener('mouseup',   dEnd);
+      document.removeEventListener('touchmove', dMove);
+      document.removeEventListener('touchend',  dEnd);
+      setTimeout(function(){ rfDrag = false; }, 50);
+    }
+    recFloat.addEventListener('mousedown',  dStart);
+    recFloat.addEventListener('touchstart', dStart, {passive:true});
+  }
+
+  function toggleRec() {
+    if (!window._REC.active) {
+      window._REC.active  = true;
+      window._REC.events  = [];
+      window._REC.pending = {};
+      window._REC.startAt = performance.now();
+      recFloat.className  = 'recording';
+      recFloat.innerHTML  = '<span class="ri">&#9209;</span><span class="rl">\u505c\u6b62</span>';
+    } else {
+      window._REC.active = false;
+      window._REC.pending = {};
+      var events = window._REC.events.slice();
+      recFloat.remove(); recFloat = null;
+      if (events.length > 0) {
+        window._openRecEdit(-1, events);
+      } else {
+        if (typeof showAppAlert === 'function') showAppAlert('\u6ca1\u6709\u5f55\u5236\u5230\u4efb\u4f55\u97f3\u7b26');
+      }
+    }
+  }
+
+  setTimeout(renderRecList, 600);
+})();
+
+
+// Current score bar type tracker for height persistence
+var _scoreBarType = null;
+
 window.onload = function(){
   canvas = document.getElementById("scoreCanvas");
   ctx = canvas.getContext("2d");
@@ -1935,6 +3411,7 @@ window.onload = function(){
   const layoutBtn = document.getElementById("layoutBtn");
   const feedbackBtn = document.getElementById("feedbackBtn");
   const keybindingBtn = document.getElementById("keybindingBtn");
+  const keyHintToggle = document.getElementById("keyHintToggle");
   const keybindingOverlay = document.getElementById("keybindingOverlay");
   const keybindingClose = document.getElementById("keybindingClose");
   const keybindingBody = document.getElementById("keybindingBody");
@@ -2357,38 +3834,36 @@ window.onload = function(){
   virtualKeyBtn.onclick = (e) => {
     settingOverlay.classList.remove("show");
     
-    // 计算弹窗位置，显示在点击按钮旁边
-    const rect = e.target.getBoundingClientRect();
     const modal = virtualKeyOverlay.querySelector('.modal');
     if (modal) {
+      const rect = e.target.getBoundingClientRect();
+      const gap = 10;
+      
       const modalWidth = modal.offsetWidth;
-      const modalHeight = modal.offsetHeight;
-      const screenWidth = window.innerWidth;
-      const screenHeight = window.innerHeight;
       
-      // 计算位置，确保弹窗在屏幕内
-      let left = rect.right + 10;
-      let top = rect.top;
+      const isRotated = document.body.classList.contains('rotated-90') || document.body.classList.contains('rotated-270');
+      const screenWidth = isRotated ? window.innerHeight : window.innerWidth;
+      const screenHeight = isRotated ? window.innerWidth : window.innerHeight;
       
-      // 如果右侧空间不够，显示在左侧
-      if (left + modalWidth > screenWidth) {
-        left = rect.left - modalWidth - 10;
+      let left = rect.left;
+      let top = rect.bottom + gap;
+      
+      if (left + modalWidth > screenWidth - gap) {
+        left = screenWidth - modalWidth - gap;
       }
+      if (left < gap) left = gap;
       
-      // 如果顶部空间不够，显示在底部
-      if (top + modalHeight > screenHeight) {
-        top = screenHeight - modalHeight - 10;
-      }
-      
-      // 确保位置不小于0
-      left = Math.max(10, left);
-      top = Math.max(10, top);
+      const availableHeight = screenHeight - top - gap;
       
       modal.style.position = 'fixed';
       modal.style.left = left + 'px';
       modal.style.top = top + 'px';
       modal.style.bottom = 'auto';
       modal.style.right = 'auto';
+      modal.style.transform = 'none';
+      modal.style.maxWidth = (screenWidth - gap * 2) + 'px';
+      modal.style.maxHeight = Math.max(100, availableHeight) + 'px';
+      modal.style.overflowY = 'auto';
     }
     
     virtualKeyOverlay.classList.add("show");
@@ -2495,26 +3970,67 @@ window.onload = function(){
     const y = touch.clientY;
     instDragClone.style.left = x - instDragClone.offsetWidth / 2 + "px";
     instDragClone.style.top = y - instDragClone.offsetHeight / 2 + "px";
+    
+    const isRotated = document.body.classList.contains('rotated-90') || document.body.classList.contains('rotated-270');
+    const isToolbarVertical = document.body.classList.contains('toolbar-rotated-90') || document.body.classList.contains('toolbar-rotated-270');
+    const useVertical = isRotated || isToolbarVertical;
+    
     const btns = Array.from(instScroll.children).filter(b => b !== instDragBtn && b !== instInsertLine);
     let insertIdx = btns.length;
-    for (let i = 0; i < btns.length; i++) {
-      const rect = btns[i].getBoundingClientRect();
-      const center = rect.left + rect.width / 2;
-      if (x < center) {
-        insertIdx = i;
-        break;
+    
+    if (useVertical) {
+      for (let i = 0; i < btns.length; i++) {
+        const rect = btns[i].getBoundingClientRect();
+        const center = rect.top + rect.height / 2;
+        if (y < center) {
+          insertIdx = i;
+          break;
+        }
       }
-    }
-    if (insertIdx < btns.length) {
-      const rect = btns[insertIdx].getBoundingClientRect();
-      instInsertLine.style.left = (rect.left - instScroll.getBoundingClientRect().left) + "px";
-      instInsertLine.style.top = "0";
-      instInsertLine.style.bottom = "0";
+      if (insertIdx < btns.length) {
+        const rect = btns[insertIdx].getBoundingClientRect();
+        instInsertLine.style.top = (rect.top - instScroll.getBoundingClientRect().top) + "px";
+        instInsertLine.style.left = "0";
+        instInsertLine.style.right = "0";
+        instInsertLine.style.width = "100%";
+        instInsertLine.style.height = "2px";
+      } else {
+        const lastBtn = btns[btns.length - 1];
+        if (lastBtn) {
+          const rect = lastBtn.getBoundingClientRect();
+          instInsertLine.style.top = (rect.bottom - instScroll.getBoundingClientRect().top) + "px";
+          instInsertLine.style.left = "0";
+          instInsertLine.style.right = "0";
+          instInsertLine.style.width = "100%";
+          instInsertLine.style.height = "2px";
+        }
+      }
     } else {
-      const lastBtn = btns[btns.length - 1];
-      if (lastBtn) {
-        const rect = lastBtn.getBoundingClientRect();
-        instInsertLine.style.left = (rect.right - instScroll.getBoundingClientRect().left) + "px";
+      for (let i = 0; i < btns.length; i++) {
+        const rect = btns[i].getBoundingClientRect();
+        const center = rect.left + rect.width / 2;
+        if (x < center) {
+          insertIdx = i;
+          break;
+        }
+      }
+      if (insertIdx < btns.length) {
+        const rect = btns[insertIdx].getBoundingClientRect();
+        instInsertLine.style.left = (rect.left - instScroll.getBoundingClientRect().left) + "px";
+        instInsertLine.style.top = "0";
+        instInsertLine.style.bottom = "0";
+        instInsertLine.style.width = "2px";
+        instInsertLine.style.height = "auto";
+      } else {
+        const lastBtn = btns[btns.length - 1];
+        if (lastBtn) {
+          const rect = lastBtn.getBoundingClientRect();
+          instInsertLine.style.left = (rect.right - instScroll.getBoundingClientRect().left) + "px";
+          instInsertLine.style.top = "0";
+          instInsertLine.style.bottom = "0";
+          instInsertLine.style.width = "2px";
+          instInsertLine.style.height = "auto";
+        }
       }
     }
   }
@@ -2525,15 +4041,33 @@ window.onload = function(){
     if (instDragging && instDragClone && instInsertLine) {
       const btns = Array.from(instScroll.children).filter(b => b !== instDragBtn && b !== instInsertLine);
       let insertIdx = btns.length;
-      const insertX = parseInt(instInsertLine.style.left) || 0;
-      for (let i = 0; i < btns.length; i++) {
-        const rect = btns[i].getBoundingClientRect();
-        const center = rect.left - instScroll.getBoundingClientRect().left + rect.width / 2;
-        if (insertX < center) {
-          insertIdx = i;
-          break;
+      
+      const isRotated = document.body.classList.contains('rotated-90') || document.body.classList.contains('rotated-270');
+      const isToolbarVertical = document.body.classList.contains('toolbar-rotated-90') || document.body.classList.contains('toolbar-rotated-270');
+      const useVertical = isRotated || isToolbarVertical;
+      
+      if (useVertical) {
+        const insertY = parseInt(instInsertLine.style.top) || 0;
+        for (let i = 0; i < btns.length; i++) {
+          const rect = btns[i].getBoundingClientRect();
+          const center = rect.top - instScroll.getBoundingClientRect().top + rect.height / 2;
+          if (insertY < center) {
+            insertIdx = i;
+            break;
+          }
+        }
+      } else {
+        const insertX = parseInt(instInsertLine.style.left) || 0;
+        for (let i = 0; i < btns.length; i++) {
+          const rect = btns[i].getBoundingClientRect();
+          const center = rect.left - instScroll.getBoundingClientRect().left + rect.width / 2;
+          if (insertX < center) {
+            insertIdx = i;
+            break;
+          }
         }
       }
+      
       if (insertIdx < btns.length) {
         instScroll.insertBefore(instDragBtn, btns[insertIdx]);
       } else {
@@ -2565,52 +4099,19 @@ window.onload = function(){
   document.addEventListener("touchcancel", endInstDrag);
 
   mainSettingBtn.onclick = (e) => {
-    const modal = settingOverlay.querySelector('.modal');
-    if (modal) {
-      const rect = e.target.getBoundingClientRect();
-      const modalWidth = modal.offsetWidth || 180;
-      const modalHeight = modal.offsetHeight || 200;
-      const screenWidth = window.innerWidth;
-      const screenHeight = window.innerHeight;
-      const gap = 10;
-      
-      let left, top;
-      
-      if (document.body.classList.contains('toolbar-rotated-90')) {
-        left = rect.right + gap;
-        top = rect.top;
-      } else if (document.body.classList.contains('toolbar-rotated-180')) {
-        left = rect.left;
-        top = rect.top - modalHeight - gap;
-      } else if (document.body.classList.contains('toolbar-rotated-270')) {
-        left = rect.left - modalWidth - gap;
-        top = rect.top;
-      } else {
-        left = rect.right + gap;
-        top = rect.top;
-      }
-      
-      if (left + modalWidth + gap > screenWidth) {
-        left = screenWidth - modalWidth - gap;
-      }
-      if (left < gap) {
-        left = gap;
-      }
-      if (top + modalHeight + gap > screenHeight) {
-        top = screenHeight - modalHeight - gap;
-      }
-      if (top < gap) {
-        top = gap;
-      }
-      
-      modal.style.position = 'fixed';
-      modal.style.left = left + 'px';
-      modal.style.top = top + 'px';
-      modal.style.margin = '0';
-    }
+    _positionModalNearBtn(settingOverlay, e.target);
     settingOverlay.classList.add("show");
+    keyHintToggle.checked = keyHintEnabled;
   };
   settingOverlay.onclick = (e) => { if (e.target === settingOverlay) settingOverlay.classList.remove("show"); };
+  keyHintToggle.onchange = () => {
+    keyHintEnabled = keyHintToggle.checked;
+    saveSettings();
+    if (!keyHintEnabled) {
+      _stopRingLoop();
+      _stopJianpuRingLoop();
+    }
+  };
   feedbackBtn.onclick = () => { showAppAlert("个人开发，联系待定…"); settingOverlay.classList.remove("show"); };
   keybindingBtn.onclick = () => {
     keybindingBackup = JSON.parse(JSON.stringify(pcKeyMap));
@@ -2648,7 +4149,7 @@ window.onload = function(){
     window.addEventListener("keydown", keybindingCaptureHandler, true);
   }
 
-  function renderKeyChip(list, idx, onChange, onRemove) {
+  function renderKeyChip(list, idx, onChange, onRemove, showRemoveBtn = true) {
     const code = list[idx] || "";
     const container2 = document.createElement("div");
     container2.style.display = "flex";
@@ -2710,18 +4211,21 @@ window.onload = function(){
     chip.onkeydown = (ev) => { if (!isCaptureMode) ev.stopPropagation(); };
     chip.onkeyup = (ev) => { if (!isCaptureMode) ev.stopPropagation(); };
 
-    const removeBtn = document.createElement("button");
-    removeBtn.className = "kb-remove-key-btn";
-    removeBtn.textContent = "-";
-    removeBtn.onclick = (ev) => { ev.stopPropagation(); list.splice(idx, 1); onRemove(); };
+    // 只有 showRemoveBtn 为 true 时才显示减号按钮
+    if (showRemoveBtn) {
+      const removeBtn = document.createElement("button");
+      removeBtn.className = "kb-remove-key-btn";
+      removeBtn.textContent = "-";
+      removeBtn.onclick = (ev) => { ev.stopPropagation(); list.splice(idx, 1); onRemove(); };
+      container2.appendChild(removeBtn);
+    }
     
     container2.appendChild(chip);
     container2.appendChild(modeBtn);
-    container2.appendChild(removeBtn);
     return container2;
   }
 
-  function renderKeyRow(container2, labelStr, list) {
+  function renderKeyRow(container2, labelStr, list, showAddBtn = true, showRemoveBtn = true) {
     const row = document.createElement("div");
     row.className = "kb-row";
     const rowLabel = document.createElement("div");
@@ -2734,13 +4238,16 @@ window.onload = function(){
     const rerenderKeys = () => {
       keyList.innerHTML = "";
       list.forEach((_, idx) => {
-        keyList.appendChild(renderKeyChip(list, idx, rerenderKeys, rerenderKeys));
+        keyList.appendChild(renderKeyChip(list, idx, rerenderKeys, rerenderKeys, showRemoveBtn));
       });
-      const addBtn = document.createElement("button");
-      addBtn.className = "kb-add-key-btn";
-      addBtn.textContent = "+";
-      addBtn.onclick = () => { list.push(""); rerenderKeys(); };
-      keyList.appendChild(addBtn);
+      // 只有 showAddBtn 为 true 时才显示加减按钮
+      if (showAddBtn) {
+        const addBtn = document.createElement("button");
+        addBtn.className = "kb-add-key-btn";
+        addBtn.textContent = "+";
+        addBtn.onclick = () => { list.push(""); rerenderKeys(); };
+        keyList.appendChild(addBtn);
+      }
     };
     rerenderKeys();
     container2.appendChild(row);
@@ -2755,19 +4262,24 @@ window.onload = function(){
       keybindingBody.appendChild(h);
     };
 
-    addSectionTitle("音域切换控制");
     const ctrlWrap = document.createElement("div");
     ctrlWrap.style.display = "flex";
     ctrlWrap.style.gap = "16px";
     ctrlWrap.style.alignItems = "flex-start";
     const prevOctaveRow = document.createElement("div");
     prevOctaveRow.style.flex = "1";
-    renderKeyRow(prevOctaveRow, "切换低八度", pcKeyMap.control.prevOctave || (pcKeyMap.control.prevOctave = []));
+    renderKeyRow(prevOctaveRow, "切换低八度", pcKeyMap.control.prevOctave || (pcKeyMap.control.prevOctave = []), false, false);
     ctrlWrap.appendChild(prevOctaveRow);
     const nextOctaveRow = document.createElement("div");
     nextOctaveRow.style.flex = "1";
-    renderKeyRow(nextOctaveRow, "切换高八度", pcKeyMap.control.nextOctave || (pcKeyMap.control.nextOctave = []));
+    renderKeyRow(nextOctaveRow, "切换高八度", pcKeyMap.control.nextOctave || (pcKeyMap.control.nextOctave = []), false, false);
     ctrlWrap.appendChild(nextOctaveRow);
+    // 添加播放暂停键设置
+    if (!pcKeyMap.control.playPause) pcKeyMap.control.playPause = [" "];
+    const playPauseRow = document.createElement("div");
+    playPauseRow.style.flex = "1";
+    renderKeyRow(playPauseRow, "播放/暂停", pcKeyMap.control.playPause, false, false);
+    ctrlWrap.appendChild(playPauseRow);
     keybindingBody.appendChild(ctrlWrap);
 
     const descText = document.createElement("div");
@@ -3017,7 +4529,7 @@ window.onload = function(){
     keybindingBody.appendChild(chordWrap);
 
     // ---- 乐器切换快捷键 ----
-    if (!pcKeyMap.instSwitch) pcKeyMap.instSwitch = {};
+    if (!pcKeyMap.instSwitchList) pcKeyMap.instSwitchList = [];
     const instSwitchWrap = document.createElement("div");
     instSwitchWrap.className = "kb-extra-wrap";
     const instSwitchHeader = document.createElement("div");
@@ -3028,10 +4540,8 @@ window.onload = function(){
     instSwitchWrap.appendChild(instSwitchHeader);
     const instSwitchDesc = document.createElement("div");
     instSwitchDesc.style.cssText = "font-size:11px;color:#666;margin-bottom:8px;";
-    instSwitchDesc.textContent = "为每种乐器绑定快捷键，按下后立即切换（不影响当前播放）";
+    instSwitchDesc.textContent = "为乐器绑定快捷键，按下后立即切换（不影响当前播放）";
     instSwitchWrap.appendChild(instSwitchDesc);
-    const instSwitchList = document.createElement("div");
-    instSwitchWrap.appendChild(instSwitchList);
 
     const INST_LIST_KB = [
       {v:"piano",t:"钢琴"},{v:"guitar",t:"吉他"},{v:"violin",t:"小提琴"},{v:"cello",t:"大提琴"},
@@ -3039,35 +4549,83 @@ window.onload = function(){
       {v:"pipa",t:"琵琶"},{v:"drum",t:"鼓"},{v:"drumkit",t:"架子鼓"},{v:"bell",t:"钟声"},
       {v:"suona",t:"唢呐"},{v:"bass",t:"贝斯"},{v:"saxophone",t:"萨克斯"}
     ];
-    // Grid 布局：5列，上下左右对齐
-    instSwitchList.style.cssText = "display:grid;grid-template-columns:repeat(5,1fr);gap:6px;";
-    INST_LIST_KB.forEach(inst => {
-      if (!pcKeyMap.instSwitch[inst.v]) pcKeyMap.instSwitch[inst.v] = [];
-      if (pcKeyMap.instSwitch[inst.v].length > 1) pcKeyMap.instSwitch[inst.v] = [pcKeyMap.instSwitch[inst.v][0]];
-      const cell = document.createElement("div");
-      // 固定高度 + flex 列排列：乐器名在上，快捷键在下，两行对齐
-      cell.style.cssText = "display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:4px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:7px;padding:6px 4px;min-height:56px;";
-      const lbl = document.createElement("div");
-      lbl.style.cssText = "font-size:11px;color:#aaa;white-space:nowrap;text-align:center;";
-      lbl.textContent = inst.t;
-      cell.appendChild(lbl);
-      const keyArea = document.createElement("div");
-      keyArea.style.cssText = "display:flex;align-items:center;justify-content:center;";
-      cell.appendChild(keyArea);
-      const rrk = () => {
-        keyArea.innerHTML = "";
-        const keys = pcKeyMap.instSwitch[inst.v];
-        if (keys.length > 0) {
-          keyArea.appendChild(renderKeyChip(keys, 0, rrk, () => { keys.splice(0,1); rrk(); }));
-        } else {
-          const ab = document.createElement("button"); ab.className = "kb-add-key-btn"; ab.textContent = "+";
-          ab.onclick = () => { keys.push(""); rrk(); };
-          keyArea.appendChild(ab);
-        }
+
+    // 容器：横向排列，自动换行
+    const instSwitchList = document.createElement("div");
+    instSwitchList.style.cssText = "display:flex;flex-wrap:wrap;gap:8px;align-items:center;";
+
+    // 渲染所有乐器快捷键项
+    const renderInstSwitchList = () => {
+      instSwitchList.innerHTML = "";
+      pcKeyMap.instSwitchList.forEach((item, idx) => {
+        const itemWrap = document.createElement("div");
+        itemWrap.style.cssText = "display:flex;align-items:center;gap:4px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:4px 6px;";
+
+        // 乐器选择下拉框（宽度为4个中文字符）
+        const instSelect = document.createElement("select");
+        instSelect.style.cssText = "min-width:5.5em;padding:4px 6px;background:#111;border:1px solid #333;border-radius:4px;color:#eee;font-size:12px;cursor:pointer;";
+        INST_LIST_KB.forEach(inst => {
+          const opt = document.createElement("option");
+          opt.value = inst.v;
+          opt.textContent = inst.t;
+          if (inst.v === item.inst) opt.selected = true;
+          instSelect.appendChild(opt);
+        });
+        instSelect.onchange = () => {
+          item.inst = instSelect.value;
+        };
+        itemWrap.appendChild(instSelect);
+
+        // 快捷键输入框
+        const keyInput = document.createElement("input");
+        keyInput.className = "kb-key-chip" + (item.key ? "" : " empty");
+        keyInput.type = "text";
+        keyInput.readOnly = true;
+        keyInput.value = item.key || "";
+        keyInput.placeholder = "录入";
+        keyInput.style.cssText = "width:60px;text-align:center;cursor:pointer;font-size:12px;";
+        keyInput.onfocus = () => {
+          keyInput.classList.add("capturing");
+          startKeybindingCapture(keyInput, (newCode) => {
+            item.key = newCode;
+            keyInput.value = newCode;
+            keyInput.classList.remove("empty", "capturing");
+          });
+        };
+        keyInput.onblur = () => {
+          stopKeybindingCapture();
+          keyInput.classList.remove("capturing");
+        };
+        itemWrap.appendChild(keyInput);
+
+        // 删除按钮
+        const delBtn = document.createElement("button");
+        delBtn.className = "kb-remove-key-btn";
+        delBtn.textContent = "-";
+        delBtn.onclick = (ev) => {
+          ev.stopPropagation();
+          pcKeyMap.instSwitchList.splice(idx, 1);
+          renderInstSwitchList();
+        };
+        itemWrap.appendChild(delBtn);
+
+        instSwitchList.appendChild(itemWrap);
+      });
+
+      // 添加按钮
+      const addBtn = document.createElement("button");
+      addBtn.className = "kb-add-key-btn";
+      addBtn.textContent = "+";
+      addBtn.style.marginLeft = "4px";
+      addBtn.onclick = () => {
+        pcKeyMap.instSwitchList.push({ inst: "piano", key: "" });
+        renderInstSwitchList();
       };
-      rrk();
-      instSwitchList.appendChild(cell);
-    });
+      instSwitchList.appendChild(addBtn);
+    };
+
+    renderInstSwitchList();
+    instSwitchWrap.appendChild(instSwitchList);
     keybindingBody.appendChild(instSwitchWrap);
   }
 
@@ -3115,14 +4673,15 @@ window.onload = function(){
   };
   
   layoutBtn.onclick = () => {
-    isLayoutMode = !isLayoutMode;
-    layoutBtn.classList.toggle("active", isLayoutMode);
-    layoutToolbar.classList.toggle("active", isLayoutMode);
-    container.classList.toggle("layout-mode-active", isLayoutMode);
-    document.body.classList.toggle("layout-mode-active", isLayoutMode);
-    
-    if (isLayoutMode) {
-      // 进入布局模式：保存乐谱状态并隐藏乐谱
+    if (!isLayoutMode) {
+      // 进入布局模式
+      isLayoutMode = true;
+      layoutBtn.classList.add("active");
+      layoutToolbar.classList.add("active");
+      container.classList.add("layout-mode-active");
+      document.body.classList.add("layout-mode-active");
+      
+      // 保存乐谱状态并隐藏乐谱
       savedScoreState = {
         tokens: [...tokens],
         currentSong: currentSong,
@@ -3148,18 +4707,29 @@ window.onload = function(){
       enableOctaveDragging();
       updateLayoutToolbarPosition();
     } else {
-      exitLayoutMode();
+      // 退出布局模式
+      exitLayoutMode(true);
     }
   };
 
-  function exitLayoutMode() {
+  function exitLayoutMode(doSave) {
     if (!isLayoutMode) return;
     
+    if (doSave) saveLayoutSettings();
+
+    // Capture scroll positions before renderPiano resets them
+    const _savedScrolls = [];
+    container.querySelectorAll('.octave-row').forEach((row, i) => {
+      const kw = row.querySelector('.octave-row-keys');
+      _savedScrolls[i] = kw ? kw.scrollLeft : 0;
+    });
+
     isLayoutMode = false;
     layoutBtn.classList.remove("active");
     layoutToolbar.classList.remove("active");
     container.classList.remove("layout-mode-active");
     document.body.classList.remove("layout-mode-active");
+    settingOverlay.classList.remove("show");
     
     // 退出布局模式：恢复乐谱状态
     tokens = [...savedScoreState.tokens];
@@ -3176,24 +4746,51 @@ window.onload = function(){
     canvas.width = scoreWrap.clientWidth;
     drawScore();
     
-    renderPiano(); // 重新渲染以隐藏控制条
+    renderPiano(); // 重新渲染以隐藏控制条（isLayoutMode=false时renderPiano不渲染行设置面板）
     disableOctaveDragging();
+
+    // Restore scroll positions after renderPiano completes
+    if (doSave) {
+      setTimeout(() => {
+        container.querySelectorAll('.octave-row').forEach((row, i) => {
+          const kw = row.querySelector('.octave-row-keys');
+          if (kw && _savedScrolls[i] > 0) kw.scrollLeft = _savedScrolls[i];
+        });
+      }, 250);
+    }
   }
 
   btnResetLayout.onclick = () => {
+    // Reset sliders
     sliderRows.value = 7; inputRows.value = 7;
     sliderWidth.value = 7; inputWidth.value = 7;
     sliderHeight.value = 140; inputHeight.value = 140;
     sliderGap.value = 18; inputGap.value = 18;
+    // Reset screen rotation
+    ['rotated-90','rotated-180','rotated-270'].forEach(r => document.body.classList.remove(r));
+    // Reset toolbar rotation
+    ['toolbar-rotated-90','toolbar-rotated-180','toolbar-rotated-270'].forEach(r => document.body.classList.remove(r));
+    btnToolbarPos.textContent = '⬆ 顶栏';
+    try { localStorage.removeItem('toolbarRotation'); } catch(e) {}
+    // Re-render piano
     updateLayout(); renderPiano();
+    // After render, reset all row scroll positions to focus-octave center
+    setTimeout(() => {
+      container.querySelectorAll('.octave-row').forEach((row) => {
+        const kw = row.querySelector('.octave-row-keys');
+        const focusOct = kw && kw.querySelector('.focus-octave');
+        if (kw && focusOct) {
+          kw.scrollLeft = focusOct.offsetLeft - (kw.clientWidth / 2) + (focusOct.clientWidth / 2);
+        }
+      });
+    }, 200);
     settingOverlay.classList.remove("show");
+    updateLayoutToolbarPosition();
   };
 
   const btnSaveLayout = document.getElementById("btnSaveLayout");
   btnSaveLayout.onclick = () => {
-    saveLayoutSettings();
-    exitLayoutMode();
-    settingOverlay.classList.remove("show");
+    exitLayoutMode(true); // saves settings, restores scroll, closes overlay
   };
 
   function saveLayoutSettings() {
@@ -3203,22 +4800,22 @@ window.onload = function(){
       height: parseInt(sliderHeight.value),
       gap: parseInt(sliderGap.value),
       screenRotation: '',
-      toolbarRotation: ''
+      toolbarRotation: '',
+      rowScrollPositions: []
     };
     const screenRotations = ['', 'rotated-90', 'rotated-180', 'rotated-270'];
     const toolbarRotations = ['', 'toolbar-rotated-90', 'toolbar-rotated-180', 'toolbar-rotated-270'];
     for (const r of screenRotations) {
-      if (document.body.classList.contains(r)) {
-        settings.screenRotation = r;
-        break;
-      }
+      if (document.body.classList.contains(r)) { settings.screenRotation = r; break; }
     }
     for (const r of toolbarRotations) {
-      if (document.body.classList.contains(r)) {
-        settings.toolbarRotation = r;
-        break;
-      }
+      if (document.body.classList.contains(r)) { settings.toolbarRotation = r; break; }
     }
+    // Save each row's horizontal scroll position
+    container.querySelectorAll('.octave-row').forEach((row, i) => {
+      const kw = row.querySelector('.octave-row-keys');
+      settings.rowScrollPositions[i] = kw ? kw.scrollLeft : 0;
+    });
     try {
       localStorage.setItem("pianoLayoutSettings", JSON.stringify(settings));
     } catch (e) {}
@@ -3254,6 +4851,18 @@ window.onload = function(){
         }
         updateLayout();
         renderPiano();
+        // Restore row scroll positions after render
+        // Use 400ms to run AFTER renderPiano's 150ms focus-scroll timer
+        if (settings.rowScrollPositions && settings.rowScrollPositions.length) {
+          setTimeout(() => {
+            container.querySelectorAll('.octave-row').forEach((row, i) => {
+              const kw = row.querySelector('.octave-row-keys');
+              if (kw && settings.rowScrollPositions[i] != null && settings.rowScrollPositions[i] > 0) {
+                kw.scrollLeft = settings.rowScrollPositions[i];
+              }
+            });
+          }, 400);
+        }
       }
     } catch (e) {}
   }
@@ -3278,6 +4887,7 @@ window.onload = function(){
     setTimeout(() => {
       window.scrollTo(0, 0);
     }, 100);
+    updateLayoutToolbarPosition();
   };
 
   const btnToolbarPos = document.getElementById("btnToolbarPos");
@@ -3309,13 +4919,10 @@ window.onload = function(){
     const settingBtnWrap = document.querySelector('.setting-btn-wrap');
     if (!layoutToolbar || !settingBtnWrap) return;
     
-    if (document.body.classList.contains('toolbar-rotated-90') || 
-        document.body.classList.contains('toolbar-rotated-270')) {
-      const rect = settingBtnWrap.getBoundingClientRect();
-      layoutToolbar.style.top = rect.height + 'px';
-    } else {
-      layoutToolbar.style.top = '';
-    }
+    layoutToolbar.style.marginLeft = '';
+    layoutToolbar.style.marginRight = '';
+    
+    void layoutToolbar.offsetHeight;
   }
   
   try {
@@ -3392,13 +4999,19 @@ window.onload = function(){
       oct.onmousedown = null; oct.ontouchstart = null;
     });
   }
+  function _isScreenRotated() {
+    return document.body.classList.contains('rotated-90') || document.body.classList.contains('rotated-270');
+  }
   function onOctaveDragStart(e) {
     if (!isLayoutMode) return;
     dragOctave = this;
     // 找到 keysWrap（键盘滚动容器）
     dragRow = this.closest(".octave-row-keys") || this.parentElement;
     const touch = e.touches ? e.touches[0] : e;
-    startX = touch.clientX; offsetX = dragRow.scrollLeft;
+    // When body rotated 90/270, horizontal screen motion = vertical body motion
+    // Use clientY as the drag axis when rotated (rows are now horizontal on screen)
+    startX = _isScreenRotated() ? touch.clientY : touch.clientX;
+    offsetX = dragRow.scrollLeft;
     dragOctave.classList.add("dragging");
     document.onmousemove = onOctaveDragMove;
     document.ontouchmove = onOctaveDragMove;
@@ -3409,7 +5022,8 @@ window.onload = function(){
   function onOctaveDragMove(e) {
     if (!dragOctave || !isLayoutMode) return;
     const touch = e.touches ? e.touches[0] : e;
-    dragRow.scrollLeft = offsetX - (touch.clientX - startX);
+    const pos = _isScreenRotated() ? touch.clientY : touch.clientX;
+    dragRow.scrollLeft = offsetX - (pos - startX);
   }
   function onOctaveDragEnd() {
     if (dragOctave) {
@@ -3528,13 +5142,21 @@ window.onload = function(){
     }
     if (isLayoutMode) enableOctaveDragging();
     setTimeout(() => {
-      container.querySelectorAll(".octave-row").forEach((row) => {
-        const keysWrap = row.querySelector(".octave-row-keys") || row;
-        const focusOct = keysWrap.querySelector(".focus-octave");
-        if (focusOct) {
-          keysWrap.scrollLeft = focusOct.offsetLeft - (keysWrap.clientWidth / 2) + (focusOct.clientWidth / 2);
-        }
-      });
+      // Only auto-center if no saved scroll positions exist
+      let hasSaved = false;
+      try {
+        const _ls = JSON.parse(localStorage.getItem("pianoLayoutSettings") || "{}"); 
+        hasSaved = _ls.rowScrollPositions && _ls.rowScrollPositions.some(v => v > 0);
+      } catch(e) {}
+      if (!hasSaved) {
+        container.querySelectorAll(".octave-row").forEach((row) => {
+          const keysWrap = row.querySelector(".octave-row-keys") || row;
+          const focusOct = keysWrap.querySelector(".focus-octave");
+          if (focusOct) {
+            keysWrap.scrollLeft = focusOct.offsetLeft - (keysWrap.clientWidth / 2) + (focusOct.clientWidth / 2);
+          }
+        });
+      }
       const allRows = Array.from(container.querySelectorAll(".octave-row"));
       const midOctRow = allRows[Math.floor(rowCount/2)];
       if (midOctRow) {
@@ -3561,6 +5183,49 @@ window.onload = function(){
     };
   });
 
+  // Position a modal overlay's inner .modal near a button element.
+  // Works correctly even when body has CSS transform:rotate().
+  // Uses element.getBoundingClientRect() which returns VISUAL viewport coords.
+  function _positionModalNearBtn(overlay, btn) {
+    const modal = overlay.querySelector('.modal');
+    if (!modal || !btn) return;
+    // getBoundingClientRect gives visual-viewport coords (post-CSS-transform)
+    // These match position:fixed coordinates directly.
+    const r   = btn.getBoundingClientRect();
+    const vw  = document.documentElement.clientWidth  || window.innerWidth;
+    const vh  = document.documentElement.clientHeight || window.innerHeight;
+    const gap = 8;
+    const mw  = modal.offsetWidth  || 200;
+    const mh  = modal.offsetHeight || 300;
+
+    // Determine best anchor: prefer placing modal to side/below the button
+    // that has most available space, clamped to screen bounds.
+    let left, top;
+
+    // Horizontal: if button is in right half, right-align modal to button right edge
+    if (r.right > vw / 2) {
+      left = Math.max(gap, r.right - mw);
+    } else {
+      left = Math.min(r.left, vw - mw - gap);
+    }
+
+    // Vertical: if button is in bottom half, place modal above
+    if (r.top > vh / 2) {
+      top = Math.max(gap, r.top - mh - gap);
+    } else {
+      top = Math.min(r.bottom + gap, vh - mh - gap);
+    }
+
+    // Final clamp
+    left = Math.max(gap, Math.min(left, vw - mw - gap));
+    top  = Math.max(gap, Math.min(top,  vh - mh - gap));
+
+    modal.style.cssText = (modal.style.cssText || '') +
+      ';position:fixed;left:' + left + 'px;top:' + top +
+      'px;margin:0;transform:none;max-width:' + (vw - gap*2) +
+      'px;max-height:' + (vh - gap*2) + 'px;overflow-y:auto;';
+  }
+
   function renderSongList(){
     songListEl.innerHTML = "";
     const noneItem = document.createElement("div");
@@ -3569,7 +5234,10 @@ window.onload = function(){
     noneItem.style.padding = "10px 16px";
     noneItem.innerHTML = `<div class="song-info" style="padding:0;"><div class="song-name">无</div></div>`;
     noneItem.onclick = () => {
+      if (typeof stopRecordPlay === 'function' && typeof _recPlayState !== 'undefined' && _recPlayState) stopRecordPlay();
+      if (typeof _stopRingLoop === 'function') _stopRingLoop();
       stopAutoPlay(); currentSong = null; tokens = [];
+      _scoreBarType = null;
       canvas.width = 0; drawScore(); closeModal();
     };
     songListEl.appendChild(noneItem);
@@ -3586,39 +5254,55 @@ window.onload = function(){
       item.querySelector(".del-opt").onclick = (e) => {
         e.stopPropagation();
         if (globalIdx < BUILT_IN.length) showAppAlert("内置歌曲无法删除");
-        else if (confirm(`确定要删除《${song.name}》吗？`)) {
+        else window.appConfirm(`确定要删除《${song.name}》吗？`, () => {
           customSongs.splice(globalIdx - BUILT_IN.length, 1); saveCustom(); renderSongList();
-        }
+        });
       };
       songListEl.appendChild(item);
     });
   }
 
   function loadSong(song) {
-    stopAutoPlay(); 
+    if (typeof stopRecordPlay === 'function' && typeof _recPlayState !== 'undefined' && _recPlayState) stopRecordPlay();
+    if (typeof _stopRingLoop === 'function') _stopRingLoop();
+    stopAutoPlay();
+    // 始终清空画布内容；同类（jianpu→jianpu）保持高度，否则重置为 34
+    const keepH = (_scoreBarType === 'jianpu');
+    const h = keepH ? (scoreWrap ? scoreWrap.offsetHeight || 34 : 34) : 34;
+    if (!keepH && scoreWrap) scoreWrap.style.setProperty("--score-height", h + "px");
+    _scoreBarType = 'jianpu';
     currentSong = song;
     currentTupu = null;
     const built = buildTokensAndNotes(song);
     tokens = built.tokens; currentSong.autoNotes = built.autoNotes;
-    canvas.height = scoreWrap && scoreWrap.offsetHeight > 0 ? scoreWrap.offsetHeight : 34;
-    canvas.style.height = canvas.height + "px";
+    canvas.height = h;
+    canvas.style.height = h + "px";
     currentPlayTime = 0; canvasOffX = 20; canvas.style.left = "20px";
+    if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawRainbowGridBackground();
     isFollowing = true; currentFollowIdx = 0;
     highlightNoteIdx = (currentSong.autoNotes && currentSong.autoNotes.length > 0) ? 0 : -1;
     animNoteIdx = -1; drawScore();
   }
 
   function loadSongWithDelay(song) {
-    stopAutoPlay(); 
+    if (typeof stopRecordPlay === 'function' && typeof _recPlayState !== 'undefined' && _recPlayState) stopRecordPlay();
+    if (typeof _stopRingLoop === 'function') _stopRingLoop();
+    stopAutoPlay();
+    const keepH = (_scoreBarType === 'jianpu');
+    const h = keepH ? (scoreWrap ? scoreWrap.offsetHeight || 34 : 34) : 34;
+    if (!keepH && scoreWrap) scoreWrap.style.setProperty("--score-height", h + "px");
+    _scoreBarType = 'jianpu';
     currentSong = song;
     currentTupu = null;
     const built = buildTokensAndNotes(song, true);
     tokens = built.tokens; currentSong.autoNotes = built.autoNotes;
-    canvas.height = scoreWrap && scoreWrap.offsetHeight > 0 ? scoreWrap.offsetHeight : 34;
-    canvas.style.height = canvas.height + "px";
+    canvas.height = h;
+    canvas.style.height = h + "px";
     currentPlayTime = 0; canvasOffX = 20; canvas.style.left = "20px";
+    if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawRainbowGridBackground();
     isFollowing = true;
-    // 跳过前置休止符，让 currentFollowIdx 指向第一个真实音符
     currentFollowIdx = 0;
     while(currentFollowIdx < currentSong.autoNotes.length && currentSong.autoNotes[currentFollowIdx].n === "R") {
       currentFollowIdx++;
@@ -3628,49 +5312,7 @@ window.onload = function(){
   }
 
   function openModal(e){ 
-    const modal = modalOverlay.querySelector('.modal');
-    if (modal && e) {
-      const rect = e.target.getBoundingClientRect();
-      const modalWidth = modal.offsetWidth || 300;
-      const modalHeight = modal.offsetHeight || 400;
-      const screenWidth = window.innerWidth;
-      const screenHeight = window.innerHeight;
-      const gap = 10;
-      
-      let left, top;
-      
-      if (document.body.classList.contains('toolbar-rotated-90')) {
-        left = rect.right + gap;
-        top = rect.top;
-      } else if (document.body.classList.contains('toolbar-rotated-180')) {
-        left = rect.left;
-        top = rect.top - modalHeight - gap;
-      } else if (document.body.classList.contains('toolbar-rotated-270')) {
-        left = rect.left - modalWidth - gap;
-        top = rect.top;
-      } else {
-        left = rect.right + gap;
-        top = rect.top;
-      }
-      
-      if (left + modalWidth + gap > screenWidth) {
-        left = screenWidth - modalWidth - gap;
-      }
-      if (left < gap) {
-        left = gap;
-      }
-      if (top + modalHeight + gap > screenHeight) {
-        top = screenHeight - modalHeight - gap;
-      }
-      if (top < gap) {
-        top = gap;
-      }
-      
-      modal.style.position = 'fixed';
-      modal.style.left = left + 'px';
-      modal.style.top = top + 'px';
-      modal.style.margin = '0';
-    }
+    if (e) _positionModalNearBtn(modalOverlay, e.target);
     modalOverlay.classList.add("show"); 
     renderSongList(); 
     renderTupuList(); 
@@ -3701,7 +5343,7 @@ window.onload = function(){
       tab.classList.add('active');
       document.querySelectorAll('.song-tab-content').forEach(c => c.style.display = 'none');
       const tabName = tab.dataset.tab;
-      document.getElementById(tabName + 'Content').style.display = 'block';
+      document.getElementById(tabName + 'Content').style.display = 'flex';
     });
   });
 
@@ -3717,13 +5359,27 @@ window.onload = function(){
   const tupuEditCancel = document.getElementById('tupuEditCancel');
   const tupuEditOk = document.getElementById('tupuEditOk');
   const tupuName = document.getElementById('tupuName');
+  const tupuPrevBtn = document.getElementById('tupuPrevBtn');
+  const tupuNextBtn = document.getElementById('tupuNextBtn');
+  const tupuDeleteBtn = document.getElementById('tupuDeleteBtn');
+  const tupuAddBtn = document.getElementById('tupuAddBtn');
+  const tupuNavInfo = document.getElementById('tupuNavInfo');
 
   let tupuImageData = null;
   let tupuMasks = [];
+  let selectedMaskIdx = -1;
   let tupuPlaying = false;
   let tupuPlayIdx = 0;
   let tupuPlayTimer = null;
   let editingTupuIdx = -1;
+  let editingPageIdx = 0;
+  let editingPages = [];
+  let currentImgLeft = 0;
+  let currentImgWidth = 0;
+  let currentImgTop = 0;
+  let currentImgHeight = 0;
+  let currentImgNaturalWidth = 0;
+  let currentImgNaturalHeight = 0;
 
   function renderTupuList() {
     if (!tupuList) return;
@@ -3747,7 +5403,7 @@ window.onload = function(){
     tupuList.appendChild(noneItem);
     allTupus().forEach((tupu, idx) => {
       const item = document.createElement("div");
-      item.className = "song-item";
+      item.className = "song-item tupu-item";
       item.innerHTML = `<div class="song-info"><div class="song-name">${tupu.name}</div></div><div class="item-actions"><button class="edit-opt">编辑</button><button class="del-opt">删除</button></div>`;
       item.onclick = (e) => {
         if (e.target.closest(".item-actions")) return;
@@ -3758,11 +5414,11 @@ window.onload = function(){
       item.querySelector(".edit-opt").onclick = (e) => { e.stopPropagation(); openTupuEditDialog(tupu, idx); };
       item.querySelector(".del-opt").onclick = (e) => {
         e.stopPropagation();
-        if (confirm(`确定要删除《${tupu.name}》吗？`)) {
+        window.appConfirm(`确定要删除《${tupu.name}》吗？`, function() {
           customTupus.splice(idx, 1);
           saveTupus();
           renderTupuList();
-        }
+        });
       };
       tupuList.appendChild(item);
     });
@@ -3775,8 +5431,10 @@ window.onload = function(){
   let currentTupuSpeed = 1.0;
   
   function loadTupu(tupu) {
-    if (!tupu.image) return;
-    
+    const pages = tupu.pages || (tupu.image ? [{ image: tupu.image, masks: tupu.masks }] : []);
+    if (pages.length === 0) return;
+    if (typeof stopRecordPlay === 'function' && typeof _recPlayState !== 'undefined' && _recPlayState) stopRecordPlay();
+    if (typeof _stopRingLoop === 'function') _stopRingLoop();
     stopAutoPlay();
     stopTupuScrolling();
     currentSong = null;
@@ -3784,54 +5442,84 @@ window.onload = function(){
     currentTupu = tupu;
     tupuScrollX = 0;
     
-    canvas.height = scoreWrap ? scoreWrap.offsetHeight : canvas.height;
+    // 同类图谱切换保持高度，不同类型切换重置
+    const keepTupu = (_scoreBarType === 'tupu');
+    const defaultHeight = keepTupu ? (scoreWrap ? scoreWrap.offsetHeight || 34*2.5 : 34*2.5) : 34*2.5;
+    if (!keepTupu && scoreWrap) scoreWrap.style.setProperty("--score-height", defaultHeight + "px");
+    _scoreBarType = 'tupu';
+    if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawRainbowGridBackground();
+    canvas.height = defaultHeight;
+    canvas.style.height = defaultHeight + "px";
+    const canvasHeight = canvas.height;
     
-    const img = new Image();
-    img.onload = function() {
-      const canvasHeight = canvas.height;
-      currentTupu.img = img;
-      
-      let totalWidth = 0;
-      const scaledMasks = [];
-      (tupu.masks || []).forEach(mask => {
-        const srcX = mask.left || 0;
-        const srcY = mask.top || 0;
-        const srcWidth = mask.width || img.width;
-        const srcHeight = mask.height || 0;
+    currentTupu.pageImgs = [];
+    currentTupu.scaledMasks = [];
+    let totalWidth = 0;
+    let loadedCount = 0;
+    
+    pages.forEach((page, pageIdx) => {
+      const img = new Image();
+      img.onload = function() {
+        currentTupu.pageImgs[pageIdx] = img;
         
-        if (srcHeight <= 0) return;
-        
-        const maskScaleRatio = canvasHeight / srcHeight;
-        const scaledMaskWidth = srcWidth * maskScaleRatio;
-        
-        scaledMasks.push({
-          srcX: srcX,
-          srcY: srcY,
-          srcWidth: srcWidth,
-          srcHeight: srcHeight,
-          x: totalWidth,
-          width: scaledMaskWidth,
-          height: canvasHeight
+        const pageMasks = [];
+        (page.masks || []).forEach(mask => {
+          const srcX = mask.left || 0;
+          const srcY = mask.top || 0;
+          const srcWidth = mask.width || img.width;
+          const srcHeight = mask.height || 0;
+          
+          if (srcHeight <= 0) return;
+          
+          const maskScaleRatio = canvasHeight / srcHeight;
+          const scaledMaskWidth = srcWidth * maskScaleRatio;
+          
+          pageMasks.push({
+            pageIdx: pageIdx,
+            srcX: srcX,
+            srcY: srcY,
+            srcWidth: srcWidth,
+            srcHeight: srcHeight,
+            x: 0,
+            width: scaledMaskWidth,
+            height: canvasHeight
+          });
         });
-        totalWidth += scaledMaskWidth;
-      });
-      currentTupu.scaledMasks = scaledMasks;
-      currentTupu.totalWidth = totalWidth;
-      
-      canvas.width = totalWidth;
-      canvas.style.width = totalWidth + "px";
-      canvasOffX = 20;
-      canvas.style.left = "20px";
-      tupuScrollX = 0;
-      
-      drawTupuScore();
-    };
-    img.src = tupu.image;
+        
+        currentTupu.scaledMasks[pageIdx] = pageMasks;
+        loadedCount++;
+        
+        if (loadedCount === pages.length) {
+          let currentX = 0;
+          currentTupu.scaledMasks.forEach(pageMasks => {
+            pageMasks.forEach(mask => {
+              mask.x = currentX;
+              currentX += mask.width;
+            });
+          });
+          
+          currentTupu.totalWidth = currentX;
+          
+          canvas.width = currentX;
+          canvas.style.width = currentX + "px";
+          canvasOffX = 20;
+          canvas.style.left = "20px";
+          tupuScrollX = 0;
+          
+          drawTupuScore();
+        }
+      };
+      img.src = page.image;
+    });
   }
   
   function loadTupuWithDelay(tupu) {
-    if (!tupu.image) return;
+    const pages = tupu.pages || (tupu.image ? [{ image: tupu.image, masks: tupu.masks }] : []);
+    if (pages.length === 0) return;
     
+    if (typeof stopRecordPlay === 'function' && typeof _recPlayState !== 'undefined' && _recPlayState) stopRecordPlay();
+    if (typeof _stopRingLoop === 'function') _stopRingLoop();
     stopAutoPlay();
     stopTupuScrolling();
     currentSong = null;
@@ -3839,71 +5527,195 @@ window.onload = function(){
     currentTupu = tupu;
     tupuScrollX = 0;
     
-    canvas.height = scoreWrap ? scoreWrap.offsetHeight : canvas.height;
+    // 同类图谱切换保持高度，不同类型切换重置
+    const keepTupu = (_scoreBarType === 'tupu');
+    const defaultHeight = keepTupu ? (scoreWrap ? scoreWrap.offsetHeight || 34*2.5 : 34*2.5) : 34*2.5;
+    if (!keepTupu && scoreWrap) scoreWrap.style.setProperty("--score-height", defaultHeight + "px");
+    _scoreBarType = 'tupu';
+    if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawRainbowGridBackground();
+    canvas.height = defaultHeight;
+    canvas.style.height = defaultHeight + "px";
+    const canvasHeight = canvas.height;
     
-    const img = new Image();
-    img.onload = function() {
-      const canvasHeight = canvas.height;
-      currentTupu.img = img;
-      
-      let totalWidth = 0;
-      const scaledMasks = [];
-      (tupu.masks || []).forEach(mask => {
-        const srcX = mask.left || 0;
-        const srcY = mask.top || 0;
-        const srcWidth = mask.width || img.width;
-        const srcHeight = mask.height || 0;
+    currentTupu.pageImgs = [];
+    currentTupu.scaledMasks = [];
+    let totalWidth = 0;
+    let loadedCount = 0;
+    
+    pages.forEach((page, pageIdx) => {
+      const img = new Image();
+      img.onload = function() {
+        currentTupu.pageImgs[pageIdx] = img;
         
-        if (srcHeight <= 0) return;
-        
-        const maskScaleRatio = canvasHeight / srcHeight;
-        const scaledMaskWidth = srcWidth * maskScaleRatio;
-        
-        scaledMasks.push({
-          srcX: srcX,
-          srcY: srcY,
-          srcWidth: srcWidth,
-          srcHeight: srcHeight,
-          x: totalWidth,
-          width: scaledMaskWidth,
-          height: canvasHeight
+        const pageMasks = [];
+        (page.masks || []).forEach(mask => {
+          const srcX = mask.left || 0;
+          const srcY = mask.top || 0;
+          const srcWidth = mask.width || img.width;
+          const srcHeight = mask.height || 0;
+          
+          if (srcHeight <= 0) return;
+          
+          const maskScaleRatio = canvasHeight / srcHeight;
+          const scaledMaskWidth = srcWidth * maskScaleRatio;
+          
+          pageMasks.push({
+            pageIdx: pageIdx,
+            srcX: srcX,
+            srcY: srcY,
+            srcWidth: srcWidth,
+            srcHeight: srcHeight,
+            x: 0,
+            width: scaledMaskWidth,
+            height: canvasHeight
+          });
         });
-        totalWidth += scaledMaskWidth;
-      });
-      currentTupu.scaledMasks = scaledMasks;
-      currentTupu.totalWidth = totalWidth;
-      
-      canvas.width = totalWidth;
-      canvas.style.width = totalWidth + "px";
-      canvasOffX = 20;
-      canvas.style.left = "20px";
-      tupuScrollX = 0;
-      
-      drawTupuScore();
-    };
-    img.src = tupu.image;
+        
+        currentTupu.scaledMasks[pageIdx] = pageMasks;
+        loadedCount++;
+        
+        if (loadedCount === pages.length) {
+          let currentX = 0;
+          currentTupu.scaledMasks.forEach(pageMasks => {
+            pageMasks.forEach(mask => {
+              mask.x = currentX;
+              currentX += mask.width;
+            });
+          });
+          
+          currentTupu.totalWidth = currentX;
+          
+          canvas.width = currentX;
+          canvas.style.width = currentX + "px";
+          canvasOffX = 20;
+          canvas.style.left = "20px";
+          tupuScrollX = 0;
+          
+          drawTupuScore();
+        }
+      };
+      img.src = page.image;
+    });
+  }
+
+  function updateTupuNavInfo() {
+    const totalPages = editingPages.length;
+    if (totalPages > 0) {
+      tupuNavInfo.textContent = `${editingPageIdx + 1} / ${totalPages}`;
+      tupuPrevBtn.disabled = editingPageIdx <= 0;
+      tupuNextBtn.disabled = editingPageIdx >= totalPages - 1;
+      tupuDeleteBtn.style.display = 'inline-block';
+    } else {
+      tupuNavInfo.textContent = '新建';
+      tupuPrevBtn.disabled = true;
+      tupuNextBtn.disabled = true;
+      tupuDeleteBtn.style.display = 'none';
+    }
   }
 
   function openTupuEditDialog(tupu, idx) {
     editingTupuIdx = idx;
     if (tupu) {
       if (tupuName) tupuName.value = tupu.name || '';
-      tupuImageData = tupu.image || null;
-      tupuMasks = tupu.masks || [];
       if (tupuSpeed) tupuSpeed.value = tupu.speed || 80;
+      editingPages = tupu.pages || [{ image: tupu.image || null, masks: tupu.masks || [] }];
+      editingPageIdx = 0;
     } else {
       if (tupuName) tupuName.value = '';
+      if (tupuSpeed) tupuSpeed.value = 80;
+      editingPages = [];
+      editingPageIdx = 0;
+    }
+    loadCurrentPage();
+    updateTupuNavInfo();
+    if (tupuEditOverlay) tupuEditOverlay.classList.add("show");
+  }
+
+  function loadCurrentPage() {
+    if (editingPages.length > 0 && editingPageIdx >= 0 && editingPageIdx < editingPages.length) {
+      const page = editingPages[editingPageIdx];
+      tupuImageData = page.image || null;
+      tupuMasks = page.masks || [];
+    } else {
       tupuImageData = null;
       tupuMasks = [];
-      if (tupuSpeed) tupuSpeed.value = 80;
     }
+    selectedMaskIdx = -1;
+    updateMaskPropsPanel();
     renderTupuPreview();
-    if (tupuEditOverlay) tupuEditOverlay.classList.add("show");
+  }
+
+  function saveCurrentPage() {
+    if (editingPages.length > 0 && editingPageIdx >= 0 && editingPageIdx < editingPages.length) {
+      editingPages[editingPageIdx] = {
+        image: tupuImageData,
+        masks: tupuMasks
+      };
+    }
   }
 
   function closeTupuEditDialog() {
     if (tupuEditOverlay) tupuEditOverlay.classList.remove("show");
     editingTupuIdx = -1;
+  }
+
+  if (tupuPrevBtn) {
+    tupuPrevBtn.onclick = () => {
+      if (editingPageIdx > 0) {
+        saveCurrentPage();
+        editingPageIdx--;
+        loadCurrentPage();
+        updateTupuNavInfo();
+      }
+    };
+  }
+
+  if (tupuNextBtn) {
+    tupuNextBtn.onclick = () => {
+      if (editingPageIdx < editingPages.length - 1) {
+        saveCurrentPage();
+        editingPageIdx++;
+        loadCurrentPage();
+        updateTupuNavInfo();
+      }
+    };
+  }
+
+  if (tupuDeleteBtn) {
+    tupuDeleteBtn.onclick = () => {
+      if (editingPages.length > 1) {
+        window.appConfirm('确定要删除当前页吗？', function() {
+          editingPages.splice(editingPageIdx, 1);
+          if (editingPageIdx >= editingPages.length) {
+            editingPageIdx = editingPages.length - 1;
+          }
+          loadCurrentPage();
+          updateTupuNavInfo();
+        });
+      } else if (editingPages.length === 1) {
+        window.appConfirm('这是最后一页，删除后将清空当前图谱。确定要删除吗？', function() {
+          editingPages = [];
+          editingPageIdx = 0;
+          tupuImageData = null;
+          tupuMasks = [];
+          renderTupuPreview();
+          updateTupuNavInfo();
+        });
+      }
+    };
+  }
+
+  if (tupuAddBtn) {
+    tupuAddBtn.onclick = () => {
+      saveCurrentPage();
+      editingPages.push({ image: null, masks: [] });
+      editingPageIdx = editingPages.length - 1;
+      tupuImageData = null;
+      tupuMasks = [];
+      renderTupuPreview();
+      updateTupuNavInfo();
+    };
   }
 
   if (addTupuBtn) {
@@ -3914,43 +5726,33 @@ window.onload = function(){
   }
   if (tupuEditOk) {
     tupuEditOk.onclick = () => {
+      saveCurrentPage();
+      
       const name = tupuName ? tupuName.value.trim() : '未命名图谱';
-      if (!tupuImageData) {
-        showAppAlert('请先上传图片');
+      
+      const validPages = editingPages.filter(p => p.image);
+      if (validPages.length === 0) {
+        showAppAlert('请至少上传一张图片');
         return;
       }
-      // Convert preview-relative coords to image-relative coords for drawImage
-      const imgEl = tupuPreview ? tupuPreview.querySelector('img') : null;
-      const previewImgLeft = imgEl ? (tupuPreview.offsetWidth - imgEl.offsetWidth) / 2 : 0;
-      const previewImgTop = imgEl ? (tupuPreview.offsetHeight - imgEl.offsetHeight) / 2 : 0;
-      // scaleRatio from preview img size to actual img size
-      const previewImgW = imgEl ? imgEl.offsetWidth : 1;
-      const previewImgH = imgEl ? imgEl.offsetHeight : 1;
-      const actualImg = new Image();
-      actualImg.onload = function() {
-        const rx = previewImgW > 0 ? actualImg.width / previewImgW : 1;
-        const ry = previewImgH > 0 ? actualImg.height / previewImgH : 1;
-        const tupuData = {
-          name: name,
-          image: tupuImageData,
-          speed: parseFloat(tupuSpeed ? tupuSpeed.value : 80),
-          masks: tupuMasks.map(mask => ({
-            top: ((mask.top || 0) - previewImgTop) * ry,
-            height: (mask.height || 60) * ry,
-            left: ((mask.left !== undefined ? mask.left : previewImgLeft) - previewImgLeft) * rx,
-            width: (mask.width || previewImgW) * rx
-          }))
-        };
-        if (editingTupuIdx >= 0) {
-          customTupus[editingTupuIdx] = tupuData;
-        } else {
-          customTupus.push(tupuData);
-        }
-        saveTupus();
-        closeTupuEditDialog();
-        renderTupuList();
+      
+      const tupuData = {
+        name: name,
+        speed: parseFloat(tupuSpeed ? tupuSpeed.value : 80),
+        pages: validPages.map(page => ({
+          image: page.image,
+          masks: page.masks || []
+        }))
       };
-      actualImg.src = tupuImageData;
+      
+      if (editingTupuIdx >= 0) {
+        customTupus[editingTupuIdx] = tupuData;
+      } else {
+        customTupus.push(tupuData);
+      }
+      saveTupus();
+      renderTupuList();
+      closeTupuEditDialog();
     };
   }
 
@@ -3963,6 +5765,8 @@ window.onload = function(){
       const reader = new FileReader();
       reader.onload = (ev) => {
         tupuImageData = ev.target.result;
+        if (editingPages.length === 0) { editingPages.push({ image: null, masks: [] }); editingPageIdx = 0; }
+        editingPages[editingPageIdx] = { image: tupuImageData, masks: (tupuMasks || []).slice() };
         renderTupuPreview();
       };
       reader.readAsDataURL(file);
@@ -3975,17 +5779,26 @@ window.onload = function(){
         showAppAlert('请先上传图片');
         return;
       }
-      const previewHeight = tupuPreview.offsetHeight;
-      const previewWidth = tupuPreview.offsetWidth;
-      const newMaskHeight = 50;
-      const newMaskWidth = (currentImgWidth || previewWidth) * 0.8;
-      const newTop = Math.max(0, previewHeight - newMaskHeight);
-      const newLeft = (currentImgLeft || 0) + ((currentImgWidth || previewWidth) - newMaskWidth) / 2;
+      
+      const widthPct = parseFloat(globalWidth.value) / 100;
+      const heightPct = parseFloat(globalHeight.value) / 100;
+      const gapPct = parseFloat(globalGap.value) / 100;
+      const newWidth = currentImgNaturalWidth * widthPct;
+      const newHeight = currentImgNaturalHeight * heightPct;
+      const newGap = currentImgNaturalHeight * gapPct;
+      const newLeft = (currentImgNaturalWidth - newWidth) / 2;
+      
+      let newTop = 0;
+      if (tupuMasks.length > 0) {
+        const lastMask = tupuMasks[tupuMasks.length - 1];
+        newTop = lastMask.top + lastMask.height + newGap;
+      }
+      
       tupuMasks.push({
         top: newTop,
-        height: newMaskHeight,
+        height: newHeight,
         left: newLeft,
-        width: newMaskWidth
+        width: newWidth
       });
       renderTupuPreview();
     };
@@ -3994,7 +5807,13 @@ window.onload = function(){
   if (tupuDelRow) {
     tupuDelRow.onclick = () => {
       if (tupuMasks.length > 0) {
-        tupuMasks.pop();
+        if (selectedMaskIdx >= 0 && selectedMaskIdx < tupuMasks.length) {
+          tupuMasks.splice(selectedMaskIdx, 1);
+        } else {
+          tupuMasks.pop();
+        }
+        selectedMaskIdx = -1;
+        updateMaskPropsPanel();
         renderTupuPreview();
       }
     };
@@ -4007,29 +5826,101 @@ window.onload = function(){
   const globalHeightVal = document.getElementById('globalHeightVal');
   const globalGap = document.getElementById('globalGap');
   const globalGapVal = document.getElementById('globalGapVal');
+  
+  const maskPropsPanel = document.getElementById('maskPropsPanel');
+  const maskLeftPct = document.getElementById('maskLeftPct');
+  const maskRightPct = document.getElementById('maskRightPct');
+  const maskTopPct = document.getElementById('maskTopPct');
+  const maskBottomPct = document.getElementById('maskBottomPct');
+
+  function updateMaskPropsPanel() {
+    if (selectedMaskIdx >= 0 && selectedMaskIdx < tupuMasks.length && currentImgNaturalWidth > 0 && currentImgNaturalHeight > 0) {
+      const mask = tupuMasks[selectedMaskIdx];
+      const leftPct = (mask.left / currentImgNaturalWidth) * 100;
+      const rightPct = ((mask.left + mask.width) / currentImgNaturalWidth) * 100;
+      const topPct = (mask.top / currentImgNaturalHeight) * 100;
+      const bottomPct = ((mask.top + mask.height) / currentImgNaturalHeight) * 100;
+      
+      maskLeftPct.value = leftPct.toFixed(2);
+      maskRightPct.value = rightPct.toFixed(2);
+      maskTopPct.value = topPct.toFixed(2);
+      maskBottomPct.value = bottomPct.toFixed(2);
+      
+      maskPropsPanel.style.display = 'block';
+    } else {
+      maskPropsPanel.style.display = 'none';
+    }
+  }
+
+  function applyMaskPropsFromPanel() {
+    if (selectedMaskIdx < 0 || selectedMaskIdx >= tupuMasks.length) return;
+    if (currentImgNaturalWidth <= 0 || currentImgNaturalHeight <= 0) return;
+    
+    const mask = tupuMasks[selectedMaskIdx];
+    const leftPct = parseFloat(maskLeftPct.value) || 0;
+    const rightPct = parseFloat(maskRightPct.value) || 100;
+    const topPct = parseFloat(maskTopPct.value) || 0;
+    const bottomPct = parseFloat(maskBottomPct.value) || 100;
+    
+    mask.left = (leftPct / 100) * currentImgNaturalWidth;
+    mask.width = (rightPct / 100) * currentImgNaturalWidth - mask.left;
+    mask.top = (topPct / 100) * currentImgNaturalHeight;
+    mask.height = (bottomPct / 100) * currentImgNaturalHeight - mask.top;
+    
+    renderTupuPreview();
+  }
+
+  if (maskLeftPct) maskLeftPct.oninput = applyMaskPropsFromPanel;
+  if (maskRightPct) maskRightPct.oninput = applyMaskPropsFromPanel;
+  if (maskTopPct) maskTopPct.oninput = applyMaskPropsFromPanel;
+  if (maskBottomPct) maskBottomPct.oninput = applyMaskPropsFromPanel;
 
   function applyGlobalSliders() {
     if (!tupuImageData || tupuMasks.length === 0) return;
     const imgEl = tupuPreview.querySelector('img');
     if (!imgEl) return;
+    
     const imgWidth = imgEl.offsetWidth;
+    const imgHeight = imgEl.offsetHeight;
     const imgLeft = (tupuPreview.offsetWidth - imgWidth) / 2;
+    const imgTop = (tupuPreview.offsetHeight - imgHeight) / 2;
+    
+    const rx = currentImgNaturalWidth > 0 ? imgWidth / currentImgNaturalWidth : 1;
+    const ry = currentImgNaturalHeight > 0 ? imgHeight / currentImgNaturalHeight : 1;
+    
     const widthPct = parseFloat(globalWidth.value) / 100;
-    const newWidth = imgWidth * widthPct;
-    const newHeight = parseFloat(globalHeight.value);
-    const newGap = parseFloat(globalGap.value);
-    const centerLeft = imgLeft + (imgWidth - newWidth) / 2;
-
-    let curTop = tupuMasks[0] ? tupuMasks[0].top : 0;
+    const heightPct = parseFloat(globalHeight.value) / 100;
+    const gapPct = parseFloat(globalGap.value) / 100;
+    
+    const newWidth = currentImgNaturalWidth * widthPct;
+    const newHeight = currentImgNaturalHeight * heightPct;
+    const newGap = currentImgNaturalHeight * gapPct;
+    
+    let curTop = 0;
     tupuMasks.forEach((mask, i) => {
-      if (i === 0) curTop = mask.top;
       mask.top = curTop;
       mask.height = newHeight;
-      mask.left = centerLeft;
+      mask.left = (currentImgNaturalWidth - newWidth) / 2;
       mask.width = newWidth;
       curTop += newHeight + newGap;
     });
-    updateMaskDisplay();
+    
+    const maskEls = tupuPreview.querySelectorAll('.tupu-mask');
+    maskEls.forEach((el, i) => {
+      if (tupuMasks[i]) {
+        const displayTop = tupuMasks[i].top * ry + imgTop;
+        const displayHeight = tupuMasks[i].height * ry;
+        const displayLeft = tupuMasks[i].left * rx + imgLeft;
+        const displayWidth = tupuMasks[i].width * rx;
+        el.style.top = displayTop + 'px';
+        el.style.height = displayHeight + 'px';
+        el.style.left = displayLeft + 'px';
+        el.style.width = displayWidth + 'px';
+      }
+    });
+    
+    updateMaskOverlay();
+    updateMaskPropsPanel();
   }
 
   if (globalWidth) {
@@ -4040,13 +5931,13 @@ window.onload = function(){
   }
   if (globalHeight) {
     globalHeight.oninput = () => {
-      globalHeightVal.textContent = globalHeight.value + 'px';
+      globalHeightVal.textContent = globalHeight.value + '%';
       applyGlobalSliders();
     };
   }
   if (globalGap) {
     globalGap.oninput = () => {
-      globalGapVal.textContent = globalGap.value + 'px';
+      globalGapVal.textContent = globalGap.value + '%';
       applyGlobalSliders();
     };
   }
@@ -4056,6 +5947,8 @@ window.onload = function(){
     tupuPreview.innerHTML = '';
     if (!tupuImageData) {
       tupuPreview.innerHTML = '<div class="tupu-placeholder">点击上方按钮上传图片</div>';
+      selectedMaskIdx = -1;
+      updateMaskPropsPanel();
       return;
     }
 
@@ -4081,31 +5974,36 @@ window.onload = function(){
         
         currentImgLeft = imgLeft;
         currentImgWidth = imgWidth;
+        currentImgTop = imgTop;
+        currentImgHeight = imgHeight;
+        currentImgNaturalWidth = img.naturalWidth;
+        currentImgNaturalHeight = img.naturalHeight;
+        
+        const rx = img.naturalWidth > 0 ? imgWidth / img.naturalWidth : 1;
+        const ry = img.naturalHeight > 0 ? imgHeight / img.naturalHeight : 1;
+        
+        const displayMasks = tupuMasks.map(mask => ({
+          top: (mask.top || 0) * ry + imgTop,
+          height: (mask.height || 60) * ry,
+          left: (mask.left || 0) * rx + imgLeft,
+          width: (mask.width || img.naturalWidth) * rx
+        }));
         
         if (tupuMasks.length === 0) {
           const initialMaskHeight = Math.min(60, imgHeight / 3);
           const initialMaskWidth = imgWidth * 0.8;
           const initialMaskLeft = imgLeft + (imgWidth - initialMaskWidth) / 2;
-          tupuMasks = [
+          displayMasks.push(
             { top: imgTop, height: initialMaskHeight, left: initialMaskLeft, width: initialMaskWidth },
             { top: imgTop + initialMaskHeight + 10, height: initialMaskHeight, left: initialMaskLeft, width: initialMaskWidth },
             { top: imgTop + (initialMaskHeight + 10) * 2, height: initialMaskHeight, left: initialMaskLeft, width: initialMaskWidth }
-          ];
-        } else {
-          // Masks are stored in image-relative coords; convert to preview coords
-          // Detect if they appear to be image-coords (left < imgLeft, since imgLeft > 0 typically)
-          // Use a flag: if mask.left is well within image pixel range, they're image coords
-          const needsConvert = tupuMasks[0] && (tupuMasks[0].left === undefined || tupuMasks[0].left < imgLeft - 5);
-          if (needsConvert) {
-            const rx = img.naturalWidth > 0 ? imgWidth / img.naturalWidth : 1;
-            const ry = img.naturalHeight > 0 ? imgHeight / img.naturalHeight : 1;
-            tupuMasks = tupuMasks.map(mask => ({
-              top: (mask.top || 0) * ry + imgTop,
-              height: (mask.height || 60) * ry,
-              left: (mask.left || 0) * rx + imgLeft,
-              width: (mask.width || img.naturalWidth) * rx
-            }));
-          }
+          );
+          tupuMasks = displayMasks.map(m => ({
+            top: (m.top - imgTop) / ry,
+            height: m.height / ry,
+            left: (m.left - imgLeft) / rx,
+            width: m.width / rx
+          }));
         }
         
         const maskContainer = document.createElement('div');
@@ -4126,7 +6024,7 @@ window.onload = function(){
           ctx.fillStyle = 'rgba(0,0,0,0.72)';
           ctx.fillRect(0, 0, overlayCanvas.width, overlayCanvas.height);
           ctx.globalCompositeOperation = 'destination-out';
-          tupuMasks.forEach(mask => {
+          displayMasks.forEach(mask => {
             ctx.fillStyle = 'rgba(0,0,0,1)';
             ctx.fillRect(mask.left || currentImgLeft, mask.top, mask.width || currentImgWidth, mask.height);
           });
@@ -4136,7 +6034,7 @@ window.onload = function(){
         maskContainer.redrawOverlay = redrawOverlay;
         redrawOverlay();
         
-        tupuMasks.forEach((mask, idx) => {
+        displayMasks.forEach((mask, idx) => {
           const maskEl = document.createElement('div');
           maskEl.className = 'tupu-mask';
           maskEl.dataset.idx = idx;
@@ -4170,18 +6068,44 @@ window.onload = function(){
           
           mask.el = maskEl;
           
+          maskEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            selectMask(idx);
+          });
+          
           maskEl.addEventListener('mousedown', startMaskDrag);
           maskEl.addEventListener('touchstart', startMaskDrag, { passive: false });
         });
         
         tupuPreview.appendChild(maskContainer);
+        
+        if (selectedMaskIdx >= 0 && selectedMaskIdx < tupuMasks.length) {
+          highlightSelectedMask();
+        }
       };
     };
   }
 
+  function selectMask(idx) {
+    selectedMaskIdx = idx;
+    highlightSelectedMask();
+    updateMaskPropsPanel();
+  }
+
+  function highlightSelectedMask() {
+    const maskEls = tupuPreview.querySelectorAll('.tupu-mask');
+    maskEls.forEach((el, i) => {
+      if (i === selectedMaskIdx) {
+        el.style.borderColor = 'rgba(255, 200, 0, 1)';
+        el.style.borderWidth = '3px';
+      } else {
+        el.style.borderColor = 'rgba(0, 153, 255, 0.8)';
+        el.style.borderWidth = '2px';
+      }
+    });
+  }
+
   let maskDragData = null;
-  let currentImgLeft = 0;
-  let currentImgWidth = 0;
 
   function startMaskDrag(e) {
     e.preventDefault();
@@ -4202,15 +6126,17 @@ window.onload = function(){
     else if (isLeftEdge) mode = 'left';
     else if (isRightEdge) mode = 'right';
 
+    const el = mask;
     maskDragData = {
       idx: idx,
       startX: touch.clientX,
       startY: touch.clientY,
-      startTop: tupuMasks[idx].top,
-      startHeight: tupuMasks[idx].height,
-      startLeft: tupuMasks[idx].left || currentImgLeft,
-      startWidth: tupuMasks[idx].width || currentImgWidth,
-      mode: mode
+      startTop: parseFloat(el.style.top) || 0,
+      startHeight: parseFloat(el.style.height) || 60,
+      startLeft: parseFloat(el.style.left) || currentImgLeft,
+      startWidth: parseFloat(el.style.width) || currentImgWidth,
+      mode: mode,
+      el: el
     };
 
     document.addEventListener('mousemove', doMaskDrag);
@@ -4225,68 +6151,95 @@ window.onload = function(){
     const touch = e.touches ? e.touches[0] : e;
     const deltaX = touch.clientX - maskDragData.startX;
     const deltaY = touch.clientY - maskDragData.startY;
-    const idx = maskDragData.idx;
     const previewHeight = tupuPreview.offsetHeight;
     const previewWidth = tupuPreview.offsetWidth;
+    const el = maskDragData.el;
 
     if (maskDragData.mode === 'move') {
       let newTop = maskDragData.startTop + deltaY;
       let newLeft = maskDragData.startLeft + deltaX;
-      newTop = Math.max(0, Math.min(previewHeight - tupuMasks[idx].height, newTop));
-      newLeft = Math.max(0, Math.min(previewWidth - tupuMasks[idx].width, newLeft));
-      tupuMasks[idx].top = newTop;
-      tupuMasks[idx].left = newLeft;
+      newTop = Math.max(0, Math.min(previewHeight - parseFloat(el.style.height), newTop));
+      newLeft = Math.max(0, Math.min(previewWidth - parseFloat(el.style.width), newLeft));
+      el.style.top = newTop + 'px';
+      el.style.left = newLeft + 'px';
     } else if (maskDragData.mode === 'top') {
       let newTop = maskDragData.startTop + deltaY;
       let newHeight = maskDragData.startHeight - deltaY;
       if (newTop >= 0 && newHeight >= 20) {
-        tupuMasks[idx].top = newTop;
-        tupuMasks[idx].height = newHeight;
+        el.style.top = newTop + 'px';
+        el.style.height = newHeight + 'px';
       }
     } else if (maskDragData.mode === 'bottom') {
       let newHeight = maskDragData.startHeight + deltaY;
-      newHeight = Math.max(20, Math.min(previewHeight - tupuMasks[idx].top, newHeight));
-      tupuMasks[idx].height = newHeight;
+      newHeight = Math.max(20, Math.min(previewHeight - parseFloat(el.style.top), newHeight));
+      el.style.height = newHeight + 'px';
     } else if (maskDragData.mode === 'left') {
       let newLeft = maskDragData.startLeft + deltaX;
       let newWidth = maskDragData.startWidth - deltaX;
       if (newLeft >= 0 && newWidth >= 20) {
-        tupuMasks[idx].left = newLeft;
-        tupuMasks[idx].width = newWidth;
+        el.style.left = newLeft + 'px';
+        el.style.width = newWidth + 'px';
       }
     } else if (maskDragData.mode === 'right') {
       let newWidth = maskDragData.startWidth + deltaX;
-      newWidth = Math.max(20, Math.min(previewWidth - tupuMasks[idx].left, newWidth));
-      tupuMasks[idx].width = newWidth;
+      newWidth = Math.max(20, Math.min(previewWidth - parseFloat(el.style.left), newWidth));
+      el.style.width = newWidth + 'px';
     }
     
-    updateMaskDisplay();
+    updateMaskOverlay();
   }
 
-  function updateMaskDisplay() {
-    const imgEl = tupuPreview.querySelector('img');
-    if (!imgEl) return;
-    
-    currentImgWidth = imgEl.offsetWidth;
-    currentImgLeft = (tupuPreview.offsetWidth - currentImgWidth) / 2;
-    
-    tupuMasks.forEach((mask, idx) => {
-      if (mask.el) {
-        mask.el.style.top = mask.top + 'px';
-        mask.el.style.height = mask.height + 'px';
-        mask.el.style.left = (mask.left !== undefined ? mask.left : currentImgLeft) + 'px';
-        mask.el.style.width = (mask.width || currentImgWidth) + 'px';
-      }
-    });
-    
-    // Redraw inverted overlay: dark everywhere except inside mask boxes
+  function updateMaskOverlay() {
     const maskContainer = tupuPreview.querySelector('.tupu-mask-container');
     if (maskContainer && maskContainer.redrawOverlay) {
-      maskContainer.redrawOverlay();
+      const maskEls = tupuPreview.querySelectorAll('.tupu-mask');
+      const displayMasks = [];
+      maskEls.forEach(el => {
+        displayMasks.push({
+          top: parseFloat(el.style.top) || 0,
+          height: parseFloat(el.style.height) || 60,
+          left: parseFloat(el.style.left) || currentImgLeft,
+          width: parseFloat(el.style.width) || currentImgWidth
+        });
+      });
+      
+      const ctx = maskContainer.querySelector('canvas').getContext('2d');
+      ctx.clearRect(0, 0, maskContainer.querySelector('canvas').width, maskContainer.querySelector('canvas').height);
+      ctx.fillStyle = 'rgba(0,0,0,0.72)';
+      ctx.fillRect(0, 0, maskContainer.querySelector('canvas').width, maskContainer.querySelector('canvas').height);
+      ctx.globalCompositeOperation = 'destination-out';
+      displayMasks.forEach(mask => {
+        ctx.fillStyle = 'rgba(0,0,0,1)';
+        ctx.fillRect(mask.left, mask.top, mask.width, mask.height);
+      });
+      ctx.globalCompositeOperation = 'source-over';
     }
   }
 
   function endMaskDrag() {
+    if (maskDragData) {
+      const el = maskDragData.el;
+      const idx = maskDragData.idx;
+      
+      const displayTop = parseFloat(el.style.top) || 0;
+      const displayHeight = parseFloat(el.style.height) || 60;
+      const displayLeft = parseFloat(el.style.left) || currentImgLeft;
+      const displayWidth = parseFloat(el.style.width) || currentImgWidth;
+      
+      const rx = currentImgNaturalWidth > 0 ? currentImgWidth / currentImgNaturalWidth : 1;
+      const ry = currentImgNaturalHeight > 0 ? currentImgHeight / currentImgNaturalHeight : 1;
+      
+      tupuMasks[idx] = {
+        top: (displayTop - currentImgTop) / ry,
+        height: displayHeight / ry,
+        left: (displayLeft - currentImgLeft) / rx,
+        width: displayWidth / rx
+      };
+      
+      selectedMaskIdx = idx;
+      updateMaskPropsPanel();
+    }
+    
     maskDragData = null;
     document.removeEventListener('mousemove', doMaskDrag);
     document.removeEventListener('mouseup', endMaskDrag);
@@ -4321,11 +6274,12 @@ window.onload = function(){
     tupuLastFrameTime = now;
     
     if (!isDraggingScore) {
-      const avgMaskWidth = currentTupu.scaledMasks.length > 0 
-        ? currentTupu.totalWidth / currentTupu.scaledMasks.length 
-        : 100;
-      const scrollSpeed = avgMaskWidth * currentTupuSpeed / 2000;
-      tupuScrollX += deltaTime * scrollSpeed;
+      const bpm = currentTupu.speed || 80;
+      const pixelsPerBeat = 30;
+      const beatsPerSecond = bpm / 60;
+      const scrollSpeed = pixelsPerBeat * beatsPerSecond * currentTupuSpeed;
+      
+      tupuScrollX += deltaTime * scrollSpeed / 1000;
       
       if (tupuScrollX >= currentTupu.totalWidth) {
         tupuScrollX = 0;
@@ -4354,6 +6308,8 @@ window.onload = function(){
   }
 
   addSongBtn.onclick = () => openEditDialog(null, -1);
+  var addRecBtn = document.getElementById("addRecBtn");
+  if (addRecBtn) addRecBtn.onclick = function() { if (window._openRecEdit) window._openRecEdit(-1, []); };
   editCancel.onclick = () => editOverlay.classList.remove("show");
   editOk.onclick = () => {
     const name = document.getElementById("editName").value || "未命名";
@@ -4372,16 +6328,37 @@ window.onload = function(){
   };
 
   playBtn.onclick = () => {
+    // 优先检查图谱播放状态
     if (currentTupu) {
       if (isTupuScrolling) {
+        // 暂停图谱播放（保持位置）
         stopTupuScrolling();
         playBtn.classList.remove("on");
         playBtn.textContent = "▶";
       } else {
-        startTupuScrolling();
+        // 没在播放：检查是否已播完（tupuScrollX 到末尾）
+        const atEnd = currentTupu.totalWidth && tupuScrollX >= currentTupu.totalWidth - 1;
+        if (atEnd) {
+          // 已播完，重播
+          tupuScrollX = 0;
+          canvasOffX = 20;
+          canvas.style.left = "20px";
+        }
+        // 继续/开始播放（不重置 tupuScrollX，继续上次位置）
+        isTupuScrolling = true;
+        tupuLastFrameTime = performance.now();
+        currentTupuSpeed = (currentTupu.speed || 80) / 80;
+        stepTupuScrolling();
         playBtn.classList.add("on");
         playBtn.textContent = "⏸";
       }
+      return;
+    }
+    
+    // 然后检查录制播放状态
+    if (typeof _recPlayState !== "undefined" && _recPlayState) {
+      if (_recPlayState.paused) { resumeRecordPlay(); }
+      else                      { pauseRecordPlay(); }
       return;
     }
     
@@ -4402,10 +6379,13 @@ window.onload = function(){
   };
 
   const startScoreDrag = (x) => {
+    // Block drag when recording playback is active (prevents switching to jianpu)
+    if (typeof _recPlayState !== "undefined" && _recPlayState) return;
     if(!currentSong && !currentTupu) return;
     isDraggingScore = true; dragStartX = x; dragStartOffX = canvasOffX;
     playSpeed = 0; isMutedTemporarily = true;
     cancelAnimationFrame(scrollRAF); isScrolling = false;
+    wasTupuScrolling = isTupuScrolling;
     cancelAnimationFrame(tupuScrollRAF); isTupuScrolling = false;
     stopNote("auto");
     container.querySelectorAll(".auto-hi").forEach(k => k.classList.remove("auto-hi"));
@@ -4458,6 +6438,16 @@ window.onload = function(){
     if (currentSong) {
       isFollowing = true; currentFollowIdx = highlightNoteIdx;
     }
+    
+    if (currentTupu && wasTupuScrolling) {
+      tupuScrollX = 20 - canvasOffX;
+      if (tupuScrollX < 0) tupuScrollX = 0;
+      if (tupuScrollX >= currentTupu.totalWidth) tupuScrollX = 0;
+      isTupuScrolling = true;
+      tupuLastFrameTime = performance.now();
+      stepTupuScrolling();
+    }
+    
     stopNote("auto");
     container.querySelectorAll(".auto-hi").forEach(k => k.classList.remove("auto-hi"));
   };
@@ -4602,12 +6592,12 @@ window.onload = function(){
     if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")) return;
     const code = e.code;
     // 乐器切换快捷键（不影响乐谱播放）
-    if (pcKeyMap.instSwitch) {
-      for (const instKey in pcKeyMap.instSwitch) {
-        if (pcKeyMap.instSwitch[instKey].includes(code)) {
-          currentInst = instKey;
+    if (pcKeyMap.instSwitchList && Array.isArray(pcKeyMap.instSwitchList)) {
+      for (const item of pcKeyMap.instSwitchList) {
+        if (item.key === code) {
+          currentInst = item.inst;
           document.querySelectorAll('.control .btn').forEach(b => {
-            b.classList.toggle('active', b.dataset.inst === instKey);
+            b.classList.toggle('active', b.dataset.inst === item.inst);
           });
           saveSettings();
           e.preventDefault(); return;
@@ -4619,6 +6609,14 @@ window.onload = function(){
     }
     if (pcKeyMap.control.nextOctave.includes(code)) {
       currentBaseOctave = Math.min(7, currentBaseOctave + 1); saveSettings(); return;
+    }
+    // 播放暂停键处理
+    if (pcKeyMap.control.playPause && pcKeyMap.control.playPause.includes(code)) {
+      e.preventDefault();
+      // 模拟点击播放按钮
+      const playBtn = document.getElementById('playBtn');
+      if (playBtn) playBtn.click();
+      return;
     }
     for (const note in pcKeyMap.fixed.octave5) {
       if (pcKeyMap.fixed.octave5[note].includes(code)) {
@@ -4724,6 +6722,9 @@ window.onload = function(){
       if (settings.currentInst) {
         currentInst = settings.currentInst;
       }
+      if (settings.keyHintEnabled !== undefined) {
+        keyHintEnabled = settings.keyHintEnabled;
+      }
       try {
         const savedOrder = localStorage.getItem('instOrder');
         if (savedOrder) instOrder = JSON.parse(savedOrder);
@@ -4774,7 +6775,7 @@ window.onload = function(){
       let localWidthScale = parseInt(computedStyle.getPropertyValue('--key-width-scale').trim()) || parseInt(sliderWidth.value);
       currentWidthScale = localWidthScale;
       localStorage.setItem('pianoSettings', JSON.stringify({
-        currentInst, isMuted,
+        currentInst, isMuted, keyHintEnabled,
         keyHeight: currentKeyHeight, rowGap: currentRowGap, keyWidthScale: currentWidthScale,
         currentBaseOctave,
         sliderRows: parseInt(sliderRows.value), sliderWidth: parseInt(sliderWidth.value),
@@ -4842,38 +6843,39 @@ let startH=0;
 let isScoreFullscreen = false;
 let savedScoreHeight = 34;
 
-function updateFullscreenBtn(h){
- let full=document.getElementById("scoreFullscreenBtn");
- const halfHeight = window.innerHeight / 2;
- 
- let position = { top: '10px', left: '10px', right: 'auto', bottom: 'auto' };
- 
- if (document.body.classList.contains('toolbar-rotated-90')) {
-   position = { top: '10px', left: '66px', right: 'auto', bottom: 'auto' };
- } else if (document.body.classList.contains('toolbar-rotated-180')) {
-   position = { top: 'auto', left: '10px', right: 'auto', bottom: '62px' };
- } else if (document.body.classList.contains('toolbar-rotated-270')) {
-   position = { top: '10px', left: 'auto', right: '66px', bottom: 'auto' };
+let _fullBtnRect=null;
+function _snapAutoBtn(){
+ var ab=document.getElementById("autoBtn");
+ if(ab&&ab.style.display!=="none"&&ab.offsetParent!==null){
+   var r=ab.getBoundingClientRect();
+   _fullBtnRect={left:r.left,top:r.top,width:r.width,height:r.height};
  }
- 
- const shouldShow = h > halfHeight || isScoreFullscreen;
- 
+}
+function _applyFullPos(full){
+ if(!_fullBtnRect)_snapAutoBtn();
+ if(!_fullBtnRect)return;
+ full.style.left=_fullBtnRect.left+"px";
+ full.style.top=_fullBtnRect.top+"px";
+ full.style.width=_fullBtnRect.width+"px";
+ full.style.height=_fullBtnRect.height+"px";
+}
+function updateFullscreenBtn(h){
+ var full=document.getElementById("scoreFullscreenBtn");
+ var halfHeight=window.innerHeight/2;
+ var shouldShow=h>halfHeight||isScoreFullscreen;
  if(shouldShow){
+   _snapAutoBtn();
    if(!full){
      full=document.createElement("button");
      full.id="scoreFullscreenBtn";
-     full.innerText="⛶";
-     full.style.cssText="position:fixed;width:40px;height:40px;border-radius:8px;border:1px solid #444;background:#222;color:#fff;font-size:18px;cursor:pointer;z-index:9999;display:flex;align-items:center;justify-content:center;";
+     full.style.cssText="position:fixed;border-radius:8px;border:1px solid #444;background:#222;color:#0099ff;font-size:15px;cursor:pointer;z-index:9999;display:flex;align-items:center;justify-content:center;padding:0;touch-action:manipulation;";
      full.onclick=toggleScoreFullscreen;
      document.body.appendChild(full);
    }
-   full.style.top = position.top;
-   full.style.left = position.left;
-   full.style.right = position.right;
-   full.style.bottom = position.bottom;
-   full.innerText = isScoreFullscreen ? "⛶" : "⛶";
+   full.innerText="⧆";
+   _applyFullPos(full);
  }else{
-   if(full) full.remove();
+   if(full)full.remove();
  }
 }
 
@@ -4892,8 +6894,13 @@ function toggleScoreFullscreen(){
    musicBar.style.zIndex = '';
    musicBar.style.background = '';
    
+   const control = document.querySelector('.control');
+   if (control) control.style.display = '';
+   
    wrap.style.position = '';
    wrap.style.margin = '';
+   wrap.style.left = '';
+   wrap.style.right = '';
    
    if(playBtn) playBtn.style.display = '';
    if(autoBtn) autoBtn.style.display = '';
@@ -4902,27 +6909,55 @@ function toggleScoreFullscreen(){
    if (canvas && scoreWrap) {
      canvas.height = savedScoreHeight;
      canvas.style.height = savedScoreHeight + "px";
-     if (currentTupu && currentTupu.img && currentTupu.masks) {
+     if (currentTupu && currentTupu.scaledMasks) {
        updateTupuScale();
        drawTupuScore();
-     }
-     if (tokens && tokens.length > 0) {
+     } else if (typeof _recPlayState !== "undefined" && _recPlayState) {
+       var _h = canvas.height;
+       var _lH = _h / 5;
+       var _fsB = Math.max(10, Math.round(_lH * 0.62));
+       _recPlayState.laneH  = _lH;
+       _recPlayState.fs     = Math.max(8, Math.round(_fsB * 2/3));
+       _recPlayState.blockH = Math.round(_fsB * 1.2);
+       _recPlayState.tracks.forEach(function(t) { t.notes.forEach(function(n) {
+         n._bw = Math.max(_textWidth(n.note, _recPlayState.fs)+10, Math.max(1, n.holdMs*_recPlayState.PX_PER_MS-2));
+       }); });
+       var _el = _recPlayState.paused ? _recPlayState.pausedElapsed : (performance.now()-_recPlayState.startTime)*_recPlayState.speed;
+       drawRecordScore(_el, performance.now());
+     } else if (tokens && tokens.length > 0) {
        drawScore();
+     } else {
+       canvas.width = scoreWrap.clientWidth;
+       canvas.style.width = canvas.width + "px";
+       drawRainbowGridBackground();
      }
    }
    isScoreFullscreen = false;
+   requestAnimationFrame(function(){_snapAutoBtn();var f=document.getElementById("scoreFullscreenBtn");if(f)_applyFullPos(f);});
  }else{
    savedScoreHeight = wrap.offsetHeight;
    
    musicBar.style.position = 'fixed';
    musicBar.style.top = '0';
-   musicBar.style.left = '0';
-   musicBar.style.right = '0';
    musicBar.style.bottom = '0';
    musicBar.style.width = '100%';
    musicBar.style.height = '100%';
    musicBar.style.zIndex = '9998';
    musicBar.style.background = 'rgba(0,0,0,0.95)';
+   
+   const control = document.querySelector('.control');
+   if (document.body.classList.contains('toolbar-rotated-90')) {
+     musicBar.style.left = '0';
+     musicBar.style.right = '0';
+     if (control) control.style.display = 'none';
+   } else if (document.body.classList.contains('toolbar-rotated-270')) {
+     musicBar.style.left = '0';
+     musicBar.style.right = '0';
+     if (control) control.style.display = 'none';
+   } else {
+     musicBar.style.left = '0';
+     musicBar.style.right = '0';
+   }
    
    wrap.style.position = 'absolute';
    wrap.style.left = '0';
@@ -4937,12 +6972,28 @@ function toggleScoreFullscreen(){
    if (canvas && scoreWrap) {
      canvas.height = maxH;
      canvas.style.height = maxH + "px";
-     if (currentTupu && currentTupu.img && currentTupu.masks) {
+     if (currentTupu && currentTupu.scaledMasks) {
        updateTupuScale();
        drawTupuScore();
-     }
-     if (tokens && tokens.length > 0) {
+     } else if (typeof _recPlayState !== "undefined" && _recPlayState) {
+       // Recalculate rec metrics for fullscreen height
+       var _fsH = maxH;
+       var _fsLH = _fsH / 5;
+       var _fsFsBase = Math.max(10, Math.round(_fsLH * 0.62));
+       _recPlayState.laneH  = _fsLH;
+       _recPlayState.fs     = Math.round(_fsFsBase * 2/3);
+       _recPlayState.blockH = Math.round(_fsFsBase * 1.2);
+       _recPlayState.tracks.forEach(function(t) { t.notes.forEach(function(n) {
+         n._bw = Math.max(_textWidth(n.note, _recPlayState.fs)+10, Math.max(1, n.holdMs*_recPlayState.PX_PER_MS-2));
+       }); });
+       var _fsEl = _recPlayState.paused ? _recPlayState.pausedElapsed : (performance.now()-_recPlayState.startTime)*_recPlayState.speed;
+       drawRecordScore(_fsEl, performance.now());
+     } else if (tokens && tokens.length > 0) {
        drawScore();
+     } else {
+       canvas.width = scoreWrap.clientWidth;
+       canvas.style.width = canvas.width + "px";
+       drawRainbowGridBackground();
      }
    }
    isScoreFullscreen = true;
@@ -4953,7 +7004,8 @@ function toggleScoreFullscreen(){
 function startResize(e){
  resizing=true;
  const touch = e.touches ? e.touches[0] : e;
- startY=touch.clientY;
+ const isRotated90 = document.body.classList.contains('rotated-90') || document.body.classList.contains('rotated-270');
+ startY = isRotated90 ? touch.clientX : touch.clientY;
  startH=wrap.offsetHeight;
  document.body.style.userSelect = "none";
  document.body.style.cursor = "ns-resize";
@@ -4965,20 +7017,51 @@ function moveResize(e){
  if(!resizing) return;
  e.preventDefault();
  const touch = e.touches ? e.touches[0] : e;
- let deltaY=touch.clientY-startY;
+ const isRotated90 = document.body.classList.contains('rotated-90') || document.body.classList.contains('rotated-270');
+ let deltaY = isRotated90 ? (touch.clientX - startY) : (touch.clientY - startY);
  let h=startH+deltaY;
  if(h<34)h=34;
+ 
+ const margin = 7;
+ let maxH = window.innerHeight - margin;
+ if (document.body.classList.contains('toolbar-rotated-180')) {
+   maxH = window.innerHeight - 52 - margin;
+ }
+ if(h>maxH)h=maxH;
+ 
  wrap.style.setProperty("--score-height",h+"px");
  
  if (canvas && scoreWrap) {
    canvas.height = h;
    canvas.style.height = h + "px";
-   if (currentTupu && currentTupu.img && currentTupu.masks) {
+   
+   if (currentTupu && currentTupu.scaledMasks) {
      updateTupuScale();
      drawTupuScore();
-   }
-   if (tokens && tokens.length > 0) {
+   } else if (typeof _recPlayState !== "undefined" && _recPlayState) {
+     // Resize rec score: recompute laneH, blockH, fs, then redraw
+     var newLaneH  = h / 5;
+     var newFsBase = Math.max(10, Math.round(newLaneH * 0.62));
+     var newFs     = Math.max(8, Math.round(newFsBase * 2/3)); // 1/3 smaller
+     var newBlockH = Math.round(newFsBase * 1.2); // block unchanged
+     _recPlayState.laneH  = newLaneH;
+     _recPlayState.fs     = newFs;
+     _recPlayState.blockH = newBlockH;
+     // Recompute block widths
+     _recPlayState.tracks.forEach(function(t) {
+       t.notes.forEach(function(n) {
+         var tw = _textWidth(n.note, newFs) + 10;
+         n._bw  = Math.max(tw, Math.max(1, n.holdMs * _recPlayState.PX_PER_MS - 2));
+       });
+     });
+     var elapsed = _recPlayState.paused ? _recPlayState.pausedElapsed : (performance.now() - _recPlayState.startTime) * _recPlayState.speed;
+     drawRecordScore(elapsed, performance.now());
+   } else if (tokens && tokens.length > 0) {
      drawScore();
+   } else {
+     canvas.width = scoreWrap.clientWidth;
+     canvas.style.width = canvas.width + "px";
+     drawRainbowGridBackground();
    }
  }
  
@@ -5002,9 +7085,8 @@ document.addEventListener("touchcancel",endResize);
 
 updateFullscreenBtn(wrap.offsetHeight);
 
-window.addEventListener('resize', () => {
-  updateFullscreenBtn(wrap.offsetHeight);
-});
+window.addEventListener("resize",function(){_snapAutoBtn();updateFullscreenBtn(wrap.offsetHeight);});
+if(window.ResizeObserver){new ResizeObserver(function(){_snapAutoBtn();var f=document.getElementById("scoreFullscreenBtn");if(f)_applyFullPos(f);}).observe(musicBar);}
 
 })();
 </script>
