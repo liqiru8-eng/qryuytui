@@ -27,6 +27,31 @@ body.landscape-mode .inst-scroll .btn{width:36px;height:36px;padding:0;font-size
 body.landscape-mode .piano-container{width:100%;}
 body.landscape-mode .music-bar{width:calc(100% - 52px);margin-left:52px;}
 body.landscape-mode #layoutToolbar{width:calc(100% - 52px);margin-left:52px;margin-right:0;}
+body.landscape-mode .tupu-edit-modal{padding:10px;}
+body.landscape-mode .tupu-edit-nav{margin-bottom:10px;}
+body.landscape-mode .tupu-edit-content{flex-direction:row;}
+body.landscape-mode .tupu-edit-left{width:180px;max-height:100%;overflow-y:auto;padding-right:10px;}
+body.landscape-mode .tupu-edit-right{flex:1;min-height:0;}
+body.landscape-mode .tupu-edit-right .tupu-preview-wrap{height:100%;margin-bottom:0;}
+body.landscape-mode .tupu-edit-right .tupu-preview{height:100%;min-height:0;}
+body.landscape-mode .tupu-controls{display:none;}
+body.landscape-mode .tupu-preview{cursor:pointer;}
+
+body:not(.landscape-mode) .tupu-edit-modal.tupu-portrait-mode{padding:8px;}
+body:not(.landscape-mode) .tupu-edit-modal.tupu-portrait-mode .tupu-edit-nav{margin-bottom:8px;}
+body:not(.landscape-mode) .tupu-edit-modal.tupu-portrait-mode .tupu-edit-content{flex-direction:column;}
+body:not(.landscape-mode) .tupu-edit-modal.tupu-portrait-mode .tupu-edit-right{order:-1;flex:none;height:50%;}
+body:not(.landscape-mode) .tupu-edit-modal.tupu-portrait-mode .tupu-edit-right .tupu-preview-wrap{height:100%;margin-bottom:0;}
+body:not(.landscape-mode) .tupu-edit-modal.tupu-portrait-mode .tupu-edit-right .tupu-preview{height:100%;min-height:0;}
+body:not(.landscape-mode) .tupu-edit-modal.tupu-portrait-mode .tupu-edit-left{width:100%;flex:none;height:auto;max-height:35%;overflow-x:auto;overflow-y:hidden;display:flex;flex-direction:row;gap:12px;padding:8px 0;}
+body:not(.landscape-mode) .tupu-edit-modal.tupu-portrait-mode .tupu-edit-left>div{flex-shrink:0;min-width:160px;background:#1a1a1a;border-radius:8px;padding:10px;}
+body:not(.landscape-mode) .tupu-edit-modal.tupu-portrait-mode .tupu-settings,
+body:not(.landscape-mode) .tupu-edit-modal.tupu-portrait-mode .tupu-speed-setting,
+body:not(.landscape-mode) .tupu-edit-modal.tupu-portrait-mode .tupu-actions,
+body:not(.landscape-mode) .tupu-edit-modal.tupu-portrait-mode .tupu-global-controls,
+body:not(.landscape-mode) .tupu-edit-modal.tupu-portrait-mode .tupu-mask-props{margin-bottom:0;margin-top:0;}
+body:not(.landscape-mode) .tupu-edit-modal.tupu-portrait-mode .tupu-controls{display:none;}
+body:not(.landscape-mode) .tupu-edit-modal.tupu-portrait-mode .tupu-preview{cursor:pointer;}
 body.toolbar-rotated-90 .control{width:52px;height:100%;flex-direction:column;position:fixed;left:0;top:0;border-right:1px solid #2a2a2a;border-bottom:none;padding:8px 0;z-index:30;justify-content:space-between;}
 body.toolbar-rotated-180 .control{height:52px;width:100%;flex-direction:row;position:fixed;bottom:0;top:auto;left:0;border-top:1px solid #2a2a2a;border-right:1px solid #2a2a2a;padding:0 8px;z-index:30;}
 body.toolbar-rotated-270 .control{width:52px;height:100%;flex-direction:column;position:fixed;right:0;top:0;border-left:1px solid #2a2a2a;padding:8px 0;z-index:30;justify-content:space-between;}
@@ -5767,6 +5792,15 @@ window.onload = function(){
     }
     loadCurrentPage();
     updateTupuNavInfo();
+    
+    const modal = tupuEditOverlay ? tupuEditOverlay.querySelector('.tupu-edit-modal') : null;
+    if (modal) {
+      modal.classList.remove('tupu-portrait-mode');
+      if (!document.body.classList.contains('landscape-mode')) {
+        modal.classList.add('tupu-portrait-mode');
+      }
+    }
+    
     if (tupuEditOverlay) tupuEditOverlay.classList.add("show");
   }
 
@@ -6083,8 +6117,21 @@ window.onload = function(){
   function renderTupuPreview() {
     if (!tupuPreview) return;
     tupuPreview.innerHTML = '';
+    
+    const isLandscape = document.body.classList.contains('landscape-mode');
+    const modal = tupuEditOverlay ? tupuEditOverlay.querySelector('.tupu-edit-modal') : null;
+    const isPortraitMode = modal && modal.classList.contains('tupu-portrait-mode');
+    const isMobileMode = isLandscape || isPortraitMode;
+    
     if (!tupuImageData) {
-      tupuPreview.innerHTML = '<div class="tupu-placeholder">点击上方按钮上传图片</div>';
+      const placeholder = document.createElement('div');
+      placeholder.className = 'tupu-placeholder';
+      placeholder.textContent = isMobileMode ? '点击此处上传图片' : '点击上方按钮上传图片';
+      tupuPreview.appendChild(placeholder);
+      
+      if (isMobileMode) {
+        tupuPreview.onclick = () => tupuImageInput.click();
+      }
       selectedMaskIdx = -1;
       updateMaskPropsPanel();
       return;
@@ -6096,13 +6143,61 @@ window.onload = function(){
       tupuPreview.innerHTML = '';
       
       const imgWrapper = document.createElement('div');
-      imgWrapper.style.cssText = 'position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;';
+      imgWrapper.style.cssText = 'position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;';
       
       const imgEl = document.createElement('img');
       imgEl.src = tupuImageData;
-      imgEl.style.cssText = 'max-width:100%;max-height:100%;display:block;';
+      imgEl.className = 'tupu-preview-image';
+      imgEl.style.cssText = 'max-width:100%;max-height:100%;display:block;object-fit:contain;';
+      imgEl.draggable = false;
       imgWrapper.appendChild(imgEl);
       tupuPreview.appendChild(imgWrapper);
+      
+      let currentScale = 1;
+      let currentTranslateX = 0;
+      let currentTranslateY = 0;
+      
+      const updateImageTransform = () => {
+        imgEl.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(${currentScale})`;
+      };
+      
+      if (isMobileMode) {
+        let lastTouchDistance = 0;
+        let isPinching = false;
+        
+        tupuPreview.addEventListener('touchstart', (e) => {
+          if (e.touches.length === 2) {
+            isPinching = true;
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            lastTouchDistance = Math.sqrt(dx * dx + dy * dy);
+            e.preventDefault();
+          }
+        }, { passive: false });
+        
+        tupuPreview.addEventListener('touchmove', (e) => {
+          if (isPinching && e.touches.length === 2) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (lastTouchDistance > 0) {
+              const scaleDelta = distance / lastTouchDistance;
+              currentScale = Math.max(0.5, Math.min(5, currentScale * scaleDelta));
+              updateImageTransform();
+            }
+            lastTouchDistance = distance;
+            e.preventDefault();
+          }
+        }, { passive: false });
+        
+        tupuPreview.addEventListener('touchend', (e) => {
+          if (e.touches.length < 2) {
+            isPinching = false;
+            lastTouchDistance = 0;
+          }
+        }, { passive: false });
+      }
       
       imgEl.onload = function() {
         const imgWidth = imgEl.offsetWidth;
@@ -6148,14 +6243,12 @@ window.onload = function(){
         maskContainer.className = 'tupu-mask-container';
         maskContainer.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;';
         
-        // Dark overlay canvas: covers entire preview, punched out by mask boxes (inverted mask)
         const overlayCanvas = document.createElement('canvas');
         overlayCanvas.width = tupuPreview.offsetWidth;
         overlayCanvas.height = tupuPreview.offsetHeight;
         overlayCanvas.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;';
         maskContainer.appendChild(overlayCanvas);
         
-        // Draw inverted mask: fill dark, then cut holes where masks are
         function redrawOverlay() {
           const ctx = overlayCanvas.getContext('2d');
           ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
