@@ -17,6 +17,16 @@ body.rotated-90 .inst-scroll, body.rotated-270 .inst-scroll{flex:1;order:0;}
 body.rotated-90 .piano-container, body.rotated-270 .piano-container{width:100%;}
 body.rotated-90 .music-bar, body.rotated-270 .music-bar{width:100%;}
 body.rotated-90 #layoutToolbar, body.rotated-270 #layoutToolbar{width:100%;}
+body.landscape-mode{transform:rotate(90deg) translateZ(0);transform-origin:center center;width:100vh;height:100vw;position:absolute;top:50%;left:50%;margin-left:-50vh;margin-top:-50vw;backface-visibility:hidden;-webkit-backface-visibility:hidden;will-change:transform;}
+body.landscape-mode .modal{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;transform:translateZ(0);will-change:transform;}
+body.landscape-mode .control{width:52px;height:100%;flex-direction:column;position:fixed;left:0;top:0;border-right:1px solid #2a2a2a;border-bottom:none;padding:8px 0;z-index:30;justify-content:space-between;}
+body.landscape-mode .setting-btn-wrap{width:100%;height:44px;border-right:none;position:relative;flex-shrink:0;background:#1a1a1a;order:-1;}
+body.landscape-mode .user-center-wrap{width:100%;height:44px;position:relative;background:#1a1a1a;border-top:1px solid #2a2a2a;flex-shrink:0;order:1;}
+body.landscape-mode .inst-scroll{flex-direction:column;height:auto;width:100%;padding:8px 0;overflow-y:auto;overflow-x:hidden;flex:1;order:0;}
+body.landscape-mode .inst-scroll .btn{width:36px;height:36px;padding:0;font-size:11px;border-radius:8px;}
+body.landscape-mode .piano-container{width:100%;}
+body.landscape-mode .music-bar{width:calc(100% - 52px);margin-left:52px;}
+body.landscape-mode #layoutToolbar{width:calc(100% - 52px);margin-left:52px;margin-right:0;}
 body.toolbar-rotated-90 .control{width:52px;height:100%;flex-direction:column;position:fixed;left:0;top:0;border-right:1px solid #2a2a2a;border-bottom:none;padding:8px 0;z-index:30;justify-content:space-between;}
 body.toolbar-rotated-180 .control{height:52px;width:100%;flex-direction:row;position:fixed;bottom:0;top:auto;left:0;border-top:1px solid #2a2a2a;border-right:1px solid #2a2a2a;padding:0 8px;z-index:30;}
 body.toolbar-rotated-270 .control{width:52px;height:100%;flex-direction:column;position:fixed;right:0;top:0;border-left:1px solid #2a2a2a;padding:8px 0;z-index:30;justify-content:space-between;}
@@ -70,7 +80,7 @@ body.toolbar-rotated-180 .music-bar{margin-bottom:52px;}
 .octave-row{display:flex;flex-direction:row;overflow:hidden;padding:10px 0;margin-bottom:var(--row-gap);border-bottom:1px solid #222;min-height:min-content;position:relative;}
 .octave-row-keys{display:flex;flex-direction:row;overflow-x:auto;flex:1;scrollbar-width:none;}
 .octave-row-keys::-webkit-scrollbar{display:none;}
-.row-ctrl-bar{flex-shrink:0;display:flex;flex-direction:column;justify-content:flex-start;gap:5px;padding:4px 6px;background:#1a1a1a;border-right:1px solid #333;z-index:15;min-width:90px;max-width:90px;}
+.row-ctrl-bar{flex-shrink:0;display:flex;flex-direction:column;justify-content:flex-start;gap:4px;padding:4px 6px;background:#1a1a1a;border-right:1px solid #333;z-index:15;width:78px;box-sizing:border-box;}
 .octave-row::-webkit-scrollbar{display:none;}
 .octave-group{flex-shrink:0;margin-right:0;width:var(--octave-width);max-width:none;}
 .octave-name{text-align:center;font-size:12px;color:#555;padding:5px 0;letter-spacing:1px;}
@@ -258,8 +268,8 @@ body.rotated-90.toolbar-rotated-180 #layoutToolbar, body.rotated-270.toolbar-rot
 .setting-btn-text:active{background:rgba(255,255,255,0.05);}
 .setting-btn-text.active{color:#0099ff;font-weight:600;background:rgba(0,153,255,0.1);}
 .setting-row{display:flex;align-items:center;justify-content:space-between;padding:10px;width:100%;border-radius:6px;}
-.setting-label{color:#ddd;font-size:14px;}
-.setting-switch{position:relative;display:inline-block;width:44px;height:24px;}
+.setting-label{color:#ddd;font-size:14px;text-align:left;}
+.setting-switch{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0;}
 .setting-switch input{opacity:0;width:0;height:0;}
 .setting-slider-round{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:#333;transition:0.3s;border-radius:24px;}
 .setting-slider-round:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background-color:#fff;transition:0.3s;border-radius:50%;}
@@ -380,7 +390,7 @@ body.rotated-90.toolbar-rotated-180 #layoutToolbar, body.rotated-270.toolbar-rot
 .keybinding-body{flex:1;overflow:auto;padding-right:6px;}
 .kb-section-title{font-size:13px;color:#9aa3b3;margin:14px 0 8px;border-left:3px solid #0099ff;padding-left:8px;}
 .kb-row{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
-.kb-row-label{width:80px;font-size:12px;color:#bbb;flex-shrink:0;text-align:left;}
+.kb-row-label{width:60px;font-size:12px;color:#bbb;flex-shrink:0;text-align:left;}
 .kb-key-list{flex:1;display:flex;flex-wrap:nowrap;gap:4px;overflow-x:auto;}
 .kb-key-list::-webkit-scrollbar{height:4px;}
 .kb-key-list::-webkit-scrollbar-thumb{background:#333;border-radius:2px;}
@@ -401,11 +411,12 @@ body.rotated-90.toolbar-rotated-180 #layoutToolbar, body.rotated-270.toolbar-rot
 .kb-key-chip-remove:hover{color:#fff;}
 .kb-add-key-btn{width:26px;height:26px;border-radius:6px;border:1px dashed #555;background:#202020;color:#999;font-size:16px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;}
 .kb-add-key-btn:hover{border-color:#0099ff;color:#0099ff;}
-.keybinding-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;}
+.keybinding-footer{display:flex;align-items:center;gap:10px;margin-top:16px;}
 .keybinding-footer .cancel-btn{padding:10px 20px;font-size:14px;border-radius:8px;}
+.keybinding-footer .ok-btn{padding:10px 20px;font-size:14px;border-radius:8px;}
 .kb-extra-wrap{padding-top:10px;}
 .kb-extra-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
-.kb-extra-btn{padding:8px 12px;border-radius:8px;border:1px dashed #555;background:#202020;color:#ccc;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;}
+.kb-extra-btn{width:26px;height:26px;border-radius:6px;border:1px dashed #555;background:#202020;color:#999;font-size:16px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;}
 .kb-extra-btn:hover{border-color:#0099ff;color:#0099ff;}
 .kb-extra-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px;background:#1a1a1a;border-radius:8px;border:1px solid #2a2a2a;}
 .kb-extra-select{width:auto;min-width:110px;padding:6px 10px;border-radius:6px;border:1px solid #444;background:#111;color:#eee;font-size:12px;flex-shrink:0;}
@@ -594,10 +605,10 @@ body.rotated-90.toolbar-rotated-180 #layoutToolbar, body.rotated-270.toolbar-rot
   </div>
   <div class="toolbar-group toolbar-group-rotate">
     <div class="toolbar-item">
-      <button class="toolbar-btn-simple" id="btnRotateScreen">🔄 旋转屏</button>
+      <button class="toolbar-btn-simple" id="btnPortrait">📱 竖屏</button>
     </div>
     <div class="toolbar-item">
-      <button class="toolbar-btn-simple" id="btnToolbarPos">⬆ 旋转栏</button>
+      <button class="toolbar-btn-simple" id="btnLandscape">📺 横屏</button>
     </div>
   </div>
   <div class="toolbar-group toolbar-group-action">
@@ -670,6 +681,13 @@ body.rotated-90.toolbar-rotated-180 #layoutToolbar, body.rotated-270.toolbar-rot
       <div class="vk-setting-row vk-text-row">
         <select id="vkKey" placeholder="对应键盘" style="width:100%;padding:6px 8px;border-radius:4px;border:1px solid #444;background:#111;color:#eee;font-size:13px;">
           <option value="">选择自定义按键</option>
+          <optgroup label="功能按键">
+            <option value="octaveDown">切换低八度</option>
+            <option value="octaveUp">切换高八度</option>
+            <option value="playPause">播放/暂停</option>
+          </optgroup>
+          <optgroup label="自定义按键" id="vkCustomKeysGroup">
+          </optgroup>
         </select>
       </div>
       <div class="vk-btn-row">
@@ -688,17 +706,12 @@ body.rotated-90.toolbar-rotated-180 #layoutToolbar, body.rotated-270.toolbar-rot
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal song-modal">
     <div class="song-tabs">
-      <button class="song-tab active" data-tab="jianpu">简谱</button>
-      <button class="song-tab" data-tab="tupu">图谱</button>
+      <button class="song-tab active" data-tab="tupu">图谱</button>
       <button class="song-tab" data-tab="record">录制</button>
+      <button class="song-tab" data-tab="jianpu">简谱</button>
       <button class="song-tab" data-tab="staff">五线谱</button>
     </div>
-    <div class="song-tab-content" id="jianpuContent">
-      <div class="modal-title" style="font-size:12px;color:#666;font-weight:normal;">提示：<br>挪动滚动栏，进入跟弹模式</div>
-      <div class="song-list" id="songList"></div>
-      <button class="add-btn" id="addSongBtn">&#65291;自定义</button>
-    </div>
-    <div class="song-tab-content" id="tupuContent" style="display:none;">
+    <div class="song-tab-content" id="tupuContent">
       <div class="modal-title" style="font-size:12px;color:#666;font-weight:normal;">提示：<br>上传图片图谱，逐行播放</div>
       <div class="song-list" id="tupuList"></div>
       <button class="add-btn" id="addTupuBtn">&#65291;自定义</button>
@@ -709,6 +722,11 @@ body.rotated-90.toolbar-rotated-180 #layoutToolbar, body.rotated-270.toolbar-rot
         <button class="add-btn" id="addRecBtn" style="flex:1;margin-top:0;">&#65291;自定义</button>
         <button class="add-btn" id="startRecordBtn" style="flex:1;margin-top:0;border-color:#0099ff;color:#0099ff;">&#127897; 录制</button>
       </div>
+    </div>
+    <div class="song-tab-content" id="jianpuContent" style="display:none;">
+      <div class="modal-title" style="font-size:12px;color:#666;font-weight:normal;">提示：<br>挪动滚动栏，进入跟弹模式</div>
+      <div class="song-list" id="songList"></div>
+      <button class="add-btn" id="addSongBtn">&#65291;自定义</button>
     </div>
     <div class="song-tab-content" id="staffContent" style="display:none;">
       <div class="coming-soon">五线谱功能开发中...</div>
@@ -876,9 +894,10 @@ body.rotated-90.toolbar-rotated-180 #layoutToolbar, body.rotated-270.toolbar-rot
     <div id="keybindingBody" class="keybinding-body"></div>
     <div class="keybinding-footer">
       <button id="keybindingRestore" class="cancel-btn">恢复默认</button>
-      <button id="keybindingSave" class="cancel-btn">保存</button>
+      <div style="flex:1;"></div>
+      <button id="keybindingCancel" class="cancel-btn">取消</button>
+      <button id="keybindingSave" class="ok-btn">保存</button>
     </div>
-    <button class="modal-cancel" id="keybindingClose">关闭</button>
   </div>
 </div>
 
@@ -962,6 +981,8 @@ let isAutoPlaying = false;
 // 每行的乐器和配色配置（布局模式可独立设置）
 let rowInstMap = {}; // rowIdx -> inst string
 let rowColorMap = {}; // rowIdx -> {white: '#fff', black: '#000'}
+let rowDynamicMap = {}; // rowIdx -> boolean (true=动态, false=静态)
+let rowOctaveOffsetMap = {}; // rowIdx -> number (八度偏移量)
 
 let currentWidthScale = 4;
 
@@ -3413,9 +3434,9 @@ window.onload = function(){
   const keybindingBtn = document.getElementById("keybindingBtn");
   const keyHintToggle = document.getElementById("keyHintToggle");
   const keybindingOverlay = document.getElementById("keybindingOverlay");
-  const keybindingClose = document.getElementById("keybindingClose");
   const keybindingBody = document.getElementById("keybindingBody");
   const keybindingRestore = document.getElementById("keybindingRestore");
+  const keybindingCancel = document.getElementById("keybindingCancel");
   const keybindingSave = document.getElementById("keybindingSave");
   let keybindingCaptureHandler = null;
   let keybindingBackup = null;
@@ -3450,10 +3471,32 @@ window.onload = function(){
   let editingVkIndex = -1;
   let vkKeyCaptureHandler = null;
   
+  // 内置示例虚拟按键（低八度、高八度）
+  const defaultVirtualKeys = [
+    { text: "低8度", key: "octaveDown", size: 50, opacity: 40, color: "#00ff00", xPercent: 2, yPercent: 15, hidden: true },
+    { text: "高8度", key: "octaveUp", size: 50, opacity: 40, color: "#00bfff", xPercent: 92, yPercent: 15, hidden: true }
+  ];
+  
   try {
     const storedVk = localStorage.getItem("virtualKeys");
-    if (storedVk) virtualKeys = JSON.parse(storedVk);
-  } catch (e) {}
+    if (storedVk) {
+      const parsed = JSON.parse(storedVk);
+      // 如果存储的是空数组，添加默认示例
+      if (Array.isArray(parsed) && parsed.length === 0) {
+        virtualKeys = JSON.parse(JSON.stringify(defaultVirtualKeys));
+        saveVirtualKeys();
+      } else {
+        virtualKeys = parsed;
+      }
+    } else {
+      // 首次使用，添加默认示例按键
+      virtualKeys = JSON.parse(JSON.stringify(defaultVirtualKeys));
+      saveVirtualKeys();
+    }
+  } catch (e) {
+    // 出错时使用默认示例
+    virtualKeys = JSON.parse(JSON.stringify(defaultVirtualKeys));
+  }
   
   function saveVirtualKeys() {
     try { localStorage.setItem("virtualKeys", JSON.stringify(virtualKeys)); } catch (e) {}
@@ -3544,7 +3587,21 @@ window.onload = function(){
       }
       const vk = virtualKeys[idx];
       if (vk && vk.key) {
-        playNoteByKey(String(vk.key).trim());
+        const key = String(vk.key).trim();
+        // Handle function keys - same as keyboard shortcuts in pcKeyMap.control
+        if (key === 'octaveDown') {
+          currentBaseOctave = Math.max(1, currentBaseOctave - 1);
+          saveSettings(); renderPiano();
+        } else if (key === 'octaveUp') {
+          currentBaseOctave = Math.min(7, currentBaseOctave + 1);
+          saveSettings(); renderPiano();
+        } else if (key === 'playPause') {
+          // Same as pcKeyMap.control.playPause - simulate play button click
+          const playBtn = document.getElementById('playBtn');
+          if (playBtn) playBtn.click();
+        } else {
+          playNoteByKey(key);
+        }
       }
     };
     
@@ -3651,8 +3708,12 @@ window.onload = function(){
   
   function populateVkKeyOptions() {
     const vkKeySelect = document.getElementById('vkKey');
-    if (!vkKeySelect) return;
-    vkKeySelect.innerHTML = '<option value="">选择自定义按键</option>';
+    const customKeysGroup = document.getElementById('vkCustomKeysGroup');
+    if (!vkKeySelect || !customKeysGroup) return;
+    
+    // Clear custom keys group
+    customKeysGroup.innerHTML = '';
+    
     const customKeys = new Set();
     if (pcKeyMap.extra && Array.isArray(pcKeyMap.extra)) {
       pcKeyMap.extra.forEach((row) => {
@@ -3676,7 +3737,7 @@ window.onload = function(){
       const option = document.createElement('option');
       option.value = key;
       option.textContent = key;
-      vkKeySelect.appendChild(option);
+      customKeysGroup.appendChild(option);
     });
   }
 
@@ -3896,7 +3957,7 @@ window.onload = function(){
   const sliderGap = document.getElementById("sliderGap");
   const inputGap = document.getElementById("inputGap");
   const btnResetLayout = document.getElementById("btnResetLayout");
-  const btnRotateScreen = document.getElementById("btnRotateScreen");
+  const btnToolbarPos = document.getElementById("btnToolbarPos");
   const instScroll = document.getElementById("instScroll");
 
   function renderInstButtons() {
@@ -4120,7 +4181,7 @@ window.onload = function(){
     settingOverlay.classList.remove("show");
   };
 
-  keybindingClose.onclick = () => {
+  keybindingCancel.onclick = () => {
     if (keybindingBackup) { pcKeyMap = keybindingBackup; keybindingBackup = null; }
     keybindingOverlay.classList.remove("show");
     stopKeybindingCapture();
@@ -4291,11 +4352,11 @@ window.onload = function(){
     const scaleCols = document.createElement("div");
     scaleCols.className = "kb-scale-columns";
     const colCurrent = document.createElement("div");
-    colCurrent.className = "kb-scale-col"; colCurrent.style.flex = "1.4";
+    colCurrent.className = "kb-scale-col";
     const colHigh = document.createElement("div");
-    colHigh.className = "kb-scale-col"; colHigh.style.flex = "1";
+    colHigh.className = "kb-scale-col";
     const colLow = document.createElement("div");
-    colLow.className = "kb-scale-col"; colLow.style.flex = "1";
+    colLow.className = "kb-scale-col";
 
     const titles = ["当前八度 1~7", "高音 1~7 (当前+1)", "低音 1~7 (当前-1)"];
     [colCurrent, colHigh, colLow].forEach((col, i) => {
@@ -4768,9 +4829,11 @@ window.onload = function(){
     sliderGap.value = 18; inputGap.value = 18;
     // Reset screen rotation
     ['rotated-90','rotated-180','rotated-270'].forEach(r => document.body.classList.remove(r));
+    document.body.classList.remove('landscape-mode');
+    try { localStorage.removeItem('screenMode'); } catch(e) {}
     // Reset toolbar rotation
     ['toolbar-rotated-90','toolbar-rotated-180','toolbar-rotated-270'].forEach(r => document.body.classList.remove(r));
-    btnToolbarPos.textContent = '⬆ 顶栏';
+    if (btnToolbarPos) btnToolbarPos.textContent = '⬆ 顶栏';
     try { localStorage.removeItem('toolbarRotation'); } catch(e) {}
     // Re-render piano
     updateLayout(); renderPiano();
@@ -4800,6 +4863,7 @@ window.onload = function(){
       height: parseInt(sliderHeight.value),
       gap: parseInt(sliderGap.value),
       screenRotation: '',
+      screenMode: document.body.classList.contains('landscape-mode') ? 'landscape' : 'portrait',
       toolbarRotation: '',
       rowScrollPositions: []
     };
@@ -4837,6 +4901,9 @@ window.onload = function(){
           }
           document.body.classList.add(settings.screenRotation);
         }
+        if (settings.screenMode === 'landscape') {
+          document.body.classList.add('landscape-mode');
+        }
         if (settings.toolbarRotation) {
           const toolbarRotations = ['', 'toolbar-rotated-90', 'toolbar-rotated-180', 'toolbar-rotated-270'];
           for (const r of toolbarRotations) {
@@ -4845,7 +4912,7 @@ window.onload = function(){
           document.body.classList.add(settings.toolbarRotation);
           const labels = ['⬆ 顶栏', '⬅ 右边', '⬇ 底栏', '➡ 左边'];
           const idx = toolbarRotations.indexOf(settings.toolbarRotation);
-          if (idx >= 0 && idx < labels.length) {
+          if (idx >= 0 && idx < labels.length && btnToolbarPos) {
             btnToolbarPos.textContent = labels[idx];
           }
         }
@@ -4868,51 +4935,54 @@ window.onload = function(){
   }
   loadLayoutSettings();
 
-  btnRotateScreen.onclick = () => {
-    const rotations = ['', 'rotated-90', 'rotated-180', 'rotated-270'];
-    let currentIdx = 0;
-    for (let i = 1; i < rotations.length; i++) {
-      if (document.body.classList.contains(rotations[i])) {
-        currentIdx = i;
-        break;
-      }
+  const btnPortrait = document.getElementById("btnPortrait");
+  const btnLandscape = document.getElementById("btnLandscape");
+  
+  function setScreenMode(isLandscape) {
+    document.body.classList.remove('rotated-90', 'rotated-180', 'rotated-270');
+    document.body.classList.remove('toolbar-rotated-90', 'toolbar-rotated-180', 'toolbar-rotated-270');
+    
+    if (isLandscape) {
+      document.body.classList.add('landscape-mode');
+      try { localStorage.setItem('screenMode', 'landscape'); } catch(e) {}
+    } else {
+      document.body.classList.remove('landscape-mode');
+      try { localStorage.setItem('screenMode', 'portrait'); } catch(e) {}
     }
-    if (rotations[currentIdx]) {
-      document.body.classList.remove(rotations[currentIdx]);
-    }
-    const nextIdx = (currentIdx + 1) % rotations.length;
-    if (rotations[nextIdx]) {
-      document.body.classList.add(rotations[nextIdx]);
-    }
+    
     setTimeout(() => {
       window.scrollTo(0, 0);
     }, 100);
     updateLayoutToolbarPosition();
-  };
+  }
+  
+  btnPortrait.onclick = () => setScreenMode(false);
+  btnLandscape.onclick = () => setScreenMode(true);
 
-  const btnToolbarPos = document.getElementById("btnToolbarPos");
-  btnToolbarPos.onclick = () => {
-    const rotations = ['', 'toolbar-rotated-90', 'toolbar-rotated-180', 'toolbar-rotated-270'];
-    let currentIdx = 0;
-    for (let i = 1; i < rotations.length; i++) {
-      if (document.body.classList.contains(rotations[i])) {
-        currentIdx = i;
-        break;
+  if (btnToolbarPos) {
+    btnToolbarPos.onclick = () => {
+      const rotations = ['', 'toolbar-rotated-90', 'toolbar-rotated-180', 'toolbar-rotated-270'];
+      let currentIdx = 0;
+      for (let i = 1; i < rotations.length; i++) {
+        if (document.body.classList.contains(rotations[i])) {
+          currentIdx = i;
+          break;
+        }
       }
-    }
-    if (rotations[currentIdx]) {
-      document.body.classList.remove(rotations[currentIdx]);
-    }
-    const nextIdx = (currentIdx + 1) % rotations.length;
-    if (rotations[nextIdx]) {
-      document.body.classList.add(rotations[nextIdx]);
-    }
-    const labels = ['⬆ 顶栏', '⬅ 右边', '⬇ 底栏', '➡ 左边'];
-    btnToolbarPos.textContent = labels[nextIdx];
-    try { localStorage.setItem('toolbarRotation', nextIdx.toString()); } catch(e) {}
-    
-    updateLayoutToolbarPosition();
-  };
+      if (rotations[currentIdx]) {
+        document.body.classList.remove(rotations[currentIdx]);
+      }
+      const nextIdx = (currentIdx + 1) % rotations.length;
+      if (rotations[nextIdx]) {
+        document.body.classList.add(rotations[nextIdx]);
+      }
+      const labels = ['⬆ 顶栏', '⬅ 右边', '⬇ 底栏', '➡ 左边'];
+      btnToolbarPos.textContent = labels[nextIdx];
+      try { localStorage.setItem('toolbarRotation', nextIdx.toString()); } catch(e) {}
+      
+      updateLayoutToolbarPosition();
+    };
+  }
   
   function updateLayoutToolbarPosition() {
     const layoutToolbar = document.getElementById('layoutToolbar');
@@ -4926,8 +4996,15 @@ window.onload = function(){
   }
   
   try {
+    const savedMode = localStorage.getItem('screenMode');
+    if (savedMode === 'landscape') {
+      document.body.classList.add('landscape-mode');
+    }
+  } catch(e) {}
+  
+  try {
     const savedRotation = parseInt(localStorage.getItem('toolbarRotation') || '0');
-    if (savedRotation > 0) {
+    if (savedRotation > 0 && btnToolbarPos) {
       document.body.classList.add('toolbar-rotated-' + (savedRotation * 90));
       const labels = ['⬆ 顶栏', '⬅ 右边', '⬇ 底栏', '➡ 左边'];
       btnToolbarPos.textContent = labels[savedRotation];
@@ -5065,14 +5142,38 @@ window.onload = function(){
       rowEl.dataset.rowIdx = rowIdx;
       const currentFocusOctave = focusOctaves[rowIdx];
 
-      // 布局模式：行左侧设置面板（乐器+配色）
+      // 布局模式：行左侧设置面板（乐器+配色+动态/静态）
       if (isLayoutMode) {
         const rowCtrl = document.createElement("div");
         rowCtrl.className = "row-ctrl-bar";
-        // 控制条内容（竖排）
-        // 乐器选择
+        rowCtrl.style.cssText = "flex-shrink:0;display:flex;flex-direction:column;justify-content:flex-start;gap:4px;padding:4px 6px;background:#1a1a1a;border-right:1px solid #333;z-index:15;width:78px;box-sizing:border-box;";
+        
+        // 重置按钮（长方形，单独一行）
+        const resetBtn2 = document.createElement("button");
+        resetBtn2.innerHTML = "重置 <b>↺</b>"; resetBtn2.style.cssText = "width:100%;padding:4px 2px;border-radius:4px;border:1px solid #333;background:#222;color:#888;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:2px;";
+        resetBtn2.onclick = () => { delete rowInstMap[rowIdx]; delete rowColorMap[rowIdx]; delete rowDynamicMap[rowIdx]; delete rowOctaveOffsetMap[rowIdx]; saveRowConfig(); renderPiano(); };
+        rowCtrl.appendChild(resetBtn2);
+        
+        // 动态/静态切换按钮
+        const modeRow = document.createElement("div");
+        modeRow.style.cssText = "display:flex;gap:2px;width:100%;";
+        const isDynamic = rowDynamicMap[rowIdx] !== false; // 默认动态
+        const dynBtn = document.createElement("button");
+        dynBtn.textContent = "动态";
+        dynBtn.style.cssText = "flex:1;padding:5px 2px;border-radius:4px;border:1px solid #444;font-size:11px;cursor:pointer;" + (isDynamic ? "background:#0099ff;color:#fff;" : "background:#222;color:#888;");
+        dynBtn.onclick = () => { rowDynamicMap[rowIdx] = true; saveRowConfig(); renderPiano(); };
+        const staticBtn = document.createElement("button");
+        staticBtn.textContent = "静态";
+        staticBtn.style.cssText = "flex:1;padding:5px 2px;border-radius:4px;border:1px solid #444;font-size:11px;cursor:pointer;" + (!isDynamic ? "background:#0099ff;color:#fff;" : "background:#222;color:#888;");
+        staticBtn.onclick = () => { rowDynamicMap[rowIdx] = false; saveRowConfig(); renderPiano(); };
+        modeRow.appendChild(dynBtn); modeRow.appendChild(staticBtn);
+        rowCtrl.appendChild(modeRow);
+        
+        // 乐器选择（单独一行）
+        const instRow = document.createElement("div");
+        instRow.style.cssText = "display:flex;align-items:center;width:100%;";
         const instSel2 = document.createElement("select");
-        instSel2.style.cssText = "width:100%;padding:2px 4px;border-radius:5px;border:1px solid #444;background:#111;color:#eee;font-size:11px;";
+        instSel2.style.cssText = "flex:1;padding:2px 4px;border-radius:4px;border:1px solid #444;background:#111;color:#eee;font-size:10px;min-width:0;";
         const defOpt2 = document.createElement("option");
         defOpt2.value = ""; defOpt2.textContent = "全局";
         instSel2.appendChild(defOpt2);
@@ -5083,27 +5184,22 @@ window.onload = function(){
           instSel2.appendChild(opt);
         });
         instSel2.onchange = () => { rowInstMap[rowIdx] = instSel2.value || null; saveRowConfig(); };
-        rowCtrl.appendChild(instSel2);
-        // 颜色行
+        instRow.appendChild(instSel2);
+        rowCtrl.appendChild(instRow);
+        
+        // 颜色行（两个颜色选择器）
         const colorRow = document.createElement("div");
-        colorRow.style.cssText = "display:flex;align-items:center;gap:3px;";
-        const wLabel2 = document.createElement("span"); wLabel2.textContent = "白"; wLabel2.style.cssText = "font-size:10px;color:#888;";
+        colorRow.style.cssText = "display:flex;align-items:center;gap:3px;width:100%;";
         const wColor2 = document.createElement("input"); wColor2.type = "color";
         wColor2.value = (rowColorMap[rowIdx] && rowColorMap[rowIdx].white) || "#f5f5f5";
-        wColor2.style.cssText = "width:24px;height:20px;border:none;cursor:pointer;padding:0;";
+        wColor2.style.cssText = "flex:1;height:24px;border:none;cursor:pointer;padding:0;background:transparent;";
         wColor2.oninput = () => { if(!rowColorMap[rowIdx]) rowColorMap[rowIdx]={}; rowColorMap[rowIdx].white=wColor2.value; applyRowColors(rowEl, rowIdx); saveRowConfig(); };
-        const bLabel2 = document.createElement("span"); bLabel2.textContent = "黑"; bLabel2.style.cssText = "font-size:10px;color:#888;";
         const bColor2 = document.createElement("input"); bColor2.type = "color";
         bColor2.value = (rowColorMap[rowIdx] && rowColorMap[rowIdx].black) || "#222222";
-        bColor2.style.cssText = "width:24px;height:20px;border:none;cursor:pointer;padding:0;";
+        bColor2.style.cssText = "flex:1;height:24px;border:none;cursor:pointer;padding:0;background:transparent;";
         bColor2.oninput = () => { if(!rowColorMap[rowIdx]) rowColorMap[rowIdx]={}; rowColorMap[rowIdx].black=bColor2.value; applyRowColors(rowEl, rowIdx); saveRowConfig(); };
-        colorRow.appendChild(wLabel2); colorRow.appendChild(wColor2); colorRow.appendChild(bLabel2); colorRow.appendChild(bColor2);
+        colorRow.appendChild(wColor2); colorRow.appendChild(bColor2);
         rowCtrl.appendChild(colorRow);
-        // 重置
-        const resetBtn2 = document.createElement("button");
-        resetBtn2.textContent = "↺ 重置"; resetBtn2.style.cssText = "width:100%;padding:2px;border-radius:4px;border:1px solid #444;background:#222;color:#aaa;font-size:10px;cursor:pointer;";
-        resetBtn2.onclick = () => { delete rowInstMap[rowIdx]; delete rowColorMap[rowIdx]; saveRowConfig(); renderPiano(); };
-        rowCtrl.appendChild(resetBtn2);
         rowEl.appendChild(rowCtrl);
       }
 
@@ -5111,8 +5207,17 @@ window.onload = function(){
       const keysWrap = document.createElement("div");
       keysWrap.className = "octave-row-keys";
 
+      // 计算该行的八度偏移
+      const isDynamic = rowDynamicMap[rowIdx] !== false;
+      let rowOctaveOffset = 0;
+      if (isDynamic) {
+        rowOctaveOffset = currentBaseOctave - 4;
+      }
+      rowOctaveOffsetMap[rowIdx] = rowOctaveOffset;
+
       for (let i = 1; i <= 7; i++) {
-        const oct = octaveList[i-1];
+        const actualOctave = Math.max(1, Math.min(7, i + rowOctaveOffset));
+        const oct = octaveList[actualOctave - 1];
         const group = document.createElement("div");
         group.className = "octave-group";
         if (i === currentFocusOctave) group.classList.add("focus-octave");
@@ -5123,12 +5228,12 @@ window.onload = function(){
         pianoRow.className = "piano-row";
         whiteKeys.forEach(n => {
           const k = document.createElement("div");
-          k.className = "key white"; k.dataset.note = n + i;
+          k.className = "key white"; k.dataset.note = n + actualOctave;
           pianoRow.appendChild(k);
         });
         blackKeys.forEach(b => {
           const kb = document.createElement("div");
-          kb.className = "key black"; kb.dataset.note = b.note + i;
+          kb.className = "key black"; kb.dataset.note = b.note + actualOctave;
           kb.style.left = ((b.after + 1) * 100 / 7) + "%";
           pianoRow.appendChild(kb);
         });
@@ -5198,25 +5303,32 @@ window.onload = function(){
     const mw  = modal.offsetWidth  || 200;
     const mh  = modal.offsetHeight || 300;
 
-    // Determine best anchor: prefer placing modal to side/below the button
-    // that has most available space, clamped to screen bounds.
     let left, top;
+    const modalGap = 20;
 
-    // Horizontal: if button is in right half, right-align modal to button right edge
-    if (r.right > vw / 2) {
-      left = Math.max(gap, r.right - mw);
+    const isLandscape = document.body.classList.contains('landscape-mode');
+
+    if (isLandscape) {
+      // In landscape mode (body rotated 90deg), place modal at fixed position
+      // Button is on the left side of screen, place modal to the right
+      left = 72 + modalGap; // 52px (control width) + 20px gap
+      top = gap;
+      // Ensure modal stays within viewport
+      left = Math.min(left, vw - mw - gap);
     } else {
-      left = Math.min(r.left, vw - mw - gap);
+      if (r.right > vw / 2) {
+        left = Math.max(gap, r.right - mw);
+      } else {
+        left = Math.max(gap, r.left);
+      }
+
+      if (r.top > vh / 2) {
+        top = Math.max(gap, r.top - mh - modalGap);
+      } else {
+        top = r.bottom + modalGap;
+      }
     }
 
-    // Vertical: if button is in bottom half, place modal above
-    if (r.top > vh / 2) {
-      top = Math.max(gap, r.top - mh - gap);
-    } else {
-      top = Math.min(r.bottom + gap, vh - mh - gap);
-    }
-
-    // Final clamp
     left = Math.max(gap, Math.min(left, vw - mw - gap));
     top  = Math.max(gap, Math.min(top,  vh - mh - gap));
 
@@ -5318,6 +5430,14 @@ window.onload = function(){
     renderTupuList(); 
   }
   function closeModal(){ modalOverlay.classList.remove("show"); }
+  
+  // Click outside modal to close
+  modalOverlay.onclick = function(e) {
+    if (e.target === modalOverlay) {
+      closeModal();
+    }
+  };
+  
   musicBtn.onclick = function(e) {
     if (isLayoutMode) {
       // 布局模式下，将歌曲设置为无
@@ -6605,10 +6725,10 @@ window.onload = function(){
       }
     }
     if (pcKeyMap.control.prevOctave.includes(code)) {
-      currentBaseOctave = Math.max(1, currentBaseOctave - 1); saveSettings(); return;
+      currentBaseOctave = Math.max(1, currentBaseOctave - 1); saveSettings(); renderPiano(); return;
     }
     if (pcKeyMap.control.nextOctave.includes(code)) {
-      currentBaseOctave = Math.min(7, currentBaseOctave + 1); saveSettings(); return;
+      currentBaseOctave = Math.min(7, currentBaseOctave + 1); saveSettings(); renderPiano(); return;
     }
     // 播放暂停键处理
     if (pcKeyMap.control.playPause && pcKeyMap.control.playPause.includes(code)) {
@@ -6761,10 +6881,14 @@ window.onload = function(){
   function saveRowConfig() {
     try { localStorage.setItem('rowInstMap', JSON.stringify(rowInstMap)); } catch(e){}
     try { localStorage.setItem('rowColorMap', JSON.stringify(rowColorMap)); } catch(e){}
+    try { localStorage.setItem('rowDynamicMap', JSON.stringify(rowDynamicMap)); } catch(e){}
+    try { localStorage.setItem('rowOctaveOffsetMap', JSON.stringify(rowOctaveOffsetMap)); } catch(e){}
   }
   function loadRowConfig() {
     try { const r = localStorage.getItem('rowInstMap'); if(r) rowInstMap = JSON.parse(r); } catch(e){}
     try { const r = localStorage.getItem('rowColorMap'); if(r) rowColorMap = JSON.parse(r); } catch(e){}
+    try { const r = localStorage.getItem('rowDynamicMap'); if(r) rowDynamicMap = JSON.parse(r); } catch(e){}
+    try { const r = localStorage.getItem('rowOctaveOffsetMap'); if(r) rowOctaveOffsetMap = JSON.parse(r); } catch(e){}
   }
 
   function saveSettings() {
