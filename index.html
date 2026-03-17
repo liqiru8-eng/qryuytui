@@ -219,11 +219,11 @@ body.rotated-90.toolbar-rotated-180 #layoutToolbar, body.rotated-270.toolbar-rot
   display: block;
 }
 
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;align-items:flex-start;justify-content:flex-start;padding:12px;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;align-items:flex-start;justify-content:flex-start;padding:0 12px 12px 12px;}
 
 /* 移动端模态框适配 */
 @media (max-width: 768px) {
-  .modal-overlay{padding:8px;}
+  .modal-overlay{padding:0 8px 8px 8px;}
   .modal{width:90%;max-width:340px;padding:15px;}
   .modal h3{font-size:16px;}
   .modal label{font-size:14px;}
@@ -299,7 +299,7 @@ body.rotated-90.toolbar-rotated-180 #layoutToolbar, body.rotated-270.toolbar-rot
 
 .song-modal{width:300px;max-width:95%;max-height:calc(100vh - 24px);display:flex;flex-direction:column;}
 .song-tabs{display:flex;gap:4px;margin-bottom:10px;border-bottom:1px solid #333;padding-bottom:8px;flex-shrink:0;}
-.song-tab{flex:1;padding:8px 4px;background:transparent;border:none;color:#888;font-size:13px;cursor:pointer;border-radius:6px;transition:all 0.15s;}
+.song-tab{flex:1;padding:8px 4px;background:transparent;border:none;color:#888;font-size:13px;cursor:pointer;border-radius:6px;transition:all 0.15s;white-space:nowrap;}
 .song-tab:hover{background:#2a2a2a;}
 .song-tab.active{background:#0099ff;color:#fff;}
 .song-tab-content{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
@@ -3903,8 +3903,9 @@ window.onload = function(){
       const modalWidth = modal.offsetWidth;
       
       const isRotated = document.body.classList.contains('rotated-90') || document.body.classList.contains('rotated-270');
-      const screenWidth = isRotated ? window.innerHeight : window.innerWidth;
-      const screenHeight = isRotated ? window.innerWidth : window.innerHeight;
+      const isLandscape = document.body.classList.contains('landscape-mode');
+      const screenWidth = (isRotated || isLandscape) ? window.innerHeight : window.innerWidth;
+      const screenHeight = (isRotated || isLandscape) ? window.innerWidth : window.innerHeight;
       
       let left = rect.left;
       let top = rect.bottom + gap;
@@ -3914,7 +3915,18 @@ window.onload = function(){
       }
       if (left < gap) left = gap;
       
-      const availableHeight = screenHeight - top - gap;
+      let availableHeight = screenHeight - top - gap;
+      
+      // 如果下方空间不够，尝试放在上方
+      if (availableHeight < 200) {
+        top = rect.top - gap - 100; // 先设置一个初始值
+        availableHeight = rect.top - gap;
+        // 如果上方空间也不够，就从屏幕顶部开始
+        if (availableHeight < 200) {
+          top = gap;
+          availableHeight = screenHeight - gap * 2;
+        }
+      }
       
       modal.style.position = 'fixed';
       modal.style.left = left + 'px';
@@ -3923,7 +3935,7 @@ window.onload = function(){
       modal.style.right = 'auto';
       modal.style.transform = 'none';
       modal.style.maxWidth = (screenWidth - gap * 2) + 'px';
-      modal.style.maxHeight = Math.max(100, availableHeight) + 'px';
+      modal.style.maxHeight = Math.max(200, availableHeight) + 'px';
       modal.style.overflowY = 'auto';
     }
     
@@ -4954,6 +4966,7 @@ window.onload = function(){
       window.scrollTo(0, 0);
     }, 100);
     updateLayoutToolbarPosition();
+    updateLayout();
   }
   
   btnPortrait.onclick = () => setScreenMode(false);
@@ -5012,6 +5025,9 @@ window.onload = function(){
     }
   } catch(e) {}
 
+  // 页面加载时更新布局（确保横屏模式下宽度正确）
+  setTimeout(updateLayout, 100);
+
   function updateLayout() {
     const widthLevel = parseFloat(sliderWidth.value) || 4;
     const height = sliderHeight.value;
@@ -5025,7 +5041,9 @@ window.onload = function(){
     document.documentElement.style.setProperty('--row-gap', gap + 'px');
     const groupsPerScreen = Math.max(1, 8 - widthLevel);
     const widthPercent = 100 / groupsPerScreen;
-    document.documentElement.style.setProperty('--octave-width', widthPercent + 'vw');
+    // 横屏模式下使用vh，竖屏模式下使用vw
+    const isLandscape = document.body.classList.contains('landscape-mode');
+    document.documentElement.style.setProperty('--octave-width', widthPercent + (isLandscape ? 'vh' : 'vw'));
     inputWidth.value = widthLevel; inputHeight.value = height; inputGap.value = gap; inputRows.value = sliderRows.value;
     currentWidthScale = widthLevel;
     requestAnimationFrame(() => {
@@ -5077,7 +5095,7 @@ window.onload = function(){
     });
   }
   function _isScreenRotated() {
-    return document.body.classList.contains('rotated-90') || document.body.classList.contains('rotated-270');
+    return document.body.classList.contains('rotated-90') || document.body.classList.contains('rotated-270') || document.body.classList.contains('landscape-mode');
   }
   function onOctaveDragStart(e) {
     if (!isLayoutMode) return;
@@ -6572,11 +6590,21 @@ window.onload = function(){
     container.querySelectorAll(".auto-hi").forEach(k => k.classList.remove("auto-hi"));
   };
 
-  scoreWrap.onmousedown = (e) => startScoreDrag(e.clientX);
-  window.onmousemove = (e) => moveScoreDrag(e.clientX);
+  // 获取滚动栏拖动坐标（横屏用Y，竖屏用X）
+  const getScoreDragCoord = (e) => {
+    const isLandscape = document.body.classList.contains('landscape-mode');
+    return isLandscape ? e.clientY : e.clientX;
+  };
+  const getScoreDragCoordTouch = (e) => {
+    const isLandscape = document.body.classList.contains('landscape-mode');
+    return isLandscape ? e.touches[0].clientY : e.touches[0].clientX;
+  };
+
+  scoreWrap.onmousedown = (e) => startScoreDrag(getScoreDragCoord(e));
+  window.onmousemove = (e) => moveScoreDrag(getScoreDragCoord(e));
   window.onmouseup = endScoreDrag;
-  scoreWrap.ontouchstart = (e) => startScoreDrag(e.touches[0].clientX);
-  scoreWrap.ontouchmove = (e) => moveScoreDrag(e.touches[0].clientX);
+  scoreWrap.ontouchstart = (e) => startScoreDrag(getScoreDragCoordTouch(e));
+  scoreWrap.ontouchmove = (e) => moveScoreDrag(getScoreDragCoordTouch(e));
   scoreWrap.ontouchend = endScoreDrag;
 
   function handleTouchStart(e){
