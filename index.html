@@ -1,0 +1,327 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>全域乐器</title>
+<link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+
+<div class="control">
+  <div class="setting-btn-wrap">
+    <div class="setting-btn" id="mainSettingBtn">⚙️</div>
+    <button class="music-btn" id="musicBtn">🎵</button>
+    <button class="play-btn" id="playBtn">▶</button>
+    <button class="auto-btn" id="autoBtn">🔊</button>
+  </div>
+  <div class="inst-scroll" id="instScroll"></div>
+  <div class="inst-fade-right"></div>
+</div>
+
+<div id="layoutToolbar">
+  <div class="toolbar-group toolbar-group-layout">
+    <div class="toolbar-item">
+      <span class="toolbar-label">排:</span>
+      <input type="range" class="toolbar-slider" id="sliderRows" min="1" max="7" step="1" value="7">
+      <input type="number" class="toolbar-input" id="inputRows" min="1" max="7" value="7">
+    </div>
+    <div class="toolbar-item">
+      <span class="toolbar-label">宽:</span>
+      <input type="range" class="toolbar-slider" id="sliderWidth" min="1" max="7" step="0.1" value="7">
+      <input type="number" class="toolbar-input" id="inputWidth" min="1" max="7" step="0.1" value="7">
+    </div>
+    <div class="toolbar-item">
+      <span class="toolbar-label">高:</span>
+      <input type="range" class="toolbar-slider" id="sliderHeight" min="80" max="300" step="10" value="80">
+      <input type="number" class="toolbar-input" id="inputHeight" min="80" max="300" value="80">
+    </div>
+    <div class="toolbar-item">
+      <span class="toolbar-label">隙:</span>
+      <input type="range" class="toolbar-slider" id="sliderGap" min="0" max="100" step="2" value="0">
+      <input type="number" class="toolbar-input" id="inputGap" min="0" max="100" value="0">
+    </div>
+  </div>
+  <div class="toolbar-group toolbar-group-rotate">
+    <div class="toolbar-item">
+      <button class="toolbar-btn-simple" id="btnPortrait">📱 竖屏</button>
+    </div>
+    <div class="toolbar-item">
+      <button class="toolbar-btn-simple" id="btnLandscape">📺 横屏</button>
+    </div>
+  </div>
+  <div class="toolbar-group toolbar-group-action">
+    <div class="toolbar-item">
+      <button class="toolbar-btn-simple toolbar-btn-save" id="btnSaveLayout">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="music-bar">
+  <div class="score-wrap" id="scoreWrap">
+    <canvas id="scoreBgCanvas" style="position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
+    <canvas id="scoreCanvas" style="z-index:1;"></canvas>
+    <canvas id="scoreOverlayCanvas" style="position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:2;"></canvas>
+    <div class="layout-drag-hint" id="layoutDragHint">布局模式里可以左右拖动琴键位置，点击布局模式恢复正常模式</div>
+  </div>
+</div>
+
+<div class="piano-wrap">
+  <div class="piano-container" id="container">
+  </div>
+</div>
+
+<div class="modal-overlay" id="settingOverlay">
+  <div class="modal">
+    <div class="modal-title">设置</div>
+    <div class="setting-list">
+      <button class="setting-btn-text" id="layoutBtn">布局模式</button>
+      <button class="setting-btn-text" id="keybindingBtn">按键设置</button>
+      <button class="setting-btn-text" id="virtualKeyBtn">虚拟按键</button>
+      <div class="setting-row">
+        <span class="setting-label">琴键提示</span>
+        <label class="setting-switch">
+          <input type="checkbox" id="keyHintToggle" checked>
+          <span class="setting-slider-round"></span>
+        </label>
+      </div>
+      <button class="setting-btn-text" id="feedbackBtn">反馈建议</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="virtualKeyOverlay">
+  <div class="modal" style="max-width:400px;max-height:90vh;overflow-y:auto;">
+    <div class="vk-settings">
+      <div class="vk-setting-row">
+        <label>按键大小:</label>
+        <div class="vk-range-row">
+          <input type="range" id="vkSize" min="30" max="300" value="50">
+          <input type="number" id="vkSizeInput" min="30" max="300" value="50">
+        </div>
+      </div>
+      <div class="vk-setting-row">
+        <label>透明度:</label>
+        <div class="vk-range-row">
+          <input type="range" id="vkOpacity" min="10" max="100" value="60">
+          <input type="number" id="vkOpacityInput" min="10" max="100" value="60">
+        </div>
+      </div>
+      <div class="vk-setting-row vk-color-row">
+        <label>颜色:</label>
+        <input type="color" id="vkColor" value="#0099ff" style="width:94px;height:24px;border:none;cursor:pointer;padding:0;background:transparent;">
+      </div>
+      <div class="vk-setting-row vk-text-row">
+        <input type="text" id="vkText" placeholder="显示文字">
+      </div>
+      <div class="vk-setting-row vk-text-row">
+        <select id="vkKey" placeholder="对应键盘" style="width:100%;padding:6px 8px;border-radius:4px;border:1px solid #444;background:#111;color:#eee;font-size:13px;">
+          <option value="">选择自定义按键</option>
+          <optgroup label="功能按键">
+            <option value="octaveDown">切换低八度</option>
+            <option value="octaveUp">切换高八度</option>
+            <option value="playPause">播放/暂停</option>
+          </optgroup>
+          <optgroup label="自定义按键" id="vkCustomKeysGroup">
+          </optgroup>
+        </select>
+      </div>
+      <div class="vk-btn-row">
+        <button id="vkAddBtn" class="vk-add-btn">+ 添加虚拟按键</button>
+        <button id="vkUpdateBtn" class="vk-add-btn" style="display:none;">保存修改</button>
+        <button id="vkCancelBtn" class="vk-add-btn" style="display:none;background:#333;color:#aaa;">取消</button>
+      </div>
+    </div>
+    <div class="vk-list-title">虚拟按键 (点击编辑):</div>
+    <div class="vk-list" id="vkList"></div>
+    <div class="vk-hint">提示：添加后可拖动调整位置</div>
+    <button class="modal-cancel" id="virtualKeyClose">关闭</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal song-modal">
+    <div class="song-tabs" id="songTabsContainer">
+      <button class="song-tab active" data-tab="record">录制</button>
+      <button class="song-tab" data-tab="tupu">图谱</button>
+      <button class="song-tab" data-tab="jianpu">简谱</button>
+      <button class="song-tab" data-tab="staff">五线谱</button>
+    </div>
+    <div class="song-tab-content" id="recordContent" style="flex-direction:column;gap:8px;padding:4px 0;">
+      <div class="song-list" id="recordList"></div>
+      <div style="display:flex;gap:6px;margin-top:4px;">
+        <button class="add-btn" id="addRecBtn" style="flex:1;margin-top:0;">&#65291;自定义</button>
+        <button class="add-btn" id="startRecordBtn" style="flex:1;margin-top:0;border-color:#0099ff;color:#0099ff;">&#127897; 录制</button>
+      </div>
+    </div>
+    <div class="song-tab-content" id="tupuContent" style="display:none;">
+      <div class="modal-title" style="font-size:12px;color:#666;font-weight:normal;white-space:nowrap;">提示：上传图片图谱，逐行播放</div>
+      <div class="song-list" id="tupuList"></div>
+      <button class="add-btn" id="addTupuBtn">&#65291;自定义</button>
+    </div>
+    <div class="song-tab-content" id="jianpuContent" style="display:none;">
+      <div class="modal-title" style="font-size:12px;color:#666;font-weight:normal;white-space:nowrap;">提示：挪动滚动栏，进入跟弹模式</div>
+      <div class="song-list" id="songList"></div>
+      <button class="add-btn" id="addSongBtn">&#65291;自定义</button>
+    </div>
+    <div class="song-tab-content" id="staffContent" style="display:none;">
+      <div class="coming-soon">五线谱功能开发中...</div>
+    </div>
+    <button class="modal-cancel" id="modalCancel">关闭</button>
+  </div>
+</div>
+
+<div class="edit-overlay" id="editOverlay">
+  <div class="edit-modal">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <label style="white-space:nowrap;">乐谱名称</label>
+      <input type="text" id="editName" placeholder="例：小星星" style="flex:1;">
+      <label style="white-space:nowrap;">大调</label>
+      <input type="text" id="editKeySig" placeholder="1=C" style="width:50px;">
+      <label style="white-space:nowrap;">节拍</label>
+      <input type="text" id="editTimeSig" placeholder="4/4" style="width:50px;">
+    </div>
+    <label style="margin-top:12px;">简谱内容</label>
+    <textarea id="editScore" placeholder="例：1 1 5 5 | 6 6 5 - | 4 4 3 3 | 2 2 1 -"></textarea>
+    <div class="hint">
+      格式：1~7，【低1】~【低7】，【高1】~【高7】。八分音符(半拍)：数字用单下划线连接（例：5_5），十六分音符(1/4拍)：数字用双下划线连接（例：5__5）。延音 -，休止 0，附点 . ，小节线 |。
+    </div>
+    <div class="row">
+      <button class="cancel-btn" id="editCancel">取消</button>
+      <button class="ok-btn" id="editOk">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 录制保存/编辑弹窗 -->
+<div class="edit-overlay" id="recEditOverlay">
+  <div class="edit-modal" style="max-height:100vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <label style="white-space:nowrap;">乐谱名称</label>
+      <input type="text" id="recEditName" placeholder="例：我的演奏" style="flex:1;">
+      <label style="white-space:nowrap;">播放倍率</label>
+      <input type="number" id="recEditSpeed" value="1" min="0.25" max="4" step="0.25" style="width:60px;">
+    </div>
+    <label style="margin-top:12px;">录制内容</label>
+    <textarea id="recEditScore" style="min-height:120px;font-size:11px;line-height:1.6;font-family:monospace;" placeholder="钢琴|C4|320ms|0ms_钢琴|G4|280ms|500ms"></textarea>
+    <div style="font-size:10px;color:#555;margin-top:6px;line-height:1.5;">
+      格式：<b style="color:#aaa">乐器|音域|按住时长ms|时间节点ms</b>，用 <b style="color:#aaa">_</b> 分隔音符。允许多个轨道播放。
+    </div>
+    <div class="row">
+      <button class="cancel-btn" id="recEditCancel">取消</button>
+      <button class="ok-btn" id="recEditOk">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="edit-overlay" id="tupuEditOverlay">
+  <div class="edit-modal tupu-edit-modal">
+    <div class="tupu-edit-content">
+      <div class="tupu-edit-left">
+        <div class="tupu-edit-left-row">
+          <div class="tupu-left-col">
+            <div class="tupu-top-row">
+              <input type="text" id="tupuName" placeholder="乐谱名称" class="tupu-name-input" maxlength="8">
+              <input type="number" id="tupuSpeed" min="30" max="240" step="1" value="80" placeholder="速度BPM" class="tupu-speed-input" maxlength="4">
+            </div>
+            <div class="tupu-page-nav">
+              <button class="tupu-nav-btn" id="tupuPrevBtn">◀</button>
+              <span id="tupuNavInfo">1 / 1</span>
+              <button class="tupu-nav-btn" id="tupuNextBtn">▶</button>
+              <button class="tupu-action-btn" id="tupuAddBtn">＋</button>
+              <button class="tupu-action-btn tupu-delete-btn" id="tupuDeleteBtn">－</button>
+            </div>
+            <div class="tupu-actions">
+              <button class="tupu-btn-small" id="tupuAddRow">＋ 增加行</button>
+              <button class="tupu-btn-small" id="tupuDelRow">－ 删除行</button>
+            </div>
+            <div class="tupu-global-controls">
+              <div class="tupu-global-row">
+                <label>宽度</label>
+                <input type="range" id="globalWidth" min="10" max="100" value="80" step="1">
+                <span id="globalWidthVal">80%</span>
+              </div>
+              <div class="tupu-global-row">
+                <label>高度</label>
+                <input type="range" id="globalHeight" min="1" max="50" value="10" step="0.5">
+                <span id="globalHeightVal">10%</span>
+              </div>
+              <div class="tupu-global-row">
+                <label>间距</label>
+                <input type="range" id="globalGap" min="0" max="20" value="2" step="0.5">
+                <span id="globalGapVal">2%</span>
+              </div>
+            </div>
+            <div class="tupu-mask-props" id="maskPropsPanel" style="display:none;">
+              <div class="tupu-prop-row">
+                <label>左边</label>
+                <input type="number" id="maskLeftPct" min="0" max="100" step="0.01" value="0">
+                <span>%</span>
+                <label>右边</label>
+                <input type="number" id="maskRightPct" min="0" max="100" step="0.01" value="100">
+                <span>%</span>
+              </div>
+              <div class="tupu-prop-row">
+                <label>上边</label>
+                <input type="number" id="maskTopPct" min="0" max="100" step="0.01" value="0">
+                <span>%</span>
+                <label>下边</label>
+                <input type="number" id="maskBottomPct" min="0" max="100" step="0.01" value="100">
+                <span>%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <input type="file" id="tupuImageInput" accept="image/*" style="display:none;">
+      </div>
+      <div class="tupu-edit-right">
+        <div class="tupu-preview-wrap">
+          <div class="tupu-preview" id="tupuPreview">
+            <div class="tupu-placeholder" style="white-space:nowrap;">上传图片乐谱，逐行播放</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <button class="cancel-btn" id="tupuEditCancel">取消</button>
+      <button class="ok-btn" id="tupuEditOk">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="msgOverlay">
+  <div class="modal">
+    <div class="modal-title">提示</div>
+    <div id="msgContent" style="font-size:13px;color:#ddd;line-height:1.6;margin-bottom:10px;"></div>
+    <button class="modal-cancel" id="msgOk">确定</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="appConfirmOverlay" style="z-index:9999;">
+  <div class="modal" style="min-width:220px;">
+    <div class="modal-title" id="appConfirmTitle">确认</div>
+    <div id="appConfirmContent" style="font-size:13px;color:#ddd;line-height:1.6;margin-bottom:16px;"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="cancel-btn" id="appConfirmCancel" style="flex:1;">取消</button>
+      <button class="ok-btn" id="appConfirmOk" style="flex:1;">确定</button>
+    </div>
+  </div>
+</div>
+
+<div id="keybindingOverlay">
+  <div class="keybinding-modal">
+    <div id="keybindingBody" class="keybinding-body"></div>
+    <div class="keybinding-footer">
+      <button id="keybindingRestore" class="cancel-btn">恢复默认</button>
+      <div style="flex:1;"></div>
+      <button id="keybindingCancel" class="cancel-btn">取消</button>
+      <button id="keybindingSave" class="ok-btn">保存</button>
+    </div>
+  </div>
+</div>
+
+<script src="main.js"></script>
+
+</body>
+</html>
