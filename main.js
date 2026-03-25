@@ -1,4 +1,4 @@
-﻿// Global custom confirm - replaces window.confirm() for WebView compatibility
+// Global custom confirm - replaces window.confirm() for WebView compatibility
 window.appConfirm = function(msg, onOk, onCancel) {
   var ov  = document.getElementById('appConfirmOverlay');
   var txt = document.getElementById('appConfirmContent');
@@ -417,50 +417,10 @@ function drawRainbowGridBackground() {
   ctx.strokeStyle = _SCORE_BG_GRADIENT.edgeLines.bottom;
   ctx.beginPath(); ctx.moveTo(0, h - 1); ctx.lineTo(scoreW, h - 1); ctx.stroke();
 
-  // 9. Fixed string line at 1/3 width — only visible during recording playback (including paused/follow mode)
+  // 9. Fixed string line at 1/4 width — only visible during recording playback (including paused/follow mode)
+  // String will be drawn AFTER lane dividers (see below)
   if (typeof _recPlayState !== 'undefined' && _recPlayState) {
-    var playheadBgX = Math.round(scoreW / 3);
-    
-    // Calculate vibration offset
-    var vibrationX = 0;
-    var isVibrating = _playheadVibration.active;
-    if (isVibrating) {
-      var elapsed = performance.now() - _playheadVibration.startTime;
-      if (elapsed < _playheadVibration.duration) {
-        var decay = 1 - (elapsed / _playheadVibration.duration);
-        var frequency = 0.05; // vibration frequency
-        vibrationX = Math.sin(elapsed * frequency) * _playheadVibration.amplitude * decay;
-      } else {
-        _playheadVibration.active = false;
-        isVibrating = false;
-      }
-    }
-    
-    var finalX = playheadBgX + vibrationX;
-    
-    ctx.save();
-    
-    // String color: dim when not vibrating, bright when vibrating (key pressed)
-    if (isVibrating) {
-      // Bright glowing string when key is pressed
-      ctx.shadowColor = 'rgba(135, 206, 250, 0.9)';
-      ctx.shadowBlur = 12;
-      ctx.fillStyle = 'rgba(135, 206, 250, 0.8)';
-      ctx.fillRect(finalX - 3, 0, 6, h);
-      ctx.shadowBlur = 6;
-      ctx.fillStyle = 'rgba(135, 206, 250, 1)';
-      ctx.fillRect(finalX - 1.5, 0, 3, h);
-    } else {
-      // Dim string when no key is pressed (same width)
-      ctx.shadowColor = 'rgba(100, 150, 180, 0.3)';
-      ctx.shadowBlur = 4;
-      ctx.fillStyle = 'rgba(80, 120, 150, 0.4)';
-      ctx.fillRect(finalX - 3, 0, 6, h);
-      ctx.fillStyle = 'rgba(100, 140, 170, 0.5)';
-      ctx.fillRect(finalX - 1.5, 0, 3, h);
-    }
-    
-    ctx.restore();
+    var playheadBgX = Math.round(scoreW / 4);
     
     // Draw lane gradient effects (from string to 2/3 of scroll bar)
     var nowPerfGrad = performance.now();
@@ -474,6 +434,7 @@ function drawRainbowGridBackground() {
     _laneGradientFx = _laneGradientFx.filter(function(gfx) {
       var age = nowPerfGrad - gfx.t0;
       if (age > gradDuration) return false;
+      if (age < 0) return true;
       var prog = age / gradDuration;
       
       // 计算轨道位置
@@ -529,16 +490,43 @@ function drawRainbowGridBackground() {
     // Draw lane dividers (fixed, doesn't scroll)
     var LANE_COUNT_DIV = 5;
     var laneHDiv = h / LANE_COUNT_DIV;
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.strokeStyle = 'rgba(42, 68, 107, 0.77)';
     ctx.lineWidth = 1;
     for (var i = 1; i < LANE_COUNT_DIV; i++) {
       ctx.beginPath(); ctx.moveTo(0, i * laneHDiv); ctx.lineTo(scoreW, i * laneHDiv); ctx.stroke();
     }
     
+    // Draw string line AFTER lane dividers (on top of dividers, below note blocks)
+    // String width: 20 pixels, no glow effect
+    var vibrationX = 0;
+    var isVibrating = _playheadVibration.active;
+    if (isVibrating) {
+      var elapsed = performance.now() - _playheadVibration.startTime;
+      if (elapsed < _playheadVibration.duration) {
+        var decay = 1 - (elapsed / _playheadVibration.duration);
+        var frequency = 0.05;
+        vibrationX = Math.sin(elapsed * frequency) * _playheadVibration.amplitude * decay;
+      } else {
+        _playheadVibration.active = false;
+        isVibrating = false;
+      }
+    }
+    var finalX = playheadBgX + vibrationX;
+    // String: 20 pixels wide, no glow
+    if (isVibrating) {
+      ctx.fillStyle = 'rgba(85, 129, 160, 0.6)';
+    } else {
+      ctx.fillStyle = 'rgba(55, 56, 83, 0.6)';
+    }
+    ctx.fillRect(finalX - 10, 0, 20, h);
+    ctx.strokeStyle = 'rgba(69, 105, 131, 0.3)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(finalX - 10, 0, 20, h);
+    
     // Draw effect texts (Perfect, Great, Right) - fixed position, doesn't scroll
     if (_recPlayState.effectTexts && !_recPlayState.scoreAnimStart) {
       var nowT2 = performance.now();
-      var playheadX = scoreW / 3;
+      var playheadX = scoreW / 4;
       var effectTextX = playheadX / 3;
       var effectFs = Math.round(h * 0.12);
       var scoreFs = Math.round(h * 0.09);
@@ -914,26 +902,26 @@ var _SCALE_NAMES  = ['C','D','E','F','G','A','B'];
 
 // 滚动栏背景渐变配置
 var _SCORE_BG_GRADIENT = {
-  baseColor: '#0c1218ff',
+  baseColor: '#070b0fff',
   horizontalGradient: {
-    left: 'rgba(204, 241, 250, 0.15)',
-    middle: 'rgba(70, 47, 77, 0.16)',
-    right: 'rgba(78, 45, 83, 0.1)'
+    left: 'rgba(158, 193, 202, 0.15)',
+    middle: 'rgba(44, 29, 49, 0.29)',
+    right: 'rgba(43, 23, 46, 0.32)'
   },
   verticalGradient: {
-    top: 'rgba(115, 138, 143, 0.14)',
-    middle1: 'rgba(191, 170, 207, 0.05)',
-    middle2: 'rgba(179, 166, 209, 0.05)',
-    bottom: 'rgba(120, 105, 123, 0.08)'
+    top: 'rgba(48, 56, 58, 0.14)',
+    middle1: 'rgba(143, 126, 156, 0.1)',
+    middle2: 'rgba(138, 126, 165, 0.14)',
+    bottom: 'rgba(76, 65, 78, 0.14)'
   },
   radialGlow: {
-    center: 'rgba(189, 189, 189, 0)',
-    middle: 'rgba(212, 212, 212, 0)',
-    edge: 'rgba(206, 206, 206, 0)'
+    center: 'rgba(233, 0, 0, 0)',
+    middle: 'rgba(150, 150, 150, 0)',
+    edge: 'rgba(92, 92, 92, 0)'
   },
   edgeLines: {
-    top: 'rgba(196, 249, 255, 0.5)',
-    bottom: 'rgba(236, 204, 255, 0.49)'
+    top: 'rgba(128, 242, 255, 0.5)',
+    bottom: 'rgba(236, 204, 255, 0.25)'
   }
 };
 
@@ -1155,9 +1143,9 @@ function checkTouchCollision() {
   var blockH = Math.round(_recPlayState.baseBlockH * scale);
   var base_bw = blockH * 1.5; // 与drawRecordScore保持一致
   // 琴弦在主canvas上的X坐标
-  var playheadX = scoreW / 3 - canvasOffX;
+  var playheadX = scoreW / 4 - canvasOffX;
   // 琴弦的屏幕坐标（固定位置）
-  var screenPlayheadX = scoreW / 3;
+  var screenPlayheadX = scoreW / 4;
   
   // Check all notes for collision with playhead
   _recPlayState.tracks.forEach(function(track, ti) {
@@ -1184,7 +1172,7 @@ function checkTouchCollision() {
 function checkPlayheadCollision() {
   if (!_recPlayState || _recPlayState.paused) return;
   var scoreW = scoreWrap ? scoreWrap.clientWidth : 300;
-  var playheadX = scoreW / 3 - canvasOffX; // Canvas coordinate (consistent with draw)
+  var playheadX = scoreW / 4 - canvasOffX; // Canvas coordinate (consistent with draw)
   var currentH = scoreWrap ? scoreWrap.offsetHeight : 170;
   var scale = currentH / (_recPlayState.baseLaneH * 5);
   var LANE_COUNT = 5;
@@ -1395,7 +1383,7 @@ function startRecordPlay(recObj) {
   
   var PX_PER_MS = 0.18; // Base pixel per ms, speed is handled in elapsed
   var scoreW    = scoreWrap ? scoreWrap.clientWidth : 300;
-  var fixedX    = scoreW / 3;
+  var fixedX    = scoreW / 4;
 
   // Pre-compute per-note geometry (base values, will be scaled during draw)
   var totalNotes = 0;
@@ -1492,7 +1480,7 @@ function _recLoop() {
 
     // Scroll - 视觉速度与音符块同步缩放
     var scoreW = scoreWrap ? scoreWrap.clientWidth : 300;
-    var fixedX = scoreW / 3;
+    var fixedX = scoreW / 4;
     var currentH = scoreWrap ? scoreWrap.offsetHeight : 170;
     var scale = currentH / (_recPlayState.baseLaneH * 5);
     // 视觉滚动偏移：与音符块同步缩放
@@ -1595,9 +1583,11 @@ function pauseRecordPlay() {
   }
   playBtn.classList.remove("on");
   playBtn.textContent = '\u25b6';
+  // 跟弹模式下启动琴键提示绘制循环
+  _startRingLoop();
   // Update canvas position to ensure it stays at the correct place
   var scoreW = scoreWrap ? scoreWrap.clientWidth : 300;
-  var fixedX = scoreW / 3;
+  var fixedX = scoreW / 4;
   var currentH = scoreWrap ? scoreWrap.offsetHeight : 170;
   var scale = currentH / (_recPlayState.baseLaneH * 5);
   var nowX = elapsed * 0.18 * _VISUAL_SPEED_MULT * scale;
@@ -1626,7 +1616,7 @@ function resumeRecordPlay() {
   // Update canvas position immediately based on current elapsed
   var elapsed = _recPlayState.pausedElapsed || 0;
   var scoreW = scoreWrap ? scoreWrap.clientWidth : 300;
-  var fixedX = scoreW / 3;
+  var fixedX = scoreW / 4;
   var currentH = scoreWrap ? scoreWrap.offsetHeight : 170;
   var scale = currentH / (_recPlayState.baseLaneH * 5);
   var nowX = elapsed * 0.18 * _VISUAL_SPEED_MULT * scale;
@@ -1711,6 +1701,76 @@ function _drawRings() {
   if (_ringCanvas.height !== vh) _ringCanvas.height = vh;
   _ringCtx.clearRect(0, 0, vw, vh);
 
+  // 跟弹模式下显示当前要弹的音符
+  if (_recPlayState.paused && _recPlayState.followMode && _recPlayState.followNotes) {
+    var followNotes = _recPlayState.followNotes;
+    var followPos = _recPlayState.followPos;
+    // 只显示当前要弹的音符（用户按了之后会立刻消失）
+    if (followPos < followNotes.length) {
+      var fn = followNotes[followPos];
+      
+      var nInstEn = _INST_EN[fn.inst] || fn.inst;
+      var allKeys = cont.querySelectorAll('[data-note="' + fn.note + '"]');
+      var matchKeys = Array.prototype.filter.call(allKeys, function(k) {
+        var row = k.closest('.octave-row');
+        if (!row) return true;
+        var ri = parseInt(row.dataset.rowIdx);
+        var rowInst = (typeof rowInstMap !== 'undefined' && rowInstMap[ri]) || null;
+        return !rowInst || rowInst === nInstEn;
+      });
+      var keys = matchKeys.length ? matchKeys : allKeys;
+      keys.forEach(function(key) {
+        var kr = key.getBoundingClientRect();
+        var kx = kr.left, ky = kr.top, kw = kr.width, kh = kr.height;
+        if (kw <= 0 || kh <= 0) return;
+        if (kr.bottom < 0 || kr.top > vh || kr.right < 0 || kr.left > vw) return;
+        var centerX = kx + kw / 2;
+        var centerY = ky + kh / 2;
+        var ringCanvas = document.getElementById('_recRingCanvas');
+        if (ringCanvas) ringCanvas.style.display = 'none';
+        var elAtPoint = document.elementFromPoint(centerX, centerY);
+        if (ringCanvas) ringCanvas.style.display = '';
+        if (elAtPoint && !key.contains(elAtPoint) && !elAtPoint.contains(key) && elAtPoint !== key) return;
+
+        // 根据音符确定音阶颜色（红橙黄绿青蓝紫）
+        var noteName = fn.note ? fn.note.replace(/[0-9]/g, '') : 'C';
+        var scaleColors = {
+          'C': { r: 255, g: 100, b: 100 },   // 1 Do - 红
+          'D': { r: 255, g: 165, b: 80 },    // 2 Re - 橙
+          'E': { r: 255, g: 220, b: 80 },    // 3 Mi - 黄
+          'F': { r: 100, g: 220, b: 100 },   // 4 Fa - 绿
+          'G': { r: 80, g: 220, b: 200 },    // 5 Sol - 青
+          'A': { r: 100, g: 150, b: 255 },   // 6 La - 蓝
+          'B': { r: 180, g: 120, b: 255 }    // 7 Si - 紫
+        };
+        var color = scaleColors[noteName] || scaleColors['C'];
+
+        // 跟弹模式下：只显示当前要弹的音符，透明度为1
+        var alpha = 1;
+
+        // 始终贴着琴键边缘的圆角矩形
+        var rectX = kx;
+        var rectY = ky;
+        var rectW = kw;
+        var rectH = kh;
+        var rectRadius = Math.min(6, kh * 0.15);
+
+        // 画圆角矩形提示（单层，浅色）
+        _ringCtx.beginPath();
+        _ringCtx.roundRect
+          ? _ringCtx.roundRect(rectX, rectY, rectW, rectH, rectRadius)
+          : _ringCtx.rect(rectX, rectY, rectW, rectH);
+        _ringCtx.strokeStyle = 'rgba(' + color.r + ',' + color.g + ',' + color.b + ',' + (alpha * 0.7) + ')';
+        _ringCtx.lineWidth = 2;
+        _ringCtx.shadowColor = 'rgba(' + color.r + ',' + color.g + ',' + color.b + ',' + (alpha * 0.5) + ')';
+        _ringCtx.shadowBlur = 8;
+        _ringCtx.stroke();
+        _ringCtx.shadowBlur = 0;
+      });
+    }
+    return;
+  }
+
   if (_recPlayState.paused) return;
 
   var elapsed = (performance.now() - _recPlayState.startTime) * _recPlayState.speed;
@@ -1752,31 +1812,55 @@ function _drawRings() {
           return;
         }
 
-        var maxExpand = Math.min(kw * 0.9, 28);
-        var expand = (1 - prog) * maxExpand;
+        // 琴键提示：始终贴着琴键边缘，只有透明度变化
+        // prog=0~0.3：淡入，透明度从0到1
+        // prog=0.3~0.7：保持，透明度为1
+        // prog=0.7~1：淡出，透明度从1到0
 
-        // Outer glow (blurry halo)
-        var oe = expand + 5;
-        _ringCtx.strokeStyle = 'rgba(255,255,255,' + (0.12 + prog * 0.18) + ')';
-        _ringCtx.lineWidth = 5 + (1 - prog) * 3;
-        _ringCtx.shadowColor = 'rgba(255,255,255,1)';
-        _ringCtx.shadowBlur  = 8 + (1 - prog) * 6;
+        // 根据音符确定音阶颜色（红橙黄绿青蓝紫）
+        var noteName = n.note ? n.note.replace(/[0-9]/g, '') : 'C';
+        var scaleColors = {
+          'C': { r: 255, g: 100, b: 100 },   // 1 Do - 红
+          'D': { r: 255, g: 165, b: 80 },    // 2 Re - 橙
+          'E': { r: 255, g: 220, b: 80 },    // 3 Mi - 黄
+          'F': { r: 100, g: 220, b: 100 },   // 4 Fa - 绿
+          'G': { r: 80, g: 220, b: 200 },    // 5 Sol - 青
+          'A': { r: 100, g: 150, b: 255 },   // 6 La - 蓝
+          'B': { r: 180, g: 120, b: 255 }    // 7 Si - 紫
+        };
+        var color = scaleColors[noteName] || scaleColors['C'];
+
+        // 计算透明度：淡入 -> 保持 -> 淡出
+        var alpha;
+        if (prog < 0.3) {
+          // 淡入：0 -> 1
+          alpha = prog / 0.3;
+        } else if (prog < 0.7) {
+          // 保持：1
+          alpha = 1;
+        } else {
+          // 淡出：1 -> 0
+          alpha = 1 - (prog - 0.7) / 0.3;
+        }
+
+        // 始终贴着琴键边缘的圆角矩形
+        var rectX = kx;
+        var rectY = ky;
+        var rectW = kw;
+        var rectH = kh;
+        var rectRadius = Math.min(6, kh * 0.15);
+
+        // 画圆角矩形提示（单层，浅色）
         _ringCtx.beginPath();
         _ringCtx.roundRect
-          ? _ringCtx.roundRect(kx - oe, ky - oe, kw + oe*2, kh + oe*2, Math.min(10, (kh + oe*2) * 0.2))
-          : _ringCtx.rect(kx - oe, ky - oe, kw + oe*2, kh + oe*2);
+          ? _ringCtx.roundRect(rectX, rectY, rectW, rectH, rectRadius)
+          : _ringCtx.rect(rectX, rectY, rectW, rectH);
+        _ringCtx.strokeStyle = 'rgba(' + color.r + ',' + color.g + ',' + color.b + ',' + (alpha * 0.7) + ')';
+        _ringCtx.lineWidth = 2;
+        _ringCtx.shadowColor = 'rgba(' + color.r + ',' + color.g + ',' + color.b + ',' + (alpha * 0.5) + ')';
+        _ringCtx.shadowBlur = 8;
         _ringCtx.stroke();
         _ringCtx.shadowBlur = 0;
-
-        // Inner crisp ring
-        _ringCtx.strokeStyle = 'rgba(255,255,255,' + (0.45 + prog * 0.50) + ')';
-        _ringCtx.lineWidth = 1.5;
-        _ringCtx.beginPath();
-        var r = Math.min(6, kh * 0.15);
-        _ringCtx.roundRect
-          ? _ringCtx.roundRect(kx - expand, ky - expand, kw + expand*2, kh + expand*2, r)
-          : _ringCtx.rect(kx - expand, ky - expand, kw + expand*2, kh + expand*2);
-        _ringCtx.stroke();
       });
     });
   });
@@ -1849,29 +1933,55 @@ function _drawJianpuRings() {
         return;
       }
 
-      var maxExpand = Math.min(kw * 0.9, 28);
-      var expand = (1 - prog) * maxExpand;
+      // 琴键提示：始终贴着琴键边缘，只有透明度变化
+      // prog=0~0.3：淡入，透明度从0到1
+      // prog=0.3~0.7：保持，透明度为1
+      // prog=0.7~1：淡出，透明度从1到0
 
-      var oe = expand + 5;
-      _ringCtx.strokeStyle = 'rgba(255,255,255,' + (0.12 + prog * 0.18) + ')';
-      _ringCtx.lineWidth = 5 + (1 - prog) * 3;
-      _ringCtx.shadowColor = 'rgba(255,255,255,0.6)';
-      _ringCtx.shadowBlur  = 8 + (1 - prog) * 6;
+      // 根据音符确定音阶颜色（红橙黄绿青蓝紫）
+      var noteName = n.n ? n.n.replace(/[0-9]/g, '') : 'C';
+      var scaleColors = {
+        'C': { r: 255, g: 100, b: 100 },   // 1 Do - 红
+        'D': { r: 255, g: 165, b: 80 },    // 2 Re - 橙
+        'E': { r: 255, g: 220, b: 80 },    // 3 Mi - 黄
+        'F': { r: 100, g: 220, b: 100 },   // 4 Fa - 绿
+        'G': { r: 80, g: 220, b: 200 },    // 5 Sol - 青
+        'A': { r: 100, g: 150, b: 255 },   // 6 La - 蓝
+        'B': { r: 180, g: 120, b: 255 }    // 7 Si - 紫
+      };
+      var color = scaleColors[noteName] || scaleColors['C'];
+
+      // 计算透明度：淡入 -> 保持 -> 淡出
+      var alpha;
+      if (prog < 0.3) {
+        // 淡入：0 -> 1
+        alpha = prog / 0.3;
+      } else if (prog < 0.7) {
+        // 保持：1
+        alpha = 1;
+      } else {
+        // 淡出：1 -> 0
+        alpha = 1 - (prog - 0.7) / 0.3;
+      }
+
+      // 始终贴着琴键边缘的圆角矩形
+      var rectX = kx;
+      var rectY = ky;
+      var rectW = kw;
+      var rectH = kh;
+      var rectRadius = Math.min(6, kh * 0.15);
+
+      // 画圆角矩形提示（单层，浅色）
       _ringCtx.beginPath();
       _ringCtx.roundRect
-        ? _ringCtx.roundRect(kx - oe, ky - oe, kw + oe*2, kh + oe*2, Math.min(10, (kh + oe*2) * 0.2))
-        : _ringCtx.rect(kx - oe, ky - oe, kw + oe*2, kh + oe*2);
+        ? _ringCtx.roundRect(rectX, rectY, rectW, rectH, rectRadius)
+        : _ringCtx.rect(rectX, rectY, rectW, rectH);
+      _ringCtx.strokeStyle = 'rgba(' + color.r + ',' + color.g + ',' + color.b + ',' + (alpha * 0.7) + ')';
+      _ringCtx.lineWidth = 2;
+      _ringCtx.shadowColor = 'rgba(' + color.r + ',' + color.g + ',' + color.b + ',' + (alpha * 0.5) + ')';
+      _ringCtx.shadowBlur = 8;
       _ringCtx.stroke();
       _ringCtx.shadowBlur = 0;
-
-      _ringCtx.strokeStyle = 'rgba(255,255,255,' + (0.45 + prog * 0.50) + ')';
-      _ringCtx.lineWidth = 1.5;
-      _ringCtx.beginPath();
-      var r = Math.min(6, kh * 0.15);
-      _ringCtx.roundRect
-        ? _ringCtx.roundRect(kx - expand, ky - expand, kw + expand*2, kh + expand*2, r)
-        : _ringCtx.rect(kx - expand, ky - expand, kw + expand*2, kh + expand*2);
-      _ringCtx.stroke();
     });
   }
   _ringCtx.globalAlpha = 1;
@@ -1911,7 +2021,7 @@ function drawRecordScore(elapsedMs, nowPerf) {
   // Playhead is drawn on the fixed background canvas (drawRainbowGridBackground).
   // We only keep scoreW / fixedX for score text positioning below.
   var scoreW = scoreWrap ? scoreWrap.clientWidth : 300;
-  var fixedX = scoreW / 3;
+  var fixedX = scoreW / 4;
 
   // Note blocks - scale positions based on current height
   ctx.font = 'bold ' + fs + 'px "PingFang SC",Arial,sans-serif';
@@ -2068,6 +2178,7 @@ function drawRecordScore(elapsedMs, nowPerf) {
     var age  = nowT - fx.t0;
     var DUR  = 650;
     if (age > DUR) return false;
+    if (age < 0) return true;
     var prog = age / DUR;
     var tierCol = fx.tier === 1 ? '#ffd700' : fx.tier === 2 ? '#4fc3f7' : '#4caf50'; // 后备颜色
 
@@ -2121,12 +2232,14 @@ function drawRecordScore(elapsedMs, nowPerf) {
   // Draw playhead explosion effects (squares and ripples) - AFTER blocks so they appear on top
   var nowPerf2 = nowPerf || performance.now();
   var baseHeight = 170;
-  var scaleFactor = h / baseHeight;
-  var playheadX = scoreW / 3 - canvasOffX;
+  var scaleFactor = h > 0 ? h / baseHeight : 1;
+  if (scaleFactor < 0) scaleFactor = 1;
+  var playheadX = scoreW / 4 - canvasOffX;
   
   _playheadExplosions = _playheadExplosions.filter(function(exp) {
     var age = nowPerf2 - exp.startTime;
     if (age > exp.duration) return false;
+    if (age < 0) return true;
     var prog = age / exp.duration;
     
     var expY = exp.lane * laneH + laneH / 2;
@@ -2137,6 +2250,7 @@ function drawRecordScore(elapsedMs, nowPerf) {
       var maxRippleRadius = 60 * scaleFactor;
       
       var outerRadius = prog * maxRippleRadius;
+      if (outerRadius < 0) outerRadius = 0;
       var outerAlpha = (1 - prog) * 0.6;
       ctx.save();
       ctx.globalAlpha = outerAlpha;
@@ -2150,6 +2264,7 @@ function drawRecordScore(elapsedMs, nowPerf) {
       ctx.restore();
       
       var innerRadius = prog * maxRippleRadius * 0.6;
+      if (innerRadius < 0) innerRadius = 0;
       var innerAlpha = (1 - prog) * 0.8;
       ctx.save();
       ctx.globalAlpha = innerAlpha;
@@ -2196,10 +2311,11 @@ function drawRecordScore(elapsedMs, nowPerf) {
     
     var expY = exp.lane * laneH + laneH / 2;
     // 将屏幕坐标转换为当前canvas坐标
-    var expX = (exp.screenX || scoreW / 3) - canvasOffX;
+    var expX = (exp.screenX || scoreW / 4) - canvasOffX;
     
     if (exp.isRipple) {
       var rippleRadius = prog * 40 * scaleFactor;
+      if (rippleRadius < 0) rippleRadius = 0;
       var rippleAlpha = 1 - prog;
       var brightRippleColor = exp.color;
       if (brightRippleColor.charAt(0) === '#') {
@@ -2314,7 +2430,7 @@ function startScrollingSync() {
     autoIdx = -1;
     highlightNoteIdx = -1;
     currentFollowIdx = 0;
-    const fixedX = scoreWrap.clientWidth / 3 || 20;
+    const fixedX = scoreWrap.clientWidth / 4 || 20;
     canvasOffX = fixedX;
     canvas.style.left = canvasOffX + "px";
   }
@@ -2408,7 +2524,7 @@ function startScrollingSync() {
     }
     
     if (targetX > 0 || !isDraggingScore) {
-        const fixedX = scoreWrap.clientWidth / 3 || 20;
+        const fixedX = scoreWrap.clientWidth / 4 || 20;
         canvasOffX = fixedX - targetX;
         canvas.style.left = canvasOffX + "px";
     }
@@ -2896,12 +3012,14 @@ function startNote(tid, ns, overrideInst){
     if (overrideInst) currentInst = prevInst;
   }
 
-  // 跟弹模式：只有用户手动弹奏才触发，排除自动播放(auto)和测试音(test)
-  const isUserPlay = (tid !== "auto" && tid !== "test" && !String(tid).startsWith("rec_") && !String(tid).startsWith("vk_"));
+  // 跟弹模式：只有用户手动弹奏才触发，排除自动播放(auto)和测试音(test)和录制播放(rec_)
+  const isUserPlay = (tid !== "auto" && tid !== "test" && !String(tid).startsWith("rec_"));
   if(isUserPlay && window._REC && window._REC.active) window._REC.onPress(tid, ns, overrideInst || currentInst);
   if(isUserPlay && window._checkRecHit) window._checkRecHit(ns, overrideInst || currentInst, performance.now());
   // 用户弹奏时检查琴弦位置是否有音符块经过，触发碰触特效
   if(isUserPlay && typeof checkTouchCollision === 'function') checkTouchCollision();
+  // 用户弹奏时触发琴弦振动效果
+  if(isUserPlay && typeof triggerPlayheadVibration === 'function') triggerPlayheadVibration(3);
   // 跟弹模式下启动特效绘制循环
   if(isUserPlay && typeof _recPlayState !== "undefined" && _recPlayState && _recPlayState.paused) {
     if(typeof _startPausedVibrationLoop === 'function') _startPausedVibrationLoop();
@@ -2962,7 +3080,7 @@ function startNote(tid, ns, overrideInst){
         _recPlayState.followPos = fp + 1;
         // Scroll canvas to show this note at playhead
         var scoreW2 = scoreWrap ? scoreWrap.clientWidth : 300;
-        var fixedX2 = scoreW2 / 3;
+        var fixedX2 = scoreW2 / 4;
         var currentH2 = scoreWrap ? scoreWrap.offsetHeight : 170;
         var scale2 = currentH2 / (_recPlayState.baseLaneH * 5);
         var nowX2 = _recPlayState.pausedElapsed * 0.18 * _VISUAL_SPEED_MULT * scale2;
@@ -3017,7 +3135,7 @@ function startNote(tid, ns, overrideInst){
           }
           
           const targetX = scaledX;
-          const fixedX = scoreWrap.clientWidth / 3 || 20;
+          const fixedX = scoreWrap.clientWidth / 4 || 20;
           canvasOffX = fixedX - targetX;
           canvas.style.left = canvasOffX + "px";
           if(matchedNote.startTime !== undefined) {
@@ -4779,6 +4897,13 @@ window.onload = function(){
   
   layoutBtn.onclick = () => {
     if (!isLayoutMode) {
+      // 进入布局模式前保存滚动位置
+      const _savedScrolls = [];
+      container.querySelectorAll('.octave-row').forEach((row, i) => {
+        const kw = row.querySelector('.octave-row-keys');
+        _savedScrolls[i] = kw ? kw.scrollLeft : 0;
+      });
+
       // 进入布局模式
       isLayoutMode = true;
       layoutBtn.classList.add("active");
@@ -4811,6 +4936,17 @@ window.onload = function(){
       renderPiano(); // 重新渲染以显示控制条
       enableOctaveDragging();
       updateLayoutToolbarPosition();
+
+      // 恢复滚动位置（在 renderPiano 的默认滚动之后）
+      setTimeout(() => {
+        container.querySelectorAll('.octave-row').forEach((row, i) => {
+          const kw = row.querySelector('.octave-row-keys');
+          if (kw && _savedScrolls[i] > 0) kw.scrollLeft = _savedScrolls[i];
+        });
+        container.querySelectorAll('.octave-gap-row').forEach((gapRow, i) => {
+          if (_savedScrolls[i] > 0) gapRow.scrollLeft = _savedScrolls[i];
+        });
+      }, 350);
     } else {
       // 退出布局模式
       exitLayoutMode(true);
@@ -4852,24 +4988,30 @@ window.onload = function(){
     drawScore();
     
     renderPiano(); // 重新渲染以隐藏控制条（isLayoutMode=false时renderPiano不渲染行设置面板）
-    updateLayout(); // 更新布局确保CSS变量正确
+    // 注意：不调用 updateLayout()，因为它会干扰滚动位置
+    // 直接设置 CSS 变量确保布局正确
+    const widthLevel = parseFloat(sliderWidth.value) || 1;
+    const height = sliderHeight.value;
+    const gap = sliderGap.value;
+    document.documentElement.style.setProperty('--key-width-scale', widthLevel);
+    document.documentElement.style.setProperty('--key-height', height + 'px');
+    document.documentElement.style.setProperty('--row-gap', gap + 'px');
+    const octaveWidthPercent = (widthLevel * 100 / 7);
+    document.documentElement.style.setProperty('--octave-width', octaveWidthPercent + 'vw');
+    currentWidthScale = widthLevel;
     disableOctaveDragging();
 
-    // Restore scroll positions after updateLayout completes (must be after requestAnimationFrame in updateLayout)
+    // Restore scroll positions after renderPiano's default scroll timer (300ms)
     if (doSave) {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            container.querySelectorAll('.octave-row').forEach((row, i) => {
-              const kw = row.querySelector('.octave-row-keys');
-              if (kw && _savedScrolls[i] > 0) kw.scrollLeft = _savedScrolls[i];
-            });
-            container.querySelectorAll('.octave-gap-row').forEach((gapRow, i) => {
-              if (_savedScrolls[i] > 0) gapRow.scrollLeft = _savedScrolls[i];
-            });
-          });
+      setTimeout(() => {
+        container.querySelectorAll('.octave-row').forEach((row, i) => {
+          const kw = row.querySelector('.octave-row-keys');
+          if (kw && _savedScrolls[i] > 0) kw.scrollLeft = _savedScrolls[i];
         });
-      });
+        container.querySelectorAll('.octave-gap-row').forEach((gapRow, i) => {
+          if (_savedScrolls[i] > 0) gapRow.scrollLeft = _savedScrolls[i];
+        });
+      }, 350);
     }
   }
 
@@ -4945,28 +5087,36 @@ window.onload = function(){
             btnToolbarPos.textContent = labels[idx];
           }
         }
+        // 先设置CSS变量，再渲染琴键
+        const settingsRows = settings.rows || (settings.screenMode === 'landscape' ? 3 : 7);
+        const settingsWidth = settings.width || (settings.screenMode === 'landscape' ? 1 : 7);
+        const settingsHeight = settings.height || 80;
+        const settingsGap = settings.gap || (settings.screenMode === 'landscape' ? 28 : 0);
+        document.documentElement.style.setProperty('--key-width-scale', settingsWidth);
+        document.documentElement.style.setProperty('--key-height', settingsHeight + 'px');
+        document.documentElement.style.setProperty('--row-gap', settingsGap + 'px');
+        const octaveWidthPercent = (settingsWidth * 100 / 7);
+        document.documentElement.style.setProperty('--octave-width', octaveWidthPercent + 'vw');
+        currentWidthScale = settingsWidth;
+
         renderPiano();
-        updateLayout();
+        // 注意：不调用 updateLayout()，因为 renderPiano() 已经会设置默认滚动位置
         // Restore row scroll positions after render
-        // Use triple requestAnimationFrame to run AFTER updateLayout's nested requestAnimationFrame
+        // Must use setTimeout > 300ms to run AFTER renderPiano's default scroll timer
         if (settings.rowScrollPositions && settings.rowScrollPositions.length) {
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              requestAnimationFrame(() => {
-                container.querySelectorAll('.octave-row').forEach((row, i) => {
-                  const kw = row.querySelector('.octave-row-keys');
-                  if (kw && settings.rowScrollPositions[i] != null && settings.rowScrollPositions[i] > 0) {
-                    kw.scrollLeft = settings.rowScrollPositions[i];
-                  }
-                });
-                container.querySelectorAll('.octave-gap-row').forEach((gapRow, i) => {
-                  if (settings.rowScrollPositions[i] != null && settings.rowScrollPositions[i] > 0) {
-                    gapRow.scrollLeft = settings.rowScrollPositions[i];
-                  }
-                });
-              });
+          setTimeout(() => {
+            container.querySelectorAll('.octave-row').forEach((row, i) => {
+              const kw = row.querySelector('.octave-row-keys');
+              if (kw && settings.rowScrollPositions[i] != null && settings.rowScrollPositions[i] > 0) {
+                kw.scrollLeft = settings.rowScrollPositions[i];
+              }
             });
-          });
+            container.querySelectorAll('.octave-gap-row').forEach((gapRow, i) => {
+              if (settings.rowScrollPositions[i] != null && settings.rowScrollPositions[i] > 0) {
+                gapRow.scrollLeft = settings.rowScrollPositions[i];
+              }
+            });
+          }, 350);
         }
       }
     } catch (e) {}
@@ -5015,12 +5165,21 @@ window.onload = function(){
     sliderHeight.value = defaultHeight; inputHeight.value = defaultHeight;
     sliderGap.value = defaultGap; inputGap.value = defaultGap;
 
+    // 先设置CSS变量，再渲染琴键
+    document.documentElement.style.setProperty('--key-width-scale', defaultWidth);
+    document.documentElement.style.setProperty('--key-height', defaultHeight + 'px');
+    document.documentElement.style.setProperty('--row-gap', defaultGap + 'px');
+    const octaveWidthPercent = (defaultWidth * 100 / 7);
+    document.documentElement.style.setProperty('--octave-width', octaveWidthPercent + 'vw');
+    currentWidthScale = defaultWidth;
+
     setTimeout(() => {
       window.scrollTo(0, 0);
     }, 100);
     updateLayoutToolbarPosition();
     renderPiano();
-    updateLayout();
+    // 注意：不调用 updateLayout()，因为 renderPiano() 已经会设置默认滚动位置
+    // updateLayout() 的滚动恢复逻辑会干扰 renderPiano() 的默认滚动设置
   }
   
   btnPortrait.onclick = () => setScreenMode(false);
@@ -5096,8 +5255,8 @@ window.onload = function(){
     }
   } catch(e) {}
 
-  // 页面加载时更新布局（确保横屏模式下宽度正确）
-  setTimeout(updateLayout, 100);
+  // 注意：不调用 setTimeout(updateLayout, 100)，因为 loadLayoutSettings 已经会设置 CSS 变量
+  // updateLayout() 的滚动恢复逻辑会干扰 renderPiano() 的默认滚动设置
 
   function updateLayout() {
     const oldWidthLevel = currentWidthScale || 1;
@@ -5424,18 +5583,32 @@ window.onload = function(){
       container.appendChild(rowEl);
       // 在每排琴键后添加空隙容器
       container.appendChild(gapRow);
-      // 同步空隙容器和琴键行的滚动
+      // 双向同步空隙容器和琴键行的滚动
+      let isSyncingScroll = false;
       keysWrap.addEventListener('scroll', function() {
+        if (isSyncingScroll) return;
+        isSyncingScroll = true;
         gapRow.scrollLeft = keysWrap.scrollLeft;
+        isSyncingScroll = false;
+      });
+      gapRow.addEventListener('scroll', function() {
+        if (isSyncingScroll) return;
+        isSyncingScroll = true;
+        keysWrap.scrollLeft = gapRow.scrollLeft;
+        isSyncingScroll = false;
       });
       // 应用行配色
       applyRowColors(rowEl, rowIdx);
-      
-      // 设置默认滚动位置
-      // 音域顺序（从左到右）：倍低音(索引0)、低音(索引1)、中低音(索引2)、中音(索引3)、中高音(索引4)、高音(索引5)、倍高音(索引6)
-      const isLandscape = document.body.classList.contains('landscape-mode');
-      // 使用更长的延迟确保所有元素都已渲染完成
-      setTimeout(function() {
+    }
+    // 设置所有行的默认滚动位置（在 for 循环外部统一处理）
+    // 音域顺序（从左到右）：倍低音(索引0)、低音(索引1)、中低音(索引2)、中音(索引3)、中高音(索引4)、高音(索引5)、倍高音(索引6)
+    const isLandscape = document.body.classList.contains('landscape-mode');
+    setTimeout(function() {
+      container.querySelectorAll('.octave-row').forEach((row, rowIdx) => {
+        const keysWrap = row.querySelector('.octave-row-keys');
+        const gapRow = container.querySelectorAll('.octave-gap-row')[rowIdx];
+        if (!keysWrap || !gapRow) return;
+        
         let targetOctaveIndex;
         if (isLandscape) {
           // 横屏模式：第1排中高音(索引4)、第2排中音(索引3)、第3排中低音(索引2)
@@ -5465,8 +5638,8 @@ window.onload = function(){
           el.style.fontSize = fontSize + 'px';
           el.style.paddingTop = paddingTop + 'px';
         });
-      }, 300);
-    }
+      });
+    }, 300);
     if (isLayoutMode) enableOctaveDragging();
   }
 
@@ -7053,7 +7226,7 @@ window.onload = function(){
       const c2 = cv.getContext("2d");
       c2.font = fontSize + "px 'PingFang SC',Arial,sans-serif";
       
-      const fixedX = scoreWrap.clientWidth / 3 || 20;
+      const fixedX = scoreWrap.clientWidth / 4 || 20;
       const targetTokenX = fixedX - canvasOffX;
       let closestAn = currentSong.autoNotes[0];
       let minDiff = Infinity, closestIdx = 0;
@@ -7510,7 +7683,7 @@ window.onload = function(){
   }, 100);
 
   tokens = [];
-  renderPiano();
+  // 注意：不调用 renderPiano()，因为 loadLayoutSettings() 已经调用过了
   drawScore();
 };
 (function(){
