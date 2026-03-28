@@ -64,6 +64,14 @@ let isMuted = false;
 let autoIdx = -1;
 let highlightNoteIdx = -1;
 
+// 切换播放按钮图标（播放/暂停）
+function togglePlayBtnIcon(isPlaying) {
+  const playIcon = playBtn.querySelector('.play-icon');
+  const pauseIcon = playBtn.querySelector('.pause-icon');
+  if (playIcon) playIcon.style.display = isPlaying ? 'none' : 'block';
+  if (pauseIcon) pauseIcon.style.display = isPlaying ? 'block' : 'none';
+}
+
 let canvas, ctx;
 let tokens = []; 
 let currentTupu = null; 
@@ -385,10 +393,11 @@ function drawRainbowGridBackground() {
   ctx.fillStyle = _SCORE_BG_GRADIENT.baseColor;
   ctx.fillRect(0, 0, w, h);
 
-  // 2. Horizontal gradient from left to right
+  // 2. Horizontal gradient from left to right (4 color stops)
   var hGrd = ctx.createLinearGradient(0, 0, w, 0);
   hGrd.addColorStop(0, _SCORE_BG_GRADIENT.horizontalGradient.left);
-  hGrd.addColorStop(0.5, _SCORE_BG_GRADIENT.horizontalGradient.middle);
+  hGrd.addColorStop(0.33, _SCORE_BG_GRADIENT.horizontalGradient.middle1);
+  hGrd.addColorStop(0.66, _SCORE_BG_GRADIENT.horizontalGradient.middle2);
   hGrd.addColorStop(1, _SCORE_BG_GRADIENT.horizontalGradient.right);
   ctx.fillStyle = hGrd;
   ctx.fillRect(0, 0, w, h);
@@ -402,15 +411,7 @@ function drawRainbowGridBackground() {
   ctx.fillStyle = vGrd;
   ctx.fillRect(0, 0, w, h);
 
-  // 4. Subtle radial glow at center (smaller radius for smoother look)
-  var grd = ctx.createRadialGradient(scoreW / 2, h / 2, 0, scoreW / 2, h / 2, Math.min(scoreW, h) * 0.6);
-  grd.addColorStop(0, _SCORE_BG_GRADIENT.radialGlow.center);
-  grd.addColorStop(0.5, _SCORE_BG_GRADIENT.radialGlow.middle);
-  grd.addColorStop(1, _SCORE_BG_GRADIENT.radialGlow.edge);
-  ctx.fillStyle = grd;
-  ctx.fillRect(0, 0, w, h);
-
-  // 5. Top & bottom edge neon lines
+  // 4. Top & bottom edge neon lines
   ctx.lineWidth = 1.5;
   ctx.strokeStyle = _SCORE_BG_GRADIENT.edgeLines.top;
   ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(scoreW, 0); ctx.stroke();
@@ -463,6 +464,9 @@ function drawRainbowGridBackground() {
       }
       
       var alpha = (1 - prog) * 1.0; // 透明度随时间衰减
+      
+      // 跳过几乎不可见的渐变
+      if (alpha < 0.05) return true;
       
       // 右边渐变（从琴弦向右）
       var gradRight = ctx.createLinearGradient(gradStartX, 0, currentRightEndX, 0);
@@ -576,11 +580,11 @@ function drawRainbowGridBackground() {
           return;
         }
         
-        // Draw hit statistics on the left side - 横排版，左上角
+        // Draw hit statistics on the right side - 横排版，右上角
         // 统计字体大小比分数小很多，限制在12-18像素
         var statsFs = Math.round(h * 0.08);
         statsFs = Math.max(12, Math.min(18, statsFs));
-        var statsMargin = 10; // 固定左边间距为10像素
+        var statsMargin = 10; // 固定右边间距为10像素
         var statsTopMargin = 8; // 顶部间距
         var shapeR = statsFs * 0.35; // 统一图形半径
         var lineWidth = 1; // 描边宽度
@@ -596,19 +600,29 @@ function drawRainbowGridBackground() {
         octx.strokeStyle = '#a0a0a0'; // 统一描边颜色
         octx.lineWidth = lineWidth;
         
-        var currentX = statsMargin + shapeR; // 起始X位置（图标中心）
+        var currentX = scoreW - statsMargin - shapeR; // 起始X位置（图标中心，从右边开始）
         var iconY = statsTopMargin + shapeR; // 图标Y位置
         var valueY = iconY + shapeR + iconValueGap + statsFs / 2; // 数值Y位置
         
-        // Perfect - 实心圆形 + 中间描边
+        // Miss - 空心圆形（中间描边）- 最右边
         octx.beginPath();
         octx.arc(currentX, iconY, shapeR, 0, Math.PI * 2);
-        octx.fillStyle = '#a0a0a0';
-        octx.fill();
         octx.stroke();
         octx.fillStyle = textColor;
-        octx.fillText(_recPlayState.perfectCount.toString(), currentX, valueY);
-        currentX += shapeR * 2 + itemGap;
+        octx.fillText(_recPlayState.missCount.toString(), currentX, valueY);
+        currentX -= shapeR * 2 + itemGap;
+        
+        // Right - 空心菱形（中间描边）
+        octx.beginPath();
+        octx.moveTo(currentX, iconY - shapeR);
+        octx.lineTo(currentX + shapeR, iconY);
+        octx.lineTo(currentX, iconY + shapeR);
+        octx.lineTo(currentX - shapeR, iconY);
+        octx.closePath();
+        octx.stroke();
+        octx.fillStyle = textColor;
+        octx.fillText(_recPlayState.rightCount.toString(), currentX, valueY);
+        currentX -= shapeR * 2 + itemGap;
         
         // Great - 实心菱形 + 中间描边
         octx.beginPath();
@@ -622,26 +636,16 @@ function drawRainbowGridBackground() {
         octx.stroke();
         octx.fillStyle = textColor;
         octx.fillText(_recPlayState.greatCount.toString(), currentX, valueY);
-        currentX += shapeR * 2 + itemGap;
+        currentX -= shapeR * 2 + itemGap;
         
-        // Right - 空心菱形（中间描边）
-        octx.beginPath();
-        octx.moveTo(currentX, iconY - shapeR);
-        octx.lineTo(currentX + shapeR, iconY);
-        octx.lineTo(currentX, iconY + shapeR);
-        octx.lineTo(currentX - shapeR, iconY);
-        octx.closePath();
-        octx.stroke();
-        octx.fillStyle = textColor;
-        octx.fillText(_recPlayState.rightCount.toString(), currentX, valueY);
-        currentX += shapeR * 2 + itemGap;
-        
-        // Miss - 空心圆形（中间描边）
+        // Perfect - 实心圆形 + 中间描边 - 最左边
         octx.beginPath();
         octx.arc(currentX, iconY, shapeR, 0, Math.PI * 2);
+        octx.fillStyle = '#a0a0a0';
+        octx.fill();
         octx.stroke();
         octx.fillStyle = textColor;
-        octx.fillText(_recPlayState.missCount.toString(), currentX, valueY);
+        octx.fillText(_recPlayState.perfectCount.toString(), currentX, valueY);
         
         octx.restore();
         
@@ -904,20 +908,16 @@ var _SCALE_NAMES  = ['C','D','E','F','G','A','B'];
 var _SCORE_BG_GRADIENT = {
   baseColor: '#070b0fff',
   horizontalGradient: {
-    left: 'rgba(158, 193, 202, 0.15)',
-    middle: 'rgba(44, 29, 49, 0.29)',
-    right: 'rgba(43, 23, 46, 0.32)'
+    left: 'rgba(9, 74, 104, 0.31)',
+    middle1: 'rgba(19, 29, 54, 0.21)',
+    middle2: 'rgba(19, 16, 46, 0.32)',
+    right: 'rgba(70, 25, 82, 0.28)'
   },
   verticalGradient: {
     top: 'rgba(48, 56, 58, 0.14)',
     middle1: 'rgba(143, 126, 156, 0.1)',
     middle2: 'rgba(138, 126, 165, 0.14)',
     bottom: 'rgba(76, 65, 78, 0.14)'
-  },
-  radialGlow: {
-    center: 'rgba(233, 0, 0, 0)',
-    middle: 'rgba(150, 150, 150, 0)',
-    edge: 'rgba(92, 92, 92, 0)'
   },
   edgeLines: {
     top: 'rgba(128, 242, 255, 0.5)',
@@ -1442,7 +1442,7 @@ function startRecordPlay(recObj) {
   _laneGradientFx = [];
 
   playBtn.classList.add("on");
-  playBtn.textContent = '\u23f8';
+  togglePlayBtnIcon(true);
   _startRingLoop();
   _recLoop();
 }
@@ -1534,7 +1534,7 @@ function _recLoop() {
       _recPlayState.finished = true;
       _recPlayState.paused   = true;
       playBtn.classList.remove("on");
-      playBtn.textContent = '\u25b6';
+      togglePlayBtnIcon(false);
     }
   });
 }
@@ -1582,7 +1582,7 @@ function pauseRecordPlay() {
     _recPlayState.followPos = i + 1;
   }
   playBtn.classList.remove("on");
-  playBtn.textContent = '\u25b6';
+  togglePlayBtnIcon(false);
   // 跟弹模式下启动琴键提示绘制循环
   _startRingLoop();
   // Update canvas position to ensure it stays at the correct place
@@ -1623,7 +1623,7 @@ function resumeRecordPlay() {
   canvasOffX = fixedX - nowX;
   if (canvas) canvas.style.left = canvasOffX + 'px';
   playBtn.classList.add("on");
-  playBtn.textContent = '\u23f8';
+  togglePlayBtnIcon(true);
   _startRingLoop();
   _recLoop();
 }
@@ -1641,7 +1641,7 @@ function stopRecordPlay() {
   _laneGradientFx = [];
   _touchFx = [];
   _stopRingLoop();
-  if (typeof playBtn !== 'undefined') { playBtn.classList.remove("on"); playBtn.textContent = '\u25b6'; }
+  if (typeof playBtn !== 'undefined') { playBtn.classList.remove("on"); togglePlayBtnIcon(false); }
   if (canvas) { canvas.style.left = '20px'; canvasOffX = 20; }
   if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawRainbowGridBackground();
@@ -1690,6 +1690,8 @@ function _stopRingLoop() {
 
 function _drawRings() {
   if (!_ringCanvas || !_ringCtx || !_recPlayState || !keyHintEnabled) { _stopRingLoop(); return; }
+  // 全屏模式下琴键被隐藏，跳过绘制避免性能问题
+  if (isScoreFullscreen) { _stopRingLoop(); return; }
   var cont = document.getElementById('container');
   if (!cont) return;
 
@@ -1890,6 +1892,8 @@ function _stopJianpuRingLoop() {
 
 function _drawJianpuRings() {
   if (!_ringCanvas || !_ringCtx || !currentSong || !keyHintEnabled || !isScrolling) { _stopJianpuRingLoop(); return; }
+  // 全屏模式下琴键被隐藏，跳过绘制避免性能问题
+  if (isScoreFullscreen) { _stopJianpuRingLoop(); return; }
   var cont = document.getElementById('container');
   if (!cont) return;
 
@@ -2029,6 +2033,7 @@ function drawRecordScore(elapsedMs, nowPerf) {
 
   _recPlayState.tracks.forEach(function(track, ti) {
     track.notes.forEach(function(n, ni) {
+      if (ti !== 0) return;
       var lane     = (ti * 3 + ni) % LANE_COUNT;
       var x        = n._x * scale;
       var hold_bw  = (n._hold_bw || 0) * scale;
@@ -2079,9 +2084,9 @@ function drawRecordScore(elapsedMs, nowPerf) {
       }
 
       // Block fill
-      // 透明度状态：未弹奏前100%，正在弹奏100%，过了琴弦30%
+      // 透明度状态：未弹奏前100%，正在弹奏100%，过了琴弦15%
       // 如果有放大缩小动画正在进行，保持不透明，等动画结束后再变暗
-      var baseAlpha = (isPast && !hitScaleAnim) ? 0.3 : 1.0;
+      var baseAlpha = (isPast && !hitScaleAnim) ? 0.15 : 1.0;
       var baseNote = n.note.match(/^([A-G])/);
       var baseNoteName = baseNote ? baseNote[1] : 'C';
       var gradients = _NOTE_GRADIENTS[baseNoteName] || _NOTE_GRADIENTS['C'];
@@ -2601,7 +2606,7 @@ function pauseAutoPlay() {
   isFollowing = true;
   stopNote("auto");
   container.querySelectorAll(".auto-hi").forEach(k => k.classList.remove("auto-hi"));
-  playBtn.textContent = "▶";
+  togglePlayBtnIcon(false);
   drawScore();
   _stopJianpuRingLoop();
 }
@@ -2615,7 +2620,7 @@ function stopAutoPlay() {
   animNoteIdx = -1;
   container.querySelectorAll(".auto-hi").forEach(k => k.classList.remove("auto-hi"));
   stopNote("auto");
-  playBtn.textContent = "▶";
+  togglePlayBtnIcon(false);
   drawScore();
   _stopJianpuRingLoop();
 }
@@ -3004,10 +3009,13 @@ function startNote(tid, ns, overrideInst){
   const isAutoOrRec = (tid === "auto") || String(tid).startsWith("rec_");
   const volume = isAutoOrRec ? (isMuted || isMutedTemporarily ? 0 : 1) : 1;
   
+  console.log('startNote:', {tid, ns, overrideInst, currentInst, volume});
+  
   if (volume > 0) {
     // 支持每行独立乐器覆盖
     const prevInst = currentInst;
     if (overrideInst) currentInst = overrideInst;
+    console.log('设置currentInst:', currentInst);
     activeNodes.set(tid, startInstrumentNote(freq, volume));
     if (overrideInst) currentInst = prevInst;
   }
@@ -3351,13 +3359,9 @@ function _noteColor(note) {
     customRecordings.forEach(function(rec, idx) {
       var el = document.createElement('div');
       el.className = 'song-item';
-      var trackCount = (rec.display||'').split('\n').filter(function(s){ return s.trim(); }).length;
-      var noteCount = 0;
-      (rec.display||'').split('\n').forEach(function(l){ noteCount += l.trim().split('_').filter(Boolean).length; });
       el.innerHTML =
         '<div class="song-info">' +
           '<div class="song-name">' + rec.name + '</div>' +
-          '<div class="song-meta"><span>' + trackCount + '\u8f68</span><span>' + noteCount + '\u4e2a\u97f3\u7b26</span><span>' + (rec.date||'') + '</span></div>' +
         '</div>' +
         '<div class="item-actions">' +
           '<button class="edit-opt">\u7f16\u8f91</button>' +
@@ -3374,6 +3378,7 @@ function _noteColor(note) {
           editBtn.onclick = function(e) {
             if (e && e.stopPropagation) e.stopPropagation();
             if (e && e.preventDefault) e.preventDefault();
+            document.getElementById('modalOverlay').classList.remove('show');
             openRecEdit(recIdx);
             return false;
           };
@@ -3403,12 +3408,2941 @@ function _noteColor(note) {
     var isNew   = (idx === -1);
     document.getElementById('recEditName').value  = isNew ? '' : customRecordings[idx].name;
     document.getElementById('recEditSpeed').value = isNew ? '1' : (customRecordings[idx].speed||1);
-    document.getElementById('recEditScore').value = isNew ? eventsToTrack(events||[]) : (customRecordings[idx].display||'');
+    
+    var fullText = isNew ? eventsToTrack(events||[]) : (customRecordings[idx].display||'');
+    var lines = fullText.split('\n');
+    var mainText = lines[0] || '';
+    var accompText = lines[1] || '';
+    
+    document.getElementById('recEditScoreMain').value = mainText;
+    document.getElementById('recEditScoreAccomp').value = accompText;
+    
     overlay._editIdx   = idx;
     overlay._newEvents = events || null;
+    overlay._origScoreMain = document.getElementById('recEditScoreMain').value;
+    overlay._origScoreAccomp = document.getElementById('recEditScoreAccomp').value;
+    overlay._origName = document.getElementById('recEditName').value;
+    overlay._origSpeed = document.getElementById('recEditSpeed').value;
+    
+    _recVisualNotes = [];
+    _recVisualSelected = null;
+    _recVisualSelectedNotes = [];
+    _recVisualPlaying = false;
+    _recVisualPlayTime = 0;
+    _recVisualHistory = [];
+    _recVisualHistoryIdx = -1;
+    _recVisualClipboard = [];
+    
+    var playBtn = document.getElementById('recVisualPlay');
+    if (playBtn) playBtn.textContent = '▶ 播放';
+    var timeSpan = document.getElementById('recVisualTime');
+    if (timeSpan) timeSpan.textContent = '0.0s';
+    
+    var visualBtn = document.getElementById('recVisualEditBtn');
+    var textLabel = document.getElementById('recTextEditLabel');
+    var textEditor = document.getElementById('recTextEditor');
+    var visualEditor = document.getElementById('recVisualEditor');
+    if (visualBtn) visualBtn.classList.add('active');
+    if (textLabel) textLabel.classList.remove('active');
+    if (textEditor) textEditor.style.display = 'none';
+    if (visualEditor) visualEditor.style.display = 'flex';
+    
     overlay.classList.add('show');
+    initRecVisualEditor();
+    loadVisualEditorSettings();
+    applyVisualEditorSettings();
+    parseTextToVisual();
+    saveVisualHistory();
+    
+    var wrap = document.getElementById('recVisualCanvasWrap');
+    var w = wrap.clientWidth;
+    
+    var hasSaved = false;
+    try {
+      var saved = localStorage.getItem('visualEditorSettings');
+      if (saved) hasSaved = true;
+    } catch(e) {}
+    
+    if (!hasSaved) {
+      _recVisualZoom = w / _recVisualMaxTime;
+      _recVisualScrollX = 0;
+    }
+    
+    renderRecVisual();
+    setTimeout(function() {
+      updateRangeBar();
+    }, 300);
   }
   window._openRecEdit = openRecEdit;
+
+  var _recVisualNotes = [];
+  var _recVisualMainTrackCount = 1;
+  var _recVisualAccompTrackCount = 3;
+  var _recVisualDrag = null;
+  var _recVisualCanvas = null;
+  var _recVisualCtx = null;
+  var _recVisualScale = 1;
+  var _recVisualMaxTime = 10000;
+  var _recVisualRegionTime = 10000;
+  var _recVisualZoom = 1;
+  var _recVisualScrollX = 0;
+  var _recVisualScrollY = 0;
+  var _recVisualSelected = null;
+  var _recVisualSelectedNotes = [];
+  var _recVisualDragMode = null;
+  var _recVisualClipboard = [];
+  var _recVisualHistory = [];
+  var _recVisualHistoryIdx = -1;
+  var _recVisualPlaying = false;
+  var _recVisualPlayTime = 0;
+  var _recVisualPlayStart = 0;
+  var _recVisualPlayAnimId = null;
+  var _recVisualSelectBox = null;
+  var _recVisualMousePos = null;
+  var _recVisualBPM = 120;
+  var _recVisualTimeSig = "4/4";
+  var _recVisualSnapEnabled = false;
+  var _recVisualTimelineDrag = false;
+  var _recVisualActiveTrack = 'main';
+  var _recVisualEditorInited = false;
+  var _recVisualMainSectionH = null;
+  var _recVisualDividerDrag = false;
+  var _recVisualDividerDragStartY = 0;
+  var _recVisualDividerDragOrigH = 0;
+  var _recVisualMiddleDrag = false;
+  var _recVisualMiddleDragStartX = 0;
+  var _recVisualMiddleDragStartScrollX = 0;
+  
+  function saveVisualEditorSettings() {
+    var settings = {
+      bpm: _recVisualBPM,
+      timeSig: _recVisualTimeSig,
+      snapEnabled: _recVisualSnapEnabled,
+      zoom: _recVisualZoom,
+      scrollX: _recVisualScrollX,
+      maxTime: _recVisualMaxTime,
+      regionTime: _recVisualRegionTime,
+      mainTrackCount: _recVisualMainTrackCount,
+      accompTrackCount: _recVisualAccompTrackCount
+    };
+    try {
+      localStorage.setItem('visualEditorSettings', JSON.stringify(settings));
+    } catch(e) {}
+  }
+  
+  function loadVisualEditorSettings() {
+    try {
+      var saved = localStorage.getItem('visualEditorSettings');
+      if (saved) {
+        var settings = JSON.parse(saved);
+        _recVisualBPM = settings.bpm || 120;
+        _recVisualTimeSig = settings.timeSig || "4/4";
+        _recVisualSnapEnabled = settings.snapEnabled || false;
+        _recVisualZoom = settings.zoom || 1;
+        _recVisualScrollX = settings.scrollX || 0;
+        _recVisualMaxTime = settings.maxTime || 10000;
+        _recVisualRegionTime = settings.regionTime || 10000;
+        _recVisualMainTrackCount = settings.mainTrackCount || 1;
+        _recVisualAccompTrackCount = settings.accompTrackCount || 1;
+      }
+    } catch(e) {}
+  }
+  
+  function applyVisualEditorSettings() {
+    var bpmInput = document.getElementById('recVisualBPM');
+    if (bpmInput) bpmInput.value = _recVisualBPM;
+    
+    var timeSigInput = document.getElementById('recVisualTimeSig');
+    if (timeSigInput) timeSigInput.value = _recVisualTimeSig;
+    
+    var snapBtn = document.getElementById('recVisualSnap');
+    if (snapBtn) {
+      snapBtn.style.background = _recVisualSnapEnabled ? '#0099ff' : '#222';
+      snapBtn.style.color = _recVisualSnapEnabled ? '#fff' : '#eee';
+      snapBtn.style.borderColor = _recVisualSnapEnabled ? '#0099ff' : '#444';
+    }
+    
+    var maxTimeInput = document.getElementById('recVisualMaxTimeInput');
+    if (maxTimeInput) maxTimeInput.value = Math.round(_recVisualMaxTime / 1000);
+  }
+
+  function getBeatDuration() {
+    return 60000 / _recVisualBPM;
+  }
+
+  function snapToBeat(timeMs) {
+    if (!_recVisualSnapEnabled) return timeMs;
+    var beatMs = getBeatDuration();
+    var snapGrid = beatMs / 4;
+    return Math.round(timeMs / snapGrid) * snapGrid;
+  }
+
+  function beatsToMs(beats) {
+    return Math.round(beats * getBeatDuration());
+  }
+
+  function saveVisualHistory() {
+    _recVisualHistory = _recVisualHistory.slice(0, _recVisualHistoryIdx + 1);
+    _recVisualHistory.push(JSON.stringify(_recVisualNotes));
+    _recVisualHistoryIdx = _recVisualHistory.length - 1;
+    if (_recVisualHistory.length > 50) {
+      _recVisualHistory.shift();
+      _recVisualHistoryIdx--;
+    }
+  }
+
+  function undoVisual() {
+    if (_recVisualHistoryIdx > 0) {
+      _recVisualHistoryIdx--;
+      _recVisualNotes = JSON.parse(_recVisualHistory[_recVisualHistoryIdx]);
+      _recVisualSelected = null;
+      _recVisualSelectedNotes = [];
+      renderRecVisual();
+    }
+  }
+
+  function redoVisual() {
+    if (_recVisualHistoryIdx < _recVisualHistory.length - 1) {
+      _recVisualHistoryIdx++;
+      _recVisualNotes = JSON.parse(_recVisualHistory[_recVisualHistoryIdx]);
+      _recVisualSelected = null;
+      _recVisualSelectedNotes = [];
+      renderRecVisual();
+    }
+  }
+
+  function copyVisualNotes() {
+    if (_recVisualSelectedNotes.length > 0) {
+      _recVisualClipboard = _recVisualSelectedNotes.map(function(n) {
+        return { inst: n.inst, note: n.note, holdMs: n.holdMs, timeMs: n.timeMs, track: n.track };
+      });
+    } else if (_recVisualSelected) {
+      _recVisualClipboard = [{ inst: _recVisualSelected.inst, note: _recVisualSelected.note, holdMs: _recVisualSelected.holdMs, timeMs: _recVisualSelected.timeMs, track: _recVisualSelected.track }];
+    }
+  }
+
+  function pasteVisualNotes() {
+    if (_recVisualClipboard.length === 0) return;
+    saveVisualHistory();
+    
+    var padding = 0;
+    var timelineH = 28;
+    
+    var scrollTime = _recVisualScrollX / _recVisualScale;
+    var pasteTimeMs = 0;
+    var pasteTrack = 0;
+    
+    var wrap = document.getElementById('recVisualCanvasWrap');
+    if (wrap) {
+      var noteAreaH = wrap.clientHeight - timelineH;
+      var mainSectionH = _recVisualMainSectionH;
+      var gap = 4;
+      var mainSectionTop = timelineH;
+      var mainSectionBottom = mainSectionTop + mainSectionH;
+      var accompSectionTop = mainSectionBottom + gap;
+      
+      if (_recVisualMousePos) {
+        var mouseY = _recVisualMousePos.y;
+        pasteTimeMs = Math.round(scrollTime + (_recVisualMousePos.x - padding) / _recVisualScale);
+        pasteTimeMs = Math.max(0, pasteTimeMs);
+        
+        if (mouseY >= mainSectionTop && mouseY < accompSectionTop) {
+          pasteTrack = 0;
+        } else if (mouseY >= accompSectionTop) {
+          pasteTrack = -1;
+        } else {
+          pasteTrack = 0;
+        }
+      } else {
+        if (_recVisualActiveTrack === 'main') {
+          pasteTrack = 0;
+        } else if (_recVisualActiveTrack === 'accomp') {
+          pasteTrack = -1;
+        } else {
+          pasteTrack = 0;
+        }
+      }
+    } else {
+      if (_recVisualActiveTrack === 'main') {
+        pasteTrack = 0;
+      } else if (_recVisualActiveTrack === 'accomp') {
+        pasteTrack = -1;
+      } else {
+        pasteTrack = 0;
+      }
+    }
+    
+    var minTime = Math.min.apply(null, _recVisualClipboard.map(function(n) { return n.timeMs; }));
+    var minTrack = Math.min.apply(null, _recVisualClipboard.map(function(n) { return n.track; }));
+    var maxTrack = Math.max.apply(null, _recVisualClipboard.map(function(n) { return n.track; }));
+    var trackRange = maxTrack - minTrack;
+    
+    var copiedIsAccomp = minTrack < 0;
+    var pastedNotes = [];
+    
+    var targetIsAccomp = false;
+    if (_recVisualMousePos && wrap) {
+      var noteAreaH = wrap.clientHeight - timelineH;
+      var mainSectionH = _recVisualMainSectionH;
+      var gap = 4;
+      var mainSectionTop = timelineH;
+      var mainSectionBottom = mainSectionTop + mainSectionH;
+      var accompSectionTop = mainSectionBottom + gap;
+      var mouseY = _recVisualMousePos.y;
+      targetIsAccomp = (mouseY >= accompSectionTop);
+    } else {
+      targetIsAccomp = (_recVisualActiveTrack === 'accomp');
+    }
+    
+    _recVisualClipboard.forEach(function(n) {
+      var newTrack;
+      if (n.track < 0) {
+        newTrack = n.track;
+      } else {
+        newTrack = n.track;
+      }
+      var newNote = {
+        inst: n.inst,
+        note: n.note,
+        holdMs: n.holdMs,
+        timeMs: pasteTimeMs + (n.timeMs - minTime),
+        track: newTrack
+      };
+      _recVisualNotes.push(newNote);
+      pastedNotes.push(newNote);
+    });
+    
+    _recVisualSelected = null;
+    _recVisualSelectedNotes = pastedNotes;
+    renderRecVisual();
+  }
+
+  function deleteVisualNotes() {
+    if (_recVisualSelectedNotes.length > 0) {
+      saveVisualHistory();
+      _recVisualSelectedNotes.forEach(function(n) {
+        var idx = _recVisualNotes.indexOf(n);
+        if (idx > -1) _recVisualNotes.splice(idx, 1);
+      });
+      _recVisualSelectedNotes = [];
+      _recVisualSelected = null;
+      renderRecVisual();
+    } else if (_recVisualSelected) {
+      saveVisualHistory();
+      var idx = _recVisualNotes.indexOf(_recVisualSelected);
+      if (idx > -1) _recVisualNotes.splice(idx, 1);
+      _recVisualSelected = null;
+      renderRecVisual();
+    }
+  }
+
+  var _recVisualPressedKeys = {};
+  var _recVisualUpdatingSelectedNote = false;
+  var _recVisualStartAt = 0;
+  var _recVisualBaseOctave = 4;
+  var _recVisualHoldUpdateTimer = null;
+
+  function updateHeldNotesHoldMs() {
+    var now = performance.now();
+    for (var keyNote in _recVisualPressedKeys) {
+      var pressedInfo = _recVisualPressedKeys[keyNote];
+      if (pressedInfo && pressedInfo.noteIndex !== undefined) {
+        var holdMs = Math.max(1, Math.round(now - pressedInfo.pressedAt));
+        _recVisualNotes[pressedInfo.noteIndex].holdMs = holdMs;
+      }
+    }
+    renderRecVisual();
+  }
+
+  function handleRecVisualPianoKey(note, instZh, instEn, keyElement) {
+    if (_recVisualSelected) {
+      _recVisualUpdatingSelectedNote = true;
+      saveVisualHistory();
+      _recVisualSelected.note = note;
+      _recVisualSelected.inst = instZh;
+      updatePropsPanel();
+      renderRecVisual();
+      _recVisualUpdatingSelectedNote = false;
+    } else {
+      var noteKey = 'visEdit_' + note + '_' + Date.now();
+      console.log('琴键处理:', {note, instZh, instEn});
+      startNote(noteKey, note, instEn);
+      
+      var newTrack;
+      if (_recVisualActiveTrack === 'main') {
+        newTrack = 0;
+      } else if (_recVisualActiveTrack === 'accomp') {
+        newTrack = -1;
+      } else {
+        newTrack = 0;
+      }
+      
+      var newTimeMs = _recVisualPlayTime;
+      if (newTimeMs < 0) newTimeMs = 0;
+      
+      var finalTrack = findAvailableTrack(newTrack, newTimeMs, 1);
+      
+      saveVisualHistory();
+      
+      _recVisualNotes.push({
+        inst: instZh,
+        note: note,
+        holdMs: 1,
+        timeMs: newTimeMs,
+        track: finalTrack
+      });
+      
+      var newNoteIndex = _recVisualNotes.length - 1;
+      
+      _recVisualPressedKeys[note] = {
+        pressedAt: performance.now(),
+        noteKey: noteKey,
+        inst: instZh,
+        keyElement: keyElement,
+        noteIndex: newNoteIndex
+      };
+      
+      if (!_recVisualHoldUpdateTimer) {
+        _recVisualHoldUpdateTimer = setInterval(updateHeldNotesHoldMs, 50);
+      }
+      
+      renderRecVisual();
+    }
+  }
+
+  function createRecVisualPiano() {
+    var container = document.getElementById('recVisualPiano');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    var octaveOrder = [1, 2, 3, 4, 5, 6, 7];
+    var octaveNames = {1:'倍低音',2:'低音',3:'中低音',4:'中音',5:'中高音',6:'高音',7:'倍高音'};
+    
+    var containerWidth = container.clientWidth - 20;
+    var whiteKeyWidth = Math.max(15, Math.floor(containerWidth / 21));
+    var blackKeyWidth = Math.floor(whiteKeyWidth * 0.6);
+    
+    var outerDiv = document.createElement('div');
+    outerDiv.style.cssText = 'display:flex;flex-direction:column;width:100%;';
+    
+    var pianoScroll = document.createElement('div');
+    pianoScroll.style.cssText = 'overflow-x:auto;overflow-y:hidden;scrollbar-width:none;display:flex;flex-direction:column;';
+    pianoScroll.style.msOverflowStyle = 'none';
+    pianoScroll.style.WebkitOverflowScrolling = 'touch';
+    
+    var pianoContent = document.createElement('div');
+    pianoContent.style.cssText = 'display:flex;align-items:flex-end;flex-shrink:0;';
+    
+    var nameContent = document.createElement('div');
+    nameContent.style.cssText = 'display:flex;align-items:flex-end;justify-content:flex-start;flex-shrink:0;';
+    
+    octaveOrder.forEach(function(octNum) {
+      var octDiv = document.createElement('div');
+      octDiv.style.cssText = 'display:flex;flex-direction:column;align-items:center;flex-shrink:0;';
+      
+      var pianoDiv = document.createElement('div');
+      pianoDiv.style.cssText = 'position:relative;height:40px;width:' + (whiteKeyWidth * 7) + 'px;';
+      
+      whiteKeys.forEach(function(n, i) {
+        var k = document.createElement('div');
+        k.className = 'key white';
+        k.dataset.note = n + octNum;
+        k.style.cssText = 'position:absolute;top:0;left:' + (i * whiteKeyWidth) + 'px;width:' + whiteKeyWidth + 'px;height:40px;background:#f5f5f5;border:1px solid #999;border-left-width:' + (i === 0 ? '1px' : '0') + ';border-radius:0 0 3px 3px;cursor:pointer;z-index:1;';
+        
+        var keyNote = k.dataset.note;
+        
+        k.onmousedown = function(e) {
+          e.preventDefault();
+          if (e.button !== 0) return;
+          
+          if (_recVisualPressedKeys[keyNote]) return;
+          
+          k.style.background = '#ccc';
+          
+          var pianoInstSelect = document.getElementById('recVisualPianoInst');
+          var instEn = pianoInstSelect ? pianoInstSelect.value : 'piano';
+          var instZh = _INST_ZH_MAP[instEn] || instEn;
+          
+          handleRecVisualPianoKey(keyNote, instZh, instEn, k);
+        };
+        
+        k.onmouseup = function() { 
+          releasePianoKey(keyNote);
+        };
+        
+        k.onmouseleave = function() { 
+          if (_recVisualPressedKeys[keyNote]) {
+            releasePianoKey(keyNote);
+          }
+        };
+        
+        pianoDiv.appendChild(k);
+      });
+      
+      blackKeys.forEach(function(b) {
+        var kb = document.createElement('div');
+        kb.className = 'key black';
+        kb.dataset.note = b.note + octNum;
+        kb.style.cssText = 'position:absolute;top:0;left:' + ((b.after + 1) * whiteKeyWidth - blackKeyWidth / 2) + 'px;width:' + blackKeyWidth + 'px;height:24px;background:#222;border:1px solid #000;border-radius:0 0 2px 2px;cursor:pointer;z-index:2;';
+        
+        var keyNote = kb.dataset.note;
+        
+        kb.onmousedown = function(e) {
+          e.preventDefault();
+          if (e.button !== 0) return;
+          
+          if (_recVisualPressedKeys[keyNote]) return;
+          
+          kb.style.background = '#444';
+          
+          var pianoInstSelect = document.getElementById('recVisualPianoInst');
+          var instEn = pianoInstSelect ? pianoInstSelect.value : 'piano';
+          var instZh = _INST_ZH_MAP[instEn] || instEn;
+          
+          handleRecVisualPianoKey(keyNote, instZh, instEn, kb);
+        };
+        
+        kb.onmouseup = function() { 
+          releasePianoKey(keyNote);
+        };
+        
+        kb.onmouseleave = function() { 
+          if (_recVisualPressedKeys[keyNote]) {
+            releasePianoKey(keyNote);
+          }
+        };
+        
+        pianoDiv.appendChild(kb);
+      });
+      
+      octDiv.appendChild(pianoDiv);
+      pianoContent.appendChild(octDiv);
+      
+      var nameDiv = document.createElement('div');
+      nameDiv.style.cssText = 'display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:' + (whiteKeyWidth * 7) + 'px;';
+      
+      var nameEl = document.createElement('div');
+      nameEl.style.cssText = 'font-size:10px;color:#888;margin-top:4px;';
+      nameEl.textContent = octaveNames[octNum];
+      
+      nameDiv.appendChild(nameEl);
+      nameContent.appendChild(nameDiv);
+    });
+    
+    pianoScroll.appendChild(pianoContent);
+    pianoScroll.appendChild(nameContent);
+    outerDiv.appendChild(pianoScroll);
+    container.appendChild(outerDiv);
+    
+    var isDragging = false;
+    var startX = 0;
+    var startScrollLeft = 0;
+    var dragTimeout = null;
+    
+    pianoScroll.addEventListener('mousedown', function(e) {
+      startX = e.pageX;
+      startScrollLeft = pianoScroll.scrollLeft;
+      
+      dragTimeout = setTimeout(function() {
+        isDragging = true;
+        pianoScroll.style.cursor = 'grabbing';
+      }, 1000);
+      
+      e.preventDefault();
+    });
+    
+    document.addEventListener('mousemove', function(e) {
+      if (!isDragging) return;
+      var dx = e.pageX - startX;
+      pianoScroll.scrollLeft = startScrollLeft - dx;
+    });
+    
+    document.addEventListener('mouseup', function() {
+      if (dragTimeout) clearTimeout(dragTimeout);
+      isDragging = false;
+      pianoScroll.style.cursor = 'default';
+    });
+    
+    setTimeout(function() {
+      var octaveWidth = whiteKeyWidth * 7;
+      var targetScroll = octaveWidth * 3 + (octaveWidth / 2) - (containerWidth / 2);
+      pianoScroll.scrollLeft = Math.max(0, targetScroll);
+    }, 50);
+  }
+  
+  function releasePianoKey(keyNote) {
+    var pressedInfo = _recVisualPressedKeys[keyNote];
+    if (!pressedInfo) return;
+    
+    var keyElement = pressedInfo.keyElement;
+    if (keyElement) {
+      keyElement.style.background = keyElement.classList.contains('black') ? '#222' : '#f5f5f5';
+    }
+    
+    try {
+      stopNote(pressedInfo.noteKey);
+    } catch (e) {}
+    
+    var now = performance.now();
+    var holdMs = Math.max(1, Math.round(now - pressedInfo.pressedAt));
+    if (pressedInfo.noteIndex !== undefined && _recVisualNotes[pressedInfo.noteIndex]) {
+      _recVisualNotes[pressedInfo.noteIndex].holdMs = holdMs;
+      renderRecVisual();
+    }
+    
+    delete _recVisualPressedKeys[keyNote];
+    
+    var hasPressedKeys = false;
+    for (var k in _recVisualPressedKeys) {
+      hasPressedKeys = true;
+      break;
+    }
+    if (!hasPressedKeys && _recVisualHoldUpdateTimer) {
+      clearInterval(_recVisualHoldUpdateTimer);
+      _recVisualHoldUpdateTimer = null;
+    }
+  }
+  
+  function addNoteFromPianoKeyWithRecRule(instZh, note, holdMs, atMs) {
+    saveVisualHistory();
+    
+    var newTrack;
+    if (_recVisualActiveTrack === 'main') {
+      newTrack = 0;
+    } else if (_recVisualActiveTrack === 'accomp') {
+      newTrack = -1;
+    } else {
+      newTrack = 0;
+    }
+    
+    var newTimeMs = _recVisualPlayTime;
+    if (newTimeMs < 0) newTimeMs = 0;
+    
+    var finalTrack = findAvailableTrack(newTrack, newTimeMs, holdMs);
+    
+    _recVisualNotes.push({
+      inst: instZh,
+      note: note,
+      holdMs: holdMs,
+      timeMs: newTimeMs,
+      track: finalTrack
+    });
+    
+    var newNoteIndex = _recVisualNotes.length - 1;
+    _recVisualSelected = _recVisualNotes[newNoteIndex];
+    _recVisualSelectedNotes = [];
+    updatePropsPanel();
+    renderRecVisual();
+    
+    return newNoteIndex;
+  }
+  
+  function addNoteFromPianoKey(note, holdMs, inst) {
+    saveVisualHistory();
+    
+    var newTrack;
+    if (_recVisualActiveTrack === 'main') {
+      newTrack = 0;
+    } else if (_recVisualActiveTrack === 'accomp') {
+      newTrack = -1;
+    } else {
+      newTrack = 0;
+    }
+    
+    var lastEndTime = 0;
+    _recVisualNotes.forEach(function(n) {
+      if ((newTrack === 0 && n.track >= 0) || (newTrack === -1 && n.track < 0)) {
+        var noteEnd = n.timeMs + n.holdMs;
+        if (noteEnd > lastEndTime) {
+          lastEndTime = noteEnd;
+        }
+      }
+    });
+    
+    var newTimeMs = snapToBeat(lastEndTime);
+    
+    var finalTrack = findAvailableTrack(newTrack, newTimeMs, holdMs);
+    
+    _recVisualNotes.push({
+      inst: inst,
+      note: note,
+      holdMs: holdMs,
+      timeMs: newTimeMs,
+      track: finalTrack
+    });
+    _recVisualSelected = _recVisualNotes[_recVisualNotes.length - 1];
+    _recVisualSelectedNotes = [];
+    updatePropsPanel();
+    renderRecVisual();
+  }
+  
+  function findAvailableTrack(baseTrack, startTime, holdMs) {
+    var isMainRegion = baseTrack >= 0;
+    var usedTracks = {};
+    
+    _recVisualNotes.forEach(function(n) {
+      if ((isMainRegion && n.track >= 0) || (!isMainRegion && n.track < 0)) {
+        var trackNum = isMainRegion ? n.track : -n.track - 1;
+        if (!usedTracks[trackNum]) usedTracks[trackNum] = [];
+        usedTracks[trackNum].push({
+          start: n.timeMs,
+          end: n.timeMs + n.holdMs
+        });
+      }
+    });
+    
+    var maxTrackNum = 0;
+    for (var t in usedTracks) {
+      maxTrackNum = Math.max(maxTrackNum, parseInt(t));
+    }
+    
+    for (var i = 0; i <= maxTrackNum + 1; i++) {
+      var trackToCheck = isMainRegion ? i : -(i + 1);
+      var existingNotes = usedTracks[i] || [];
+      var isOverlapping = false;
+      
+      for (var j = 0; j < existingNotes.length; j++) {
+        var en = existingNotes[j];
+        if (!(startTime + holdMs <= en.start || startTime >= en.end)) {
+          isOverlapping = true;
+          break;
+        }
+      }
+      
+      if (!isOverlapping) {
+        return trackToCheck;
+      }
+    }
+    
+    return isMainRegion ? (maxTrackNum + 1) : -(maxTrackNum + 2);
+  }
+  
+  function updateRangeBar() {
+    var rangeBar = document.getElementById('recVisualRangeBar');
+    var rangeSel = document.getElementById('recVisualRangeSel');
+    var rangeHandleLeft = document.getElementById('recVisualRangeHandleLeft');
+    var rangeHandleRight = document.getElementById('recVisualRangeHandleRight');
+    if (!rangeBar || !rangeSel || !rangeHandleLeft || !rangeHandleRight) return;
+    var wrap = document.getElementById('recVisualCanvasWrap');
+    if (!wrap) return;
+    var w = wrap.clientWidth;
+    
+    var totalTime = _recVisualMaxTime;
+    var visibleTime = w / _recVisualZoom;
+    var startTime = _recVisualScrollX / _recVisualZoom;
+    var endTime = startTime + visibleTime;
+    
+    var rangeStart = startTime / totalTime;
+    var rangeEndPos = endTime / totalTime;
+    
+    rangeStart = Math.max(0, Math.min(1, rangeStart));
+    rangeEndPos = Math.max(0, Math.min(1, rangeEndPos));
+    
+    var barW = rangeBar.clientWidth;
+    
+    var leftPos = rangeStart * barW;
+    var rightPos = rangeEndPos * barW;
+    
+    rangeHandleLeft.style.left = leftPos + 'px';
+    rangeSel.style.left = leftPos + 'px';
+    rangeSel.style.width = Math.max(2, rightPos - leftPos) + 'px';
+    rangeHandleRight.style.left = (rightPos - 6) + 'px';
+    
+    var regionTimeInput = document.getElementById('recVisualRegionTime');
+    if (regionTimeInput) {
+      var regionSeconds = Math.max(4, Math.round(visibleTime / 1000));
+      regionTimeInput.value = regionSeconds;
+    }
+  }
+
+  function initRecVisualEditor() {
+    if (_recVisualEditorInited) return;
+    _recVisualEditorInited = true;
+    
+    _recVisualStartAt = performance.now();
+    
+    var _recVisualKeydownHandler = null;
+    var _recVisualKeyupHandler = null;
+    
+    window.addEventListener('resize', function() {
+      var visualEditor = document.getElementById('recVisualEditor');
+      if (visualEditor && visualEditor.style.display !== 'none') {
+        createRecVisualPiano();
+      }
+    });
+    
+    function setupRecVisualKeyboardEvents() {
+      _recVisualKeydownHandler = function(e) {
+        var visualEditor = document.getElementById('recVisualEditor');
+        if (!visualEditor || visualEditor.style.display === 'none') return;
+        
+        if (e.repeat) return;
+        
+        if (e.ctrlKey && e.code === 'KeyS') {
+          e.preventDefault();
+          saveVisualEditorWithoutClose();
+          return;
+        }
+        
+        if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey) return;
+        const activeEl = document.activeElement;
+        if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")) return;
+        const code = e.code;
+        
+        if (typeof pcKeyMap !== 'undefined' && pcKeyMap.control && pcKeyMap.control.prevOctave && pcKeyMap.control.prevOctave.includes(code)) {
+          _recVisualBaseOctave = Math.max(1, _recVisualBaseOctave - 1);
+          e.preventDefault();
+          return;
+        }
+        
+        if (typeof pcKeyMap !== 'undefined' && pcKeyMap.control && pcKeyMap.control.nextOctave && pcKeyMap.control.nextOctave.includes(code)) {
+          _recVisualBaseOctave = Math.min(7, _recVisualBaseOctave + 1);
+          e.preventDefault();
+          return;
+        }
+        
+        var foundNote = null;
+        
+        const BASE_NOTE_ORDER = ["C","D","E","F","G","A","B","C#","D#","F#","G#","A#"];
+        for (const note of BASE_NOTE_ORDER) {
+          if (typeof pcKeyMap !== 'undefined' && pcKeyMap.base && pcKeyMap.base[note] && pcKeyMap.base[note].includes(code)) {
+            foundNote = note + _recVisualBaseOctave;
+            break;
+          }
+        }
+        
+        if (!foundNote && typeof pcKeyMap !== 'undefined' && pcKeyMap.fixed && pcKeyMap.fixed.octave5) {
+          for (const note in pcKeyMap.fixed.octave5) {
+            if (pcKeyMap.fixed.octave5[note].includes(code)) {
+              foundNote = note + (_recVisualBaseOctave + 1);
+              break;
+            }
+          }
+        }
+        
+        if (!foundNote && typeof pcKeyMap !== 'undefined' && pcKeyMap.fixed && pcKeyMap.fixed.octave3) {
+          for (const note in pcKeyMap.fixed.octave3) {
+            if (pcKeyMap.fixed.octave3[note].includes(code)) {
+              foundNote = note + (_recVisualBaseOctave - 1);
+              break;
+            }
+          }
+        }
+        
+        if (foundNote && !_recVisualPressedKeys[foundNote]) {
+          e.preventDefault();
+          
+          var pianoInstSelect = document.getElementById('recVisualPianoInst');
+          var instEn = pianoInstSelect ? pianoInstSelect.value : 'piano';
+          var instZh = _INST_ZH_MAP[instEn] || instEn;
+          
+          handleRecVisualPianoKey(foundNote, instZh, instEn, null);
+        }
+      };
+      
+      _recVisualKeyupHandler = function(e) {
+        var visualEditor = document.getElementById('recVisualEditor');
+        if (!visualEditor || visualEditor.style.display === 'none') return;
+        
+        if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey) return;
+        const activeEl = document.activeElement;
+        if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")) return;
+        const code = e.code;
+        
+        var foundNote = null;
+        
+        const BASE_NOTE_ORDER = ["C","D","E","F","G","A","B","C#","D#","F#","G#","A#"];
+        for (const note of BASE_NOTE_ORDER) {
+          if (typeof pcKeyMap !== 'undefined' && pcKeyMap.base && pcKeyMap.base[note] && pcKeyMap.base[note].includes(code)) {
+            foundNote = note + _recVisualBaseOctave;
+            break;
+          }
+        }
+        
+        if (!foundNote && typeof pcKeyMap !== 'undefined' && pcKeyMap.fixed && pcKeyMap.fixed.octave5) {
+          for (const note in pcKeyMap.fixed.octave5) {
+            if (pcKeyMap.fixed.octave5[note].includes(code)) {
+              foundNote = note + (_recVisualBaseOctave + 1);
+              break;
+            }
+          }
+        }
+        
+        if (!foundNote && typeof pcKeyMap !== 'undefined' && pcKeyMap.fixed && pcKeyMap.fixed.octave3) {
+          for (const note in pcKeyMap.fixed.octave3) {
+            if (pcKeyMap.fixed.octave3[note].includes(code)) {
+              foundNote = note + (_recVisualBaseOctave - 1);
+              break;
+            }
+          }
+        }
+        
+        if (foundNote) {
+          releasePianoKey(foundNote);
+        }
+      };
+      
+      document.addEventListener('keydown', _recVisualKeydownHandler, true);
+      document.addEventListener('keyup', _recVisualKeyupHandler, true);
+    }
+    
+    function removeRecVisualKeyboardEvents() {
+      if (_recVisualKeydownHandler) {
+        document.removeEventListener('keydown', _recVisualKeydownHandler, true);
+      }
+      if (_recVisualKeyupHandler) {
+        document.removeEventListener('keyup', _recVisualKeyupHandler, true);
+      }
+    }
+    
+    loadVisualEditorSettings();
+    
+    createRecVisualPiano();
+    
+    var visualBtn = document.getElementById('recVisualEditBtn');
+    var textLabel = document.getElementById('recTextEditLabel');
+    var textEditor = document.getElementById('recTextEditor');
+    var visualEditor = document.getElementById('recVisualEditor');
+    
+    if (!visualBtn || !textLabel) return;
+    
+    visualBtn.onclick = function() {
+      visualBtn.classList.add('active');
+      textLabel.classList.remove('active');
+      textEditor.style.display = 'none';
+      visualEditor.style.display = 'flex';
+      parseTextToVisual();
+      saveVisualHistory();
+      _recVisualSelected = null;
+      _recVisualSelectedNotes = [];
+      applyVisualEditorSettings();
+      
+      setTimeout(function() {
+        createRecVisualPiano();
+      }, 100);
+      
+      setupRecVisualKeyboardEvents();
+      
+      var wrap = document.getElementById('recVisualCanvasWrap');
+      var w = wrap.clientWidth;
+      
+      var hasSaved = false;
+      try {
+        var saved = localStorage.getItem('visualEditorSettings');
+        if (saved) hasSaved = true;
+      } catch(e) {}
+      
+      if (!hasSaved) {
+        _recVisualZoom = w / _recVisualMaxTime;
+        _recVisualScrollX = 0;
+      }
+      
+      renderRecVisual();
+      setTimeout(function() {
+        updateRangeBar();
+      }, 300);
+    };
+    
+    textLabel.onclick = function() {
+      textLabel.classList.add('active');
+      visualBtn.classList.remove('active');
+      textEditor.style.display = 'block';
+      visualEditor.style.display = 'none';
+      parseVisualToText();
+      removeRecVisualKeyboardEvents();
+    };
+    
+    _recVisualCanvas = document.getElementById('recVisualCanvas');
+    if (_recVisualCanvas) {
+      _recVisualCtx = _recVisualCanvas.getContext('2d');
+      setupRecVisualEvents();
+    }
+    
+    var fitBtn = document.getElementById('recVisualFit');
+    if (fitBtn) {
+      fitBtn.onclick = function() {
+        var wrap = document.getElementById('recVisualCanvasWrap');
+        var w = wrap.clientWidth;
+        
+        var notesToConsider = [];
+        
+        if (_recVisualSelectedNotes.length > 0) {
+          notesToConsider = _recVisualSelectedNotes;
+        } else if (_recVisualSelected) {
+          notesToConsider = [_recVisualSelected];
+        } else {
+          notesToConsider = _recVisualNotes;
+        }
+        
+        if (notesToConsider.length === 0) {
+          var newZoom = w / _recVisualMaxTime;
+          _recVisualZoom = Math.max(0.1, newZoom);
+          _recVisualScrollX = 0;
+        } else {
+          var minTime = Infinity;
+          var maxTime = 0;
+          
+          notesToConsider.forEach(function(n) {
+            if (n.timeMs < minTime) minTime = n.timeMs;
+            if (n.timeMs + n.holdMs > maxTime) maxTime = n.timeMs + n.holdMs;
+          });
+          
+          var timeSpan = maxTime - minTime;
+          if (timeSpan <= 0) timeSpan = 1000;
+          
+          var padding = 50;
+          var newZoom = (w - padding * 2) / timeSpan;
+          _recVisualZoom = Math.max(0.1, newZoom);
+          _recVisualScrollX = Math.max(0, minTime * _recVisualZoom - padding);
+        }
+        
+        renderRecVisual();
+        updateRangeBar();
+      };
+    }
+    
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Z' && e.shiftKey) {
+        var fitBtn = document.getElementById('recVisualFit');
+        if (fitBtn) fitBtn.click();
+      }
+    });
+    
+    var addMainTrackBtn = document.getElementById('recVisualAddMainTrack');
+    if (addMainTrackBtn) {
+      addMainTrackBtn.onclick = function() {
+        _recVisualMainTrackCount++;
+        saveVisualEditorSettings();
+        renderRecVisual();
+      };
+    }
+    
+    var delMainTrackBtn = document.getElementById('recVisualDelMainTrack');
+    if (delMainTrackBtn) {
+      delMainTrackBtn.onclick = function() {
+        if (_recVisualMainTrackCount > 1) {
+          _recVisualMainTrackCount--;
+          saveVisualEditorSettings();
+          renderRecVisual();
+        }
+      };
+    }
+    
+    var addAccompTrackBtn = document.getElementById('recVisualAddAccompTrack');
+    if (addAccompTrackBtn) {
+      addAccompTrackBtn.onclick = function() {
+        _recVisualAccompTrackCount++;
+        saveVisualEditorSettings();
+        renderRecVisual();
+      };
+    }
+    
+    var delAccompTrackBtn = document.getElementById('recVisualDelAccompTrack');
+    if (delAccompTrackBtn) {
+      delAccompTrackBtn.onclick = function() {
+        if (_recVisualAccompTrackCount > 1) {
+          _recVisualAccompTrackCount--;
+          saveVisualEditorSettings();
+          renderRecVisual();
+        }
+      };
+    }
+    
+    var pianoInstSelect = document.getElementById('recVisualPianoInst');
+    if (pianoInstSelect) {
+      pianoInstSelect.onchange = function() {
+      };
+    }
+    
+    var rangeBar = document.getElementById('recVisualRangeBar');
+    var rangeSel = document.getElementById('recVisualRangeSel');
+    var rangeHandleLeft = document.getElementById('recVisualRangeHandleLeft');
+    var rangeHandleRight = document.getElementById('recVisualRangeHandleRight');
+    
+    if (!rangeBar) return;
+    
+    var _rangeDrag = null;
+    
+    if (rangeHandleLeft) {
+      rangeHandleLeft.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.style.background = 'rgba(0, 170, 255, 1)';
+        var wrap = document.getElementById('recVisualCanvasWrap');
+        var w = wrap.clientWidth;
+        var startTime = _recVisualScrollX / _recVisualZoom;
+        var endTime = startTime + w / _recVisualZoom;
+        _rangeDrag = { 
+          type: 'left', 
+          startX: e.clientX, 
+          startTime: startTime,
+          endTime: endTime
+        };
+      });
+    }
+    
+    if (rangeHandleRight) {
+      rangeHandleRight.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.style.background = 'rgba(0, 170, 255, 1)';
+        var wrap = document.getElementById('recVisualCanvasWrap');
+        var w = wrap.clientWidth;
+        var startTime = _recVisualScrollX / _recVisualZoom;
+        var endTime = startTime + w / _recVisualZoom;
+        _rangeDrag = { 
+          type: 'right', 
+          startX: e.clientX, 
+          startTime: startTime,
+          endTime: endTime
+        };
+      });
+    }
+    
+    if (rangeSel) {
+      rangeSel.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.style.background = 'rgba(100, 150, 200, 0.7)';
+        var wrap = document.getElementById('recVisualCanvasWrap');
+        var w = wrap.clientWidth;
+        var startTime = _recVisualScrollX / _recVisualZoom;
+        var visibleTime = w / _recVisualZoom;
+        _rangeDrag = { 
+          type: 'drag', 
+          startX: e.clientX, 
+          startTime: startTime,
+          visibleTime: visibleTime
+        };
+      });
+    }
+    
+    if (rangeBar) {
+      rangeBar.addEventListener('mousedown', function(e) {
+        if (e.target !== rangeBar) return;
+        var rect = rangeBar.getBoundingClientRect();
+        var x = e.clientX - rect.left;
+        var ratio = x / rect.width;
+        
+        var wrap = document.getElementById('recVisualCanvasWrap');
+        var w = wrap.clientWidth;
+        var visibleTime = w / _recVisualZoom;
+        var newStartTime = ratio * _recVisualMaxTime - visibleTime / 2;
+        newStartTime = Math.max(0, Math.min(_recVisualMaxTime - visibleTime, newStartTime));
+        
+        _recVisualScrollX = newStartTime * _recVisualZoom;
+        
+        renderRecVisual();
+        updateRangeBar();
+      });
+    }
+    
+    document.addEventListener('mousemove', function(e) {
+      if (!_rangeDrag) return;
+      
+      var barW = rangeBar.clientWidth;
+      var dx = e.clientX - _rangeDrag.startX;
+      var wrap = document.getElementById('recVisualCanvasWrap');
+      var w = wrap.clientWidth;
+      
+      if (_rangeDrag.type === 'drag') {
+        var timeDelta = dx / barW * _recVisualMaxTime;
+        var newStartTime = _rangeDrag.startTime + timeDelta;
+        var visibleTime = _rangeDrag.visibleTime;
+        newStartTime = Math.max(0, Math.min(_recVisualMaxTime - visibleTime, newStartTime));
+        _recVisualScrollX = newStartTime * _recVisualZoom;
+      } else if (_rangeDrag.type === 'left') {
+        var timeDelta = dx / barW * _recVisualMaxTime;
+        var newStartTime = _rangeDrag.startTime + timeDelta;
+        var endTime = _rangeDrag.endTime;
+        
+        newStartTime = Math.max(0, newStartTime);
+        
+        var newVisibleTime = endTime - newStartTime;
+        newVisibleTime = Math.max(4000, newVisibleTime);
+        var newZoom = w / newVisibleTime;
+        _recVisualZoom = newZoom;
+        _recVisualScrollX = newStartTime * newZoom;
+      } else if (_rangeDrag.type === 'right') {
+        var timeDelta = dx / barW * _recVisualMaxTime;
+        var newEndTime = _rangeDrag.endTime + timeDelta;
+        var startTime = _rangeDrag.startTime;
+        
+        newEndTime = Math.min(_recVisualMaxTime, newEndTime);
+        
+        var newVisibleTime = newEndTime - startTime;
+        newVisibleTime = Math.max(4000, newVisibleTime);
+        var newZoom = w / newVisibleTime;
+        _recVisualZoom = newZoom;
+        _recVisualScrollX = startTime * newZoom;
+      }
+      
+      renderRecVisual();
+      updateRangeBar();
+    });
+    
+    document.addEventListener('mouseup', function() {
+      if (rangeHandleLeft) rangeHandleLeft.style.background = 'rgba(150,180,210,0.9)';
+      if (rangeHandleRight) rangeHandleRight.style.background = 'rgba(150,180,210,0.9)';
+      if (rangeSel) rangeSel.style.background = 'rgba(100,140,180,0.6)';
+      _rangeDrag = null;
+    });
+    
+    var maxTimeInput = document.getElementById('recVisualMaxTimeInput');
+    if (maxTimeInput) {
+      maxTimeInput.value = Math.round(_recVisualMaxTime / 1000);
+      maxTimeInput.onchange = function() {
+        var seconds = Math.max(1, Math.min(300, parseInt(this.value) || 10));
+        this.value = seconds;
+        _recVisualMaxTime = seconds * 1000;
+        
+        var wrap = document.getElementById('recVisualCanvasWrap');
+        var w = wrap.clientWidth;
+        
+        var newZoom = w / _recVisualMaxTime;
+        _recVisualZoom = Math.max(0.1, newZoom);
+        _recVisualScrollX = 0;
+        
+        if (_recVisualPlayTime > _recVisualMaxTime) {
+          _recVisualPlayTime = _recVisualMaxTime;
+          document.getElementById('recVisualTime').textContent = (_recVisualPlayTime / 1000).toFixed(2) + 's';
+        }
+        
+        saveVisualEditorSettings();
+        renderRecVisual();
+        updateRangeBar();
+      };
+    }
+    
+    var regionTimeInput = document.getElementById('recVisualRegionTime');
+    if (regionTimeInput) {
+      regionTimeInput.onchange = function() {
+        var seconds = Math.max(4, Math.min(300, parseInt(this.value) || 10));
+        this.value = seconds;
+        _recVisualRegionTime = seconds * 1000;
+        
+        var wrap = document.getElementById('recVisualCanvasWrap');
+        var w = wrap.clientWidth;
+        
+        var currentStartTime = _recVisualScrollX / _recVisualZoom;
+        var newVisibleTime = _recVisualRegionTime;
+        var newZoom = w / newVisibleTime;
+        _recVisualZoom = newZoom;
+        _recVisualScrollX = currentStartTime * newZoom;
+        
+        saveVisualEditorSettings();
+        renderRecVisual();
+        updateRangeBar();
+      };
+    }
+    
+    var bpmInput = document.getElementById('recVisualBPM');
+    if (bpmInput) {
+      bpmInput.onchange = function() {
+        _recVisualBPM = Math.max(30, Math.min(240, parseInt(this.value) || 120));
+        this.value = _recVisualBPM;
+        saveVisualEditorSettings();
+        renderRecVisual();
+      };
+    }
+    
+    var timeSigInput = document.getElementById('recVisualTimeSig');
+    if (timeSigInput) {
+      timeSigInput.oninput = function() {
+        var val = this.value.trim();
+        if (val && /^\d+\/\d+$/.test(val)) {
+          _recVisualTimeSig = val;
+          _recVisualMainSectionH = null;
+          saveVisualEditorSettings();
+          renderRecVisual();
+        }
+      };
+    }
+    
+    var snapBtn = document.getElementById('recVisualSnap');
+    if (snapBtn) {
+      snapBtn.onclick = function() {
+        _recVisualSnapEnabled = !_recVisualSnapEnabled;
+        this.style.background = _recVisualSnapEnabled ? '#0099ff' : '#222';
+        this.style.color = _recVisualSnapEnabled ? '#fff' : '#eee';
+        this.style.borderColor = _recVisualSnapEnabled ? '#0099ff' : '#444';
+        saveVisualEditorSettings();
+      };
+    }
+    
+    var durationSelect = document.getElementById('recVisualDuration');
+    if (durationSelect) {
+      durationSelect.onchange = function() {
+        if (_recVisualSelectedNotes.length > 0) {
+          saveVisualHistory();
+          var newHoldMs = beatsToMs(parseFloat(this.value));
+          _recVisualSelectedNotes.forEach(function(n) { n.holdMs = newHoldMs; });
+          renderRecVisual();
+        } else if (_recVisualSelected) {
+          saveVisualHistory();
+          _recVisualSelected.holdMs = beatsToMs(parseFloat(this.value));
+          renderRecVisual();
+        }
+      };
+    }
+    
+    var playBtn = document.getElementById('recVisualPlay');
+    if (playBtn) {
+      playBtn.onclick = function() {
+        if (_recVisualPlaying) {
+          _recVisualPlaying = false;
+          playBtn.textContent = '▶ 播放';
+          if (_recVisualPlayAnimId) {
+            cancelAnimationFrame(_recVisualPlayAnimId);
+            _recVisualPlayAnimId = null;
+          }
+          _recVisualNotes.forEach(function(n) {
+            if (n._noteKey) {
+              try { stopNote(n._noteKey); } catch(e) {}
+            }
+          });
+        } else {
+          _recVisualNotes.forEach(function(n) {
+            n._played = false;
+            n._noteKey = null;
+          });
+          
+          if (_recVisualPlayTime >= _recVisualMaxTime) {
+            _recVisualPlayTime = 0;
+          }
+          
+          initAudio();
+          
+          _recVisualPlaying = true;
+          _recVisualPlayStart = performance.now() - _recVisualPlayTime;
+          playBtn.textContent = '⏸ 暂停';
+          visualPlayLoop();
+        }
+      };
+    }
+    
+    var undoBtn = document.getElementById('recVisualUndo');
+    var redoBtn = document.getElementById('recVisualRedo');
+    var addBtn = document.getElementById('recVisualAdd');
+    var copyBtn = document.getElementById('recVisualCopy');
+    var pasteBtn = document.getElementById('recVisualPaste');
+    var delBtn = document.getElementById('recVisualDel');
+    
+    if (undoBtn) undoBtn.onclick = undoVisual;
+    if (redoBtn) redoBtn.onclick = redoVisual;
+    if (addBtn) addBtn.onclick = function() {
+      saveVisualHistory();
+      var durationVal = 1;
+      var durSelect = document.getElementById('recVisualDuration');
+      if (durSelect) durationVal = parseFloat(durSelect.value) || 1;
+      var newHoldMs = beatsToMs(durationVal);
+      
+      var instSelect = document.getElementById('recVisualInst');
+      var noteSelect = document.getElementById('recVisualNote');
+      var inst = instSelect ? instSelect.value : '钢琴';
+      var note = noteSelect ? noteSelect.value : 'C4';
+      
+      var newTrack;
+      if (_recVisualActiveTrack === 'main') {
+        newTrack = 0;
+      } else if (_recVisualActiveTrack === 'accomp') {
+        newTrack = -1;
+      } else {
+        newTrack = 0;
+      }
+      
+      var lastEndTime = 0;
+      _recVisualNotes.forEach(function(n) {
+        if ((newTrack === 0 && n.track >= 0) || (newTrack === -1 && n.track < 0)) {
+          var noteEnd = n.timeMs + n.holdMs;
+          if (noteEnd > lastEndTime) {
+            lastEndTime = noteEnd;
+          }
+        }
+      });
+      
+      var newTimeMs = snapToBeat(lastEndTime);
+      
+      _recVisualNotes.push({
+        inst: inst,
+        note: note,
+        holdMs: newHoldMs,
+        timeMs: newTimeMs,
+        track: newTrack
+      });
+      _recVisualSelected = _recVisualNotes[_recVisualNotes.length - 1];
+      _recVisualSelectedNotes = [];
+      updatePropsPanel();
+      renderRecVisual();
+    };
+    if (copyBtn) copyBtn.onclick = copyVisualNotes;
+    if (pasteBtn) pasteBtn.onclick = pasteVisualNotes;
+    if (delBtn) delBtn.onclick = deleteVisualNotes;
+    
+    var instSelect = document.getElementById('recVisualInst');
+    var noteSelect = document.getElementById('recVisualNote');
+    if (instSelect) {
+      instSelect.onchange = function() {
+        if (_recVisualSelectedNotes.length > 0) {
+          saveVisualHistory();
+          _recVisualSelectedNotes.forEach(function(n) { n.inst = this.value; }.bind(this));
+          renderRecVisual();
+        } else if (_recVisualSelected) {
+          saveVisualHistory();
+          _recVisualSelected.inst = this.value;
+          renderRecVisual();
+        }
+      };
+    }
+    if (noteSelect) {
+      noteSelect.onchange = function() {
+        if (_recVisualSelectedNotes.length > 0) {
+          saveVisualHistory();
+          _recVisualSelectedNotes.forEach(function(n) { n.note = this.value; }.bind(this));
+          renderRecVisual();
+        } else if (_recVisualSelected) {
+          saveVisualHistory();
+          _recVisualSelected.note = this.value;
+          renderRecVisual();
+        }
+      };
+    }
+    
+    document.removeEventListener('keydown', handleVisualKeydown);
+    document.addEventListener('keydown', handleVisualKeydown);
+    
+    setupRecVisualKeyboardEvents();
+  }
+
+  function handleVisualKeydown(e) {
+    if (document.getElementById('recVisualEditor').style.display === 'none') return;
+    
+    if (e.key === 'Delete') {
+      deleteVisualNotes();
+    } else if (e.ctrlKey && e.key === 'z') {
+      e.preventDefault();
+      undoVisual();
+    } else if (e.ctrlKey && e.key === 'y') {
+      e.preventDefault();
+      redoVisual();
+    } else if (e.ctrlKey && e.key === 'c') {
+      e.preventDefault();
+      copyVisualNotes();
+    } else if (e.ctrlKey && e.key === 'v') {
+      e.preventDefault();
+      pasteVisualNotes();
+    } else if (e.ctrlKey && e.key === 'a') {
+      e.preventDefault();
+      _recVisualSelectedNotes = _recVisualNotes.slice();
+      _recVisualSelected = null;
+      renderRecVisual();
+    } else if (e.ctrlKey && (e.key === 's' || e.key === 'S')) {
+      e.preventDefault();
+      saveVisualEditorWithoutClose();
+    } else if (e.key === ' ' || e.code === 'Space') {
+      e.preventDefault();
+      var playBtn = document.getElementById('recVisualPlay');
+      if (playBtn) playBtn.click();
+    }
+  }
+  
+  function saveVisualEditorWithoutClose() {
+    var overlay = document.getElementById('recEditOverlay');
+    var name = document.getElementById('recEditName').value.trim() || '未命名录制';
+    parseVisualToText();
+    var mainText = document.getElementById('recEditScoreMain').value.trim();
+    var accompText = document.getElementById('recEditScoreAccomp').value.trim();
+    var display = mainText;
+    if (accompText) {
+      display = mainText + '\n' + accompText;
+    }
+    var speed = parseFloat(document.getElementById('recEditSpeed').value) || 1;
+    var idx = overlay._editIdx;
+    var dateStr = new Date().toLocaleDateString('zh-CN');
+    
+    if (idx === -1) {
+      customRecordings.push({ key: Date.now(), name: name, display: display, speed: speed, date: dateStr });
+      overlay._editIdx = customRecordings.length - 1;
+    } else {
+      customRecordings[idx].name = name;
+      customRecordings[idx].display = display;
+      customRecordings[idx].speed = speed;
+    }
+    saveRecs();
+    renderRecList();
+    
+    saveVisualEditorSettings();
+  }
+
+  function visualPlayLoop() {
+    if (!_recVisualPlaying) return;
+    
+    _recVisualPlayTime = performance.now() - _recVisualPlayStart;
+    
+    var timeSpan = document.getElementById('recVisualTime');
+    if (timeSpan) {
+      timeSpan.textContent = (_recVisualPlayTime / 1000).toFixed(1) + 's';
+    }
+    
+    _recVisualNotes.forEach(function(n, idx) {
+      var noteKey = 'visEdit_' + idx;
+      if (_recVisualPlayTime >= n.timeMs && _recVisualPlayTime < n.timeMs + n.holdMs) {
+        if (!n._played) {
+          var instEn = _INST_EN[n.inst] || n.inst;
+          startNote(noteKey, n.note, instEn);
+          n._played = true;
+          n._noteKey = noteKey;
+        }
+      } else {
+        if (n._played && n._noteKey) {
+          try { stopNote(n._noteKey); } catch(e) {}
+          n._played = false;
+        }
+      }
+    });
+    
+    renderRecVisual();
+
+    var maxNoteTime = 0;
+    _recVisualNotes.forEach(function(n) {
+      if (n.track >= 0) {
+        var noteEnd = n.timeMs + n.holdMs;
+        if (noteEnd > maxNoteTime) {
+          maxNoteTime = noteEnd;
+        }
+      }
+    });
+
+    var stopTime = Math.max(maxNoteTime + 500, _recVisualMaxTime);
+
+    if (_recVisualPlayTime >= stopTime) {
+      _recVisualPlaying = false;
+      _recVisualNotes.forEach(function(n) {
+        if (n._noteKey) {
+          try { stopNote(n._noteKey); } catch(e) {}
+        }
+      });
+      var playBtn = document.getElementById('recVisualPlay');
+      if (playBtn) playBtn.textContent = '▶ 播放';
+      return;
+    }
+    
+    _recVisualPlayAnimId = requestAnimationFrame(visualPlayLoop);
+  }
+
+  function playNoteImmediate(inst, note, duration) {
+    initAudio();
+    var freq = noteToFreq(note);
+    if (!freq) return;
+    
+    var instType = getInstType(inst);
+    var savedInst = currentInst;
+    currentInst = instType;
+    
+    var result = startInstrumentNote(freq);
+    if (result && result.env) {
+      var now = audioCtx.currentTime;
+      var dur = Math.min(duration / 1000, 3);
+      result.env.gain.cancelScheduledValues(now);
+      result.env.gain.setValueAtTime(result.env.gain.value, now);
+      result.env.gain.exponentialRampToValueAtTime(0.001, now + dur);
+      result.nodes.forEach(function(osc) {
+        if (osc.stop) osc.stop(now + dur + 0.1);
+      });
+    }
+    
+    currentInst = savedInst;
+  }
+
+  function noteToFreq(note) {
+    var notes = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+    var match = note.match(/([A-G])(#?)(\d)/);
+    if (!match) return null;
+    var n = match[1];
+    var sharp = match[2] === '#';
+    var octave = parseInt(match[3]);
+    var idx = notes.indexOf(n);
+    var semitones = idx + (sharp ? 1 : 0);
+    var midi = 12 + (octave * 12) + semitones;
+    return 440 * Math.pow(2, (midi - 69) / 12);
+  }
+
+  function getInstType(inst) {
+    var map = {
+      '钢琴': 'piano',
+      '吉他': 'guitar',
+      '小提琴': 'violin',
+      '大提琴': 'cello',
+      '箫': 'xiao',
+      '笛子': 'dizi',
+      '古筝': 'guzheng',
+      '二胡': 'erhu',
+      '琵琶': 'pipa',
+      '鼓': 'drum',
+      '架子鼓': 'drumkit',
+      '钟声': 'bell',
+      '唢呐': 'suona',
+      '贝斯': 'bass',
+      '萨克斯': 'saxophone'
+    };
+    return map[inst] || 'piano';
+  }
+
+  function updatePropsPanel() {
+    var instSelect = document.getElementById('recVisualInst');
+    var noteSelect = document.getElementById('recVisualNote');
+    if (_recVisualSelected) {
+      if (instSelect) instSelect.value = _recVisualSelected.inst;
+      if (noteSelect) noteSelect.value = _recVisualSelected.note;
+    }
+  }
+
+  function parseTextToVisual() {
+    _recVisualNotes = [];
+    _recVisualHistory = [];
+    _recVisualHistoryIdx = -1;
+    _recVisualSelected = null;
+    _recVisualSelectedNotes = [];
+    _recVisualPlayTime = 0;
+    
+    var textMain = document.getElementById('recEditScoreMain').value.trim();
+    var textAccomp = document.getElementById('recEditScoreAccomp').value.trim();
+    
+    if (textMain) {
+      var notesMain = textMain.split('_');
+      notesMain.forEach(function(noteStr) {
+        if (!noteStr.trim()) return;
+        var parts = noteStr.split('|');
+        if (parts.length >= 4) {
+          var inst = parts[0];
+          var note = parts[1];
+          var holdMs = parseInt(parts[2]) || 200;
+          var timeMs = parseInt(parts[3]) || 0;
+          var track = parts.length >= 5 ? (parseInt(parts[4]) || 0) : 0;
+          _recVisualNotes.push({
+            inst: inst,
+            note: note,
+            holdMs: holdMs,
+            timeMs: timeMs,
+            track: track
+          });
+        }
+      });
+    }
+    
+    if (textAccomp) {
+      var notesAccomp = textAccomp.split('_');
+      notesAccomp.forEach(function(noteStr) {
+        if (!noteStr.trim()) return;
+        var parts = noteStr.split('|');
+        if (parts.length >= 4) {
+          var inst = parts[0];
+          var note = parts[1];
+          var holdMs = parseInt(parts[2]) || 200;
+          var timeMs = parseInt(parts[3]) || 0;
+          var track = parts.length >= 5 ? (parseInt(parts[4]) || 1) : 1;
+          
+          _recVisualNotes.push({
+            inst: inst,
+            note: note,
+            holdMs: holdMs,
+            timeMs: timeMs,
+            track: -track
+          });
+        }
+      });
+    }
+    
+    var maxTimeInput = document.getElementById('recVisualMaxTimeInput');
+    if (maxTimeInput) {
+      maxTimeInput.value = Math.round(_recVisualMaxTime / 1000);
+    }
+  }
+  
+  function parseVisualToText() {
+    var notesMain = [];
+    var notesAccomp = [];
+    
+    _recVisualNotes.forEach(function(n) {
+      var t = parseInt(n.track);
+      if (isNaN(t)) t = 0;
+      
+      var isMain = t >= 0;
+      var displayTrack = t;
+      if (t < 0) {
+        displayTrack = -t;
+      }
+      
+      var noteStr = n.inst + '|' + n.note + '|' + n.holdMs + '|' + n.timeMs + '|' + displayTrack;
+      if (isMain) {
+        notesMain.push(noteStr);
+      } else {
+        notesAccomp.push(noteStr);
+      }
+    });
+    
+    notesMain.sort(function(a, b) {
+      var aTime = parseInt(a.split('|')[3]) || 0;
+      var bTime = parseInt(b.split('|')[3]) || 0;
+      return aTime - bTime;
+    });
+    
+    notesAccomp.sort(function(a, b) {
+      var aTime = parseInt(a.split('|')[3]) || 0;
+      var bTime = parseInt(b.split('|')[3]) || 0;
+      return aTime - bTime;
+    });
+    
+    document.getElementById('recEditScoreMain').value = notesMain.join('_');
+    document.getElementById('recEditScoreAccomp').value = notesAccomp.join('_');
+  }
+
+  var _recVisualVScrollbarDragging = false;
+  var _recVisualVScrollbarDragStartY = 0;
+  var _recVisualVScrollbarDragStartScrollY = 0;
+
+  function updateVScrollbar() {
+    var wrap = document.getElementById('recVisualCanvasWrap');
+    var container = document.getElementById('recVisualCanvasContainer');
+    var thumb = document.getElementById('recVisualVThumb');
+    if (!wrap || !thumb) return;
+
+    var totalMainTracks = _recVisualMainTrackCount || 1;
+    var totalAccompTracks = _recVisualAccompTrackCount || 0;
+    var fixedTrackH = 70;
+    var gap = 8;
+    var timelineH = 28;
+    var totalContentHeight = timelineH + totalMainTracks * fixedTrackH + gap + (totalAccompTracks > 0 ? totalAccompTracks * fixedTrackH : 0);
+    var visibleHeight = container ? container.clientHeight : wrap.clientHeight;
+
+    if (totalContentHeight <= visibleHeight) {
+      thumb.style.display = 'none';
+      return;
+    }
+
+    thumb.style.display = 'block';
+    var scrollbarH = thumb.parentElement.clientHeight - 8;
+    var thumbH = Math.max(30, (visibleHeight / totalContentHeight) * scrollbarH);
+    var maxThumbTop = scrollbarH - thumbH;
+    var scrollRatio = (_recVisualScrollY || 0) / (totalContentHeight - visibleHeight);
+    var thumbTop = scrollRatio * maxThumbTop;
+
+    thumb.style.height = thumbH + 'px';
+    thumb.style.top = (4 + thumbTop) + 'px';
+  }
+
+  function onVScrollbarDrag(e) {
+    if (!_recVisualVScrollbarDragging) return;
+    var wrap = document.getElementById('recVisualCanvasWrap');
+    var container = document.getElementById('recVisualCanvasContainer');
+    var thumb = document.getElementById('recVisualVThumb');
+    if (!wrap || !thumb) return;
+
+    var totalMainTracks = _recVisualMainTrackCount || 1;
+    var totalAccompTracks = _recVisualAccompTrackCount || 0;
+    var fixedTrackH = 70;
+    var gap = 8;
+    var timelineH = 28;
+    var totalContentHeight = timelineH + totalMainTracks * fixedTrackH + gap + (totalAccompTracks > 0 ? totalAccompTracks * fixedTrackH : 0);
+    var visibleHeight = container ? container.clientHeight : wrap.clientHeight;
+
+    var scrollbarH = thumb.parentElement.clientHeight - 8;
+    var thumbH = Math.max(30, (visibleHeight / totalContentHeight) * scrollbarH);
+    var maxThumbTop = scrollbarH - thumbH;
+    var maxScrollY = Math.max(0, totalContentHeight - visibleHeight);
+
+    var deltaY = e.clientY - _recVisualVScrollbarDragStartY;
+    var scrollDelta = (deltaY / maxThumbTop) * maxScrollY;
+    _recVisualScrollY = Math.max(0, Math.min(maxScrollY, _recVisualVScrollbarDragStartScrollY + scrollDelta));
+
+    renderRecVisual();
+    updateVScrollbar();
+    updateRangeBar();
+  }
+
+  function onVScrollbarDragEnd() {
+    _recVisualVScrollbarDragging = false;
+    document.removeEventListener('mousemove', onVScrollbarDrag);
+    document.removeEventListener('mouseup', onVScrollbarDragEnd);
+  }
+
+  function renderRecVisual() {
+    console.log('renderRecVisual called', {_recVisualCanvas: !!_recVisualCanvas, _recVisualCtx: !!_recVisualCtx});
+    if (!_recVisualCanvas || !_recVisualCtx) {
+      console.log('Canvas or ctx not available, returning early');
+      return;
+    }
+    
+    var wrap = document.getElementById('recVisualCanvasWrap');
+    var w = wrap.clientWidth;
+    var baseH = wrap.clientHeight;
+    
+    var totalMainTracks = _recVisualMainTrackCount;
+    var totalAccompTracks = _recVisualAccompTrackCount;
+    var fixedTrackH = 70;
+    var gap = 8;
+    var timelineH = 28;
+    var totalTrackCount = totalMainTracks + totalAccompTracks;
+    var totalContentHeight = timelineH + totalMainTracks * fixedTrackH + gap + (totalAccompTracks > 0 ? totalAccompTracks * fixedTrackH : 0);
+    var h = Math.max(baseH, totalContentHeight);
+    
+    if (_recVisualCanvas.width !== w) _recVisualCanvas.width = w;
+    if (_recVisualCanvas.height !== h) _recVisualCanvas.height = h;
+    
+    var ctx = _recVisualCtx;
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, 0, w, h);
+    
+    var padding = 0;
+    var trackW = w - padding * 2;
+    
+    if (_recVisualZoom <= 0) _recVisualZoom = 1;
+    var visibleTime = w / _recVisualZoom;
+    _recVisualScale = trackW / visibleTime;
+    if (_recVisualScale <= 0) _recVisualScale = 1;
+    
+    var scrollTime = _recVisualScrollX / _recVisualScale;
+    var scrollY = _recVisualScrollY || 0;
+    
+    var mainTrackH = fixedTrackH;
+    var mainSectionTop = timelineH - scrollY;
+    var mainSectionH = fixedTrackH * totalMainTracks;
+    var noteAreaH = h - timelineH;
+    var accompSectionH = fixedTrackH * totalAccompTracks;
+    var accompSectionTop = mainSectionTop + mainSectionH + gap;
+    
+    var mainTrackControls = document.getElementById('mainTrackControls');
+    var accompTrackControls = document.getElementById('accompTrackControls');
+    var trackControlsWrap = document.getElementById('trackControlsWrap');
+    if (mainTrackControls) {
+      mainTrackControls.style.height = mainSectionH + 'px';
+      mainTrackControls.style.display = 'flex';
+      mainTrackControls.style.flexDirection = 'column';
+      mainTrackControls.style.justifyContent = 'flex-start';
+      mainTrackControls.style.paddingTop = '0px';
+    }
+    if (accompTrackControls) {
+      accompTrackControls.style.height = Math.max(accompSectionH, 50) + 'px';
+      accompTrackControls.style.display = 'flex';
+      accompTrackControls.style.flexDirection = 'column';
+      accompTrackControls.style.justifyContent = 'flex-start';
+    }
+    if (trackControlsWrap) {
+      trackControlsWrap.style.paddingTop = timelineH + 'px';
+    }
+    
+    ctx.fillStyle = 'rgba(35, 35, 50, 1)';
+    ctx.fillRect(0, 0, w, timelineH);
+    
+    ctx.strokeStyle = 'rgba(80, 80, 100, 0.8)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, timelineH);
+    ctx.lineTo(w, timelineH);
+    ctx.stroke();
+    
+    var endX = padding + (_recVisualMaxTime - scrollTime) * _recVisualScale;
+    if (endX >= 0 && endX <= w) {
+      ctx.strokeStyle = '#ff4444';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(endX, 0);
+      ctx.lineTo(endX, h);
+      ctx.stroke();
+      
+      ctx.fillStyle = '#ff4444';
+      ctx.font = 'bold 10px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText((_recVisualMaxTime / 1000).toFixed(1) + 's', endX, 2);
+    }
+    
+    var beatMs = getBeatDuration();
+    if (typeof _recVisualTimeSig !== 'string') {
+      _recVisualTimeSig = "4/4";
+    }
+    var timeSigParts = _recVisualTimeSig.split('/');
+    var beatsPerMeasure = parseInt(timeSigParts[0]) || 4;
+    var beatUnit = parseInt(timeSigParts[1]) || 4;
+    var measureMs = beatMs * beatsPerMeasure * (4 / beatUnit);
+    var quarterMs = beatMs;
+    var eighthMs = beatMs / 2;
+    var sixteenthMs = beatMs / 4;
+    var thirtySecondMs = beatMs / 8;
+    
+    var showThirtySecond = (_recVisualZoom >= 0.5);
+    var showSixteenth = (_recVisualZoom >= 0.25);
+    var showEighth = (_recVisualZoom >= 0.1);
+    
+    function drawTimelineMark(x, height, color) {
+      if (x < -10 || x > w + 10) return;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, timelineH - height);
+      ctx.lineTo(x, timelineH);
+      ctx.stroke();
+    }
+    
+    if (showThirtySecond) {
+      var startTick = Math.floor(scrollTime / thirtySecondMs);
+      var totalTicks = Math.ceil((scrollTime + visibleTime) / thirtySecondMs);
+      for (var t = startTick; t <= totalTicks; t++) {
+        var tickTime = t * thirtySecondMs;
+        var tx = padding + (tickTime - scrollTime) * _recVisualScale;
+        if (tx < -10) continue;
+        if (tx > w + 10) break;
+        
+        var isMeasureStart = (t % (beatsPerMeasure * 8) === 0);
+        var isQuarter = (t % 8 === 0);
+        var isEighth = (t % 4 === 0);
+        var isSixteenth = (t % 2 === 0);
+        
+        if (isMeasureStart) {
+          ctx.strokeStyle = 'rgba(100, 100, 140, 0.9)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(tx, timelineH - 14);
+          ctx.lineTo(tx, timelineH);
+          ctx.stroke();
+          
+          ctx.fillStyle = '#bbb';
+          ctx.font = 'bold 10px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          var measureNum = Math.floor(t / (beatsPerMeasure * 8));
+          ctx.fillText(measureNum, tx, timelineH / 2);
+        } else if (isQuarter) {
+          drawTimelineMark(tx, 10, 'rgba(80, 80, 120, 0.7)');
+        } else if (isEighth) {
+          drawTimelineMark(tx, 7, 'rgba(55, 55, 90, 0.35)');
+        } else if (isSixteenth) {
+          drawTimelineMark(tx, 5, 'rgba(50, 50, 85, 0.2)');
+        } else {
+          drawTimelineMark(tx, 3, 'rgba(45, 45, 80, 0.1)');
+        }
+      }
+    } else if (showSixteenth) {
+      var startSixteenth = Math.floor(scrollTime / sixteenthMs);
+      var totalSixteenths = Math.ceil((scrollTime + visibleTime) / sixteenthMs);
+      for (var s = startSixteenth; s <= totalSixteenths; s++) {
+        var sixteenthTime = s * sixteenthMs;
+        var sx = padding + (sixteenthTime - scrollTime) * _recVisualScale;
+        if (sx < -10) continue;
+        if (sx > w + 10) break;
+        
+        var isMeasureStart = (s % (beatsPerMeasure * 4) === 0);
+        var isQuarter = (s % 4 === 0);
+        var isEighth = (s % 2 === 0);
+        
+        if (isMeasureStart) {
+          ctx.strokeStyle = 'rgba(100, 100, 140, 0.9)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(sx, timelineH - 14);
+          ctx.lineTo(sx, timelineH);
+          ctx.stroke();
+          
+          ctx.fillStyle = '#bbb';
+          ctx.font = 'bold 10px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          var measureNum = Math.floor(s / (beatsPerMeasure * 4));
+          ctx.fillText(measureNum, sx, timelineH / 2);
+        } else if (isQuarter) {
+          drawTimelineMark(sx, 10, 'rgba(80, 80, 120, 0.7)');
+        } else if (isEighth) {
+          drawTimelineMark(sx, 7, 'rgba(70, 70, 110, 0.4)');
+        } else {
+          drawTimelineMark(sx, 5, 'rgba(55, 55, 90, 0.25)');
+        }
+      }
+    } else if (showEighth) {
+      var startEighth = Math.floor(scrollTime / eighthMs);
+      var totalEighths = Math.ceil((scrollTime + visibleTime) / eighthMs);
+      for (var e = startEighth; e <= totalEighths; e++) {
+        var eighthTime = e * eighthMs;
+        var ex = padding + (eighthTime - scrollTime) * _recVisualScale;
+        if (ex < -10) continue;
+        if (ex > w + 10) break;
+        
+        var isMeasureStart = (e % (beatsPerMeasure * 2) === 0);
+        var isQuarter = (e % 2 === 0);
+        
+        if (isMeasureStart) {
+          ctx.strokeStyle = 'rgba(100, 100, 140, 0.9)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(ex, timelineH - 14);
+          ctx.lineTo(ex, timelineH);
+          ctx.stroke();
+          
+          ctx.fillStyle = '#bbb';
+          ctx.font = 'bold 10px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          var measureNum = Math.floor(e / (beatsPerMeasure * 2));
+          ctx.fillText(measureNum, ex, timelineH / 2);
+        } else if (isQuarter) {
+          drawTimelineMark(ex, 10, 'rgba(80, 80, 120, 0.7)');
+        } else {
+          drawTimelineMark(ex, 7, 'rgba(70, 70, 110, 0.5)');
+        }
+      }
+    } else {
+      var startBeat = Math.floor(scrollTime / beatMs);
+      var totalBeats = Math.ceil((scrollTime + visibleTime) / beatMs);
+      for (var b = startBeat; b <= totalBeats; b++) {
+        var beatTime = b * beatMs;
+        var bx = padding + (beatTime - scrollTime) * _recVisualScale;
+        if (bx < -10) continue;
+        if (bx > w + 10) break;
+        
+        var isMeasureStart = (b % beatsPerMeasure === 0);
+        
+        if (isMeasureStart) {
+          ctx.strokeStyle = 'rgba(100, 100, 140, 0.9)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(bx, timelineH - 14);
+          ctx.lineTo(bx, timelineH);
+          ctx.stroke();
+          
+          ctx.fillStyle = '#bbb';
+          ctx.font = 'bold 10px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          var measureNum = Math.floor(b / beatsPerMeasure);
+          ctx.fillText(measureNum, bx, timelineH / 2);
+        } else {
+          drawTimelineMark(bx, 10, 'rgba(80, 80, 120, 0.7)');
+        }
+      }
+    }
+    
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, accompSectionTop - gap / 2 - 4, w, 8);
+    
+    ctx.fillStyle = 'rgba(30, 30, 45, 1)';
+    ctx.fillRect(0, mainSectionTop, w, mainSectionH);
+    ctx.fillRect(0, accompSectionTop, w, accompSectionH);
+    
+    var dynamicMainTrackH = totalMainTracks > 0 ? mainSectionH / totalMainTracks : fixedTrackH;
+    var dynamicAccompTrackH = totalAccompTracks > 1 ? accompSectionH / (totalAccompTracks - 1) : fixedTrackH;
+    
+    ctx.strokeStyle = 'rgba(60, 60, 80, 0.3)';
+    ctx.lineWidth = 1;
+    for (var i = 1; i < totalMainTracks; i++) {
+      ctx.beginPath();
+      ctx.moveTo(0, mainSectionTop + i * dynamicMainTrackH);
+      ctx.lineTo(w, mainSectionTop + i * dynamicMainTrackH);
+      ctx.stroke();
+    }
+    for (var i = 1; i < totalAccompTracks - 1; i++) {
+      ctx.beginPath();
+      ctx.moveTo(0, accompSectionTop + i * dynamicAccompTrackH);
+      ctx.lineTo(w, accompSectionTop + i * dynamicAccompTrackH);
+      ctx.stroke();
+    }
+    
+    ctx.fillStyle = '#666';
+    ctx.font = '9px Arial';
+    for (var i = 0; i < totalMainTracks; i++) {
+      ctx.fillText('轨道' + (i + 1), 4, mainSectionTop + i * dynamicMainTrackH + dynamicMainTrackH / 2);
+    }
+    for (var i = 0; i < totalAccompTracks - 1; i++) {
+      ctx.fillText('轨道' + (i + 1), 4, accompSectionTop + i * dynamicAccompTrackH + dynamicAccompTrackH / 2);
+    }
+    
+    var measureMs = beatMs * beatsPerMeasure;
+    var startMeasure = Math.floor(scrollTime / measureMs);
+    var totalMeasures = Math.ceil((scrollTime + visibleTime) / measureMs);
+    for (var m = startMeasure; m <= totalMeasures; m++) {
+      var measureTime = m * measureMs;
+      var mx = padding + (measureTime - scrollTime) * _recVisualScale;
+      if (mx < -w) continue;
+      if (mx > w * 2) break;
+      
+      if (m % 2 === 1) {
+        var nextMx = mx + measureMs * _recVisualScale;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+        ctx.fillRect(mx, mainSectionTop, Math.min(nextMx - mx, w - mx), mainSectionH);
+        ctx.fillRect(mx, accompSectionTop, Math.min(nextMx - mx, w - mx), accompSectionH);
+      }
+    }
+    
+    ctx.lineWidth = 1;
+    if (showThirtySecond) {
+      var startTick2 = Math.floor(scrollTime / thirtySecondMs);
+      var totalTicks2 = Math.ceil((scrollTime + visibleTime) / thirtySecondMs);
+      for (var t = startTick2; t <= totalTicks2; t++) {
+        var tickTime = t * thirtySecondMs;
+        var tx = padding + (tickTime - scrollTime) * _recVisualScale;
+        if (tx < -10) continue;
+        if (tx > w + 10) break;
+        
+        var isMeasureStart = (t % (beatsPerMeasure * 8) === 0);
+        var isQuarter = (t % 8 === 0);
+        var isEighth = (t % 4 === 0);
+        var isSixteenth = (t % 2 === 0);
+        
+        ctx.lineWidth = 1;
+        if (isMeasureStart) {
+          ctx.strokeStyle = 'rgba(70, 70, 100, 0.5)';
+        } else if (isQuarter) {
+          ctx.strokeStyle = 'rgba(60, 60, 90, 0.4)';
+        } else if (isEighth) {
+          ctx.strokeStyle = 'rgba(45, 45, 75, 0.25)';
+        } else if (isSixteenth) {
+          ctx.strokeStyle = 'rgba(35, 35, 60, 0.15)';
+        } else {
+          ctx.strokeStyle = 'rgba(30, 30, 55, 0.1)';
+        }
+        ctx.beginPath();
+        ctx.moveTo(tx, mainSectionTop);
+        ctx.lineTo(tx, h);
+        ctx.stroke();
+      }
+    } else if (showSixteenth) {
+      var startSixteenth2 = Math.floor(scrollTime / sixteenthMs);
+      var totalSixteenths2 = Math.ceil((scrollTime + visibleTime) / sixteenthMs);
+      for (var s = startSixteenth2; s <= totalSixteenths2; s++) {
+        var sixteenthTime = s * sixteenthMs;
+        var sx = padding + (sixteenthTime - scrollTime) * _recVisualScale;
+        if (sx < -10) continue;
+        if (sx > w + 10) break;
+        
+        var isMeasureStart = (s % (beatsPerMeasure * 4) === 0);
+        var isQuarter = (s % 4 === 0);
+        var isEighth = (s % 2 === 0);
+        
+        ctx.lineWidth = 1;
+        if (isMeasureStart) {
+          ctx.strokeStyle = 'rgba(70, 70, 100, 0.5)';
+        } else if (isQuarter) {
+          ctx.strokeStyle = 'rgba(60, 60, 90, 0.4)';
+        } else if (isEighth) {
+          ctx.strokeStyle = 'rgba(45, 45, 75, 0.25)';
+        } else {
+          ctx.strokeStyle = 'rgba(35, 35, 60, 0.15)';
+        }
+        ctx.beginPath();
+        ctx.moveTo(sx, mainSectionTop);
+        ctx.lineTo(sx, h);
+        ctx.stroke();
+      }
+    } else if (showEighth) {
+      var startEighth2 = Math.floor(scrollTime / eighthMs);
+      var totalEighths2 = Math.ceil((scrollTime + visibleTime) / eighthMs);
+      for (var e = startEighth2; e <= totalEighths2; e++) {
+        var eighthTime = e * eighthMs;
+        var ex = padding + (eighthTime - scrollTime) * _recVisualScale;
+        if (ex < -10) continue;
+        if (ex > w + 10) break;
+        
+        var isMeasureStart = (e % (beatsPerMeasure * 2) === 0);
+        var isQuarter = (e % 2 === 0);
+        
+        ctx.lineWidth = 1;
+        if (isMeasureStart) {
+          ctx.strokeStyle = 'rgba(70, 70, 100, 0.5)';
+        } else if (isQuarter) {
+          ctx.strokeStyle = 'rgba(60, 60, 90, 0.4)';
+        } else {
+          ctx.strokeStyle = 'rgba(40, 40, 65, 0.1)';
+        }
+        ctx.beginPath();
+        ctx.moveTo(ex, mainSectionTop);
+        ctx.lineTo(ex, h);
+        ctx.stroke();
+      }
+    } else {
+      var startBeat2 = Math.floor(scrollTime / beatMs);
+      var totalBeats2 = Math.ceil((scrollTime + visibleTime) / beatMs);
+      for (var b = startBeat2; b <= totalBeats2; b++) {
+        var beatTime = b * beatMs;
+        var bx = padding + (beatTime - scrollTime) * _recVisualScale;
+        if (bx < -10) continue;
+        if (bx > w + 10) break;
+        
+        var isMeasureStart = (b % beatsPerMeasure === 0);
+        ctx.lineWidth = 1;
+        if (isMeasureStart) {
+          ctx.strokeStyle = 'rgba(70, 70, 100, 0.5)';
+        } else {
+          ctx.strokeStyle = 'rgba(60, 60, 90, 0.4)';
+        }
+        ctx.beginPath();
+        ctx.moveTo(bx, mainSectionTop);
+        ctx.lineTo(bx, h);
+        ctx.stroke();
+      }
+    }
+    
+    _recVisualNotes.forEach(function(n, idx) {
+      var x = padding + (n.timeMs - scrollTime) * _recVisualScale;
+      var noteW = Math.max(n.holdMs * _recVisualScale, 2);
+      
+      if (x + noteW < 0 || x > w) return;
+      
+      var trackInfo = parseInt(n.track);
+      if (isNaN(trackInfo)) trackInfo = 0;
+      var isAccomp = trackInfo < 0;
+      var trackIdx = isAccomp ? -trackInfo : trackInfo;
+      
+      if (isAccomp && trackIdx === 0) {
+        return;
+      }
+      
+      var dynamicMainTrackH = totalMainTracks > 0 ? mainSectionH / totalMainTracks : fixedTrackH;
+      var dynamicAccompTrackH = totalAccompTracks > 1 ? (totalAccompTracks > 1 ? accompSectionH / (totalAccompTracks - 1) : fixedTrackH) : fixedTrackH;
+      
+      var y, noteH;
+      if (isAccomp) {
+        var adjustedTrackIdx = trackIdx - 1;
+        if (adjustedTrackIdx >= totalAccompTracks - 1) adjustedTrackIdx = totalAccompTracks - 2;
+        if (adjustedTrackIdx < 0) adjustedTrackIdx = 0;
+        y = mainSectionTop + mainSectionH + gap + adjustedTrackIdx * dynamicAccompTrackH;
+        noteH = dynamicAccompTrackH;
+      } else {
+        if (trackIdx >= totalMainTracks) trackIdx = totalMainTracks - 1;
+        if (trackIdx < 0) trackIdx = 0;
+        y = mainSectionTop + trackIdx * dynamicMainTrackH;
+        noteH = dynamicMainTrackH;
+      }
+      
+      var isSelected = (_recVisualSelected === n);
+      var isMultiSelected = _recVisualSelectedNotes.indexOf(n) !== -1;
+      
+      var noteColors = {
+        'C': 'rgba(255, 80, 80, 0.3)',
+        'D': 'rgba(255, 165, 0, 0.3)',
+        'E': 'rgba(255, 255, 0, 0.3)',
+        'F': 'rgba(0, 200, 0, 0.3)',
+        'G': 'rgba(0, 200, 200, 0.3)',
+        'A': 'rgba(80, 80, 255, 0.3)',
+        'B': 'rgba(180, 80, 255, 0.3)'
+      };
+      
+      var noteKey = n.note.charAt(0).toUpperCase();
+      var noteColor = noteColors[noteKey] || 'rgba(100, 150, 200, 0.3)';
+      
+      if (isSelected || isMultiSelected) {
+        ctx.strokeStyle = '#0099ff';
+        ctx.lineWidth = 2;
+      } else {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 1;
+      }
+      ctx.strokeRect(x, y, noteW, noteH);
+      
+      ctx.fillStyle = isSelected || isMultiSelected ? 'rgba(0, 100, 180, 0.3)' : noteColor;
+      ctx.fillRect(x, y, noteW, noteH);
+
+      ctx.fillStyle = isSelected || isMultiSelected ? '#fff' : '#bbb';
+      ctx.font = '11px Arial';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      if (noteW >= 30) {
+        ctx.fillText(n.note, x + 4, y + noteH / 2);
+      }
+      
+      n._x = x;
+      n._y = y;
+      n._w = noteW;
+      n._h = noteH;
+      n._track = trackInfo;
+      n._idx = idx;
+    });
+    
+    if (_recVisualPlaying && _recVisualPlayTime > 0) {
+      var playX = padding + (_recVisualPlayTime - scrollTime) * _recVisualScale;
+      if (playX >= 0 && playX <= w) {
+        ctx.strokeStyle = '#ff4444';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(playX, 0);
+        ctx.lineTo(playX, h);
+        ctx.stroke();
+        
+        ctx.fillStyle = '#ff4444';
+        ctx.beginPath();
+        ctx.moveTo(playX - 6, 0);
+        ctx.lineTo(playX + 6, 0);
+        ctx.lineTo(playX, 10);
+        ctx.closePath();
+        ctx.fill();
+      }
+    } else if (_recVisualPlayTime > 0) {
+      var playX = padding + (_recVisualPlayTime - scrollTime) * _recVisualScale;
+      if (playX >= 0 && playX <= w) {
+        ctx.strokeStyle = '#ff8844';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(playX, 0);
+        ctx.lineTo(playX, h);
+        ctx.stroke();
+        
+        ctx.fillStyle = '#ff8844';
+        ctx.beginPath();
+        ctx.moveTo(playX - 6, 0);
+        ctx.lineTo(playX + 6, 0);
+        ctx.lineTo(playX, 10);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+    
+    if (_recVisualSelectBox) {
+      ctx.strokeStyle = '#0099ff';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.strokeRect(_recVisualSelectBox.x, _recVisualSelectBox.y, _recVisualSelectBox.w, _recVisualSelectBox.h);
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(0, 153, 255, 0.1)';
+      ctx.fillRect(_recVisualSelectBox.x, _recVisualSelectBox.y, _recVisualSelectBox.w, _recVisualSelectBox.h);
+    }
+    
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, accompSectionTop - gap / 2 - 4, w, 8);
+    
+    ctx.strokeStyle = 'rgba(80, 80, 100, 0.8)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(0, mainSectionTop, w, mainSectionH);
+    ctx.strokeRect(0, accompSectionTop, w, accompSectionH);
+    
+    if (_recVisualActiveTrack === 'main') {
+      ctx.strokeStyle = 'rgba(100, 200, 255, 0.8)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(0, mainSectionTop, w, mainSectionH);
+    } else if (_recVisualActiveTrack === 'accomp') {
+      ctx.strokeStyle = 'rgba(255, 200, 100, 0.8)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(0, accompSectionTop, w, accompSectionH);
+    }
+    
+    ctx.fillStyle = 'rgba(35, 35, 50, 1)';
+    ctx.fillRect(0, 0, w, timelineH);
+    
+    ctx.strokeStyle = 'rgba(80, 80, 100, 0.8)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, timelineH);
+    ctx.lineTo(w, timelineH);
+    ctx.lineTo(w, h);
+    ctx.lineTo(0, h);
+    ctx.closePath();
+    ctx.stroke();
+    
+    function drawTimelineMark2(x, height, color) {
+      if (x < -10 || x > w + 10) return;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, timelineH - height);
+      ctx.lineTo(x, timelineH);
+      ctx.stroke();
+    }
+    
+    if (showThirtySecond) {
+      var startTick3 = Math.floor(scrollTime / thirtySecondMs);
+      var totalTicks3 = Math.ceil((scrollTime + visibleTime) / thirtySecondMs);
+      for (var t = startTick3; t <= totalTicks3; t++) {
+        var tickTime = t * thirtySecondMs;
+        var tx = padding + (tickTime - scrollTime) * _recVisualScale;
+        if (tx < -10) continue;
+        if (tx > w + 10) break;
+        
+        var isMeasureStart = (t % (beatsPerMeasure * 8) === 0);
+        var isQuarter = (t % 8 === 0);
+        var isEighth = (t % 4 === 0);
+        var isSixteenth = (t % 2 === 0);
+        
+        if (isMeasureStart) {
+          ctx.strokeStyle = 'rgba(100, 100, 140, 0.9)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(tx, timelineH - 14);
+          ctx.lineTo(tx, timelineH);
+          ctx.stroke();
+          
+          ctx.fillStyle = '#bbb';
+          ctx.font = 'bold 10px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          var measureNum = Math.floor(t / (beatsPerMeasure * 8));
+          ctx.fillText(measureNum, tx, timelineH / 2);
+        } else if (isQuarter) {
+          drawTimelineMark2(tx, 10, 'rgba(80, 80, 120, 0.7)');
+        } else if (isEighth) {
+          drawTimelineMark2(tx, 7, 'rgba(55, 55, 90, 0.35)');
+        } else if (isSixteenth) {
+          drawTimelineMark2(tx, 5, 'rgba(50, 50, 85, 0.2)');
+        } else {
+          drawTimelineMark2(tx, 3, 'rgba(45, 45, 80, 0.1)');
+        }
+      }
+    } else if (showSixteenth) {
+      var startSixteenth3 = Math.floor(scrollTime / sixteenthMs);
+      var totalSixteenths3 = Math.ceil((scrollTime + visibleTime) / sixteenthMs);
+      for (var s = startSixteenth3; s <= totalSixteenths3; s++) {
+        var sixteenthTime = s * sixteenthMs;
+        var sx = padding + (sixteenthTime - scrollTime) * _recVisualScale;
+        if (sx < -10) continue;
+        if (sx > w + 10) break;
+        
+        var isMeasureStart = (s % (beatsPerMeasure * 4) === 0);
+        var isQuarter = (s % 4 === 0);
+        var isEighth = (s % 2 === 0);
+        
+        if (isMeasureStart) {
+          ctx.strokeStyle = 'rgba(100, 100, 140, 0.9)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(sx, timelineH - 14);
+          ctx.lineTo(sx, timelineH);
+          ctx.stroke();
+          
+          ctx.fillStyle = '#bbb';
+          ctx.font = 'bold 10px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          var measureNum = Math.floor(s / (beatsPerMeasure * 4));
+          ctx.fillText(measureNum, sx, timelineH / 2);
+        } else if (isQuarter) {
+          drawTimelineMark2(sx, 10, 'rgba(80, 80, 120, 0.7)');
+        } else if (isEighth) {
+          drawTimelineMark2(sx, 7, 'rgba(70, 70, 110, 0.4)');
+        } else {
+          drawTimelineMark2(sx, 5, 'rgba(55, 55, 90, 0.25)');
+        }
+      }
+    } else if (showEighth) {
+      var startEighth3 = Math.floor(scrollTime / eighthMs);
+      var totalEighths3 = Math.ceil((scrollTime + visibleTime) / eighthMs);
+      for (var e = startEighth3; e <= totalEighths3; e++) {
+        var eighthTime = e * eighthMs;
+        var ex = padding + (eighthTime - scrollTime) * _recVisualScale;
+        if (ex < -10) continue;
+        if (ex > w + 10) break;
+        
+        var isMeasureStart = (e % (beatsPerMeasure * 2) === 0);
+        var isQuarter = (e % 2 === 0);
+        
+        if (isMeasureStart) {
+          ctx.strokeStyle = 'rgba(100, 100, 140, 0.9)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(ex, timelineH - 14);
+          ctx.lineTo(ex, timelineH);
+          ctx.stroke();
+          
+          ctx.fillStyle = '#bbb';
+          ctx.font = 'bold 10px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          var measureNum = Math.floor(e / (beatsPerMeasure * 2));
+          ctx.fillText(measureNum, ex, timelineH / 2);
+        } else if (isQuarter) {
+          drawTimelineMark2(ex, 10, 'rgba(80, 80, 120, 0.7)');
+        } else {
+          drawTimelineMark2(ex, 7, 'rgba(70, 70, 110, 0.5)');
+        }
+      }
+    } else {
+      var startBeat3 = Math.floor(scrollTime / beatMs);
+      var totalBeats3 = Math.ceil((scrollTime + visibleTime) / beatMs);
+      for (var b = startBeat3; b <= totalBeats3; b++) {
+        var beatTime = b * beatMs;
+        var bx = padding + (beatTime - scrollTime) * _recVisualScale;
+        if (bx < -10) continue;
+        if (bx > w + 10) break;
+        
+        var isMeasureStart = (b % beatsPerMeasure === 0);
+        
+        if (isMeasureStart) {
+          ctx.strokeStyle = 'rgba(100, 100, 140, 0.9)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(bx, timelineH - 14);
+          ctx.lineTo(bx, timelineH);
+          ctx.stroke();
+          
+          ctx.fillStyle = '#bbb';
+          ctx.font = 'bold 10px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          var measureNum = Math.floor(b / beatsPerMeasure);
+          ctx.fillText(measureNum, bx, timelineH / 2);
+        } else {
+          drawTimelineMark2(bx, 10, 'rgba(80, 80, 120, 0.7)');
+        }
+      }
+    }
+    
+    var endX2 = padding + (_recVisualMaxTime - scrollTime) * _recVisualScale;
+    if (endX2 >= 0 && endX2 <= w) {
+      ctx.strokeStyle = '#ff4444';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(endX2, 0);
+      ctx.lineTo(endX2, timelineH);
+      ctx.stroke();
+      
+      ctx.fillStyle = '#ff4444';
+      ctx.font = 'bold 10px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText((_recVisualMaxTime / 1000).toFixed(1) + 's', endX2, 2);
+    }
+  }
+
+  function setupRecVisualEvents() {
+    if (!_recVisualCanvas) return;
+    
+    var trackCount = 3;
+    var timelineH = 28;
+    
+    _recVisualCanvas.onmousedown = function(e) {
+      e.preventDefault();
+      var rect = _recVisualCanvas.getBoundingClientRect();
+      var x = e.clientX - rect.left;
+      var y = e.clientY - rect.top;
+      var timelineH = 28;
+      
+      if (e.button === 1) {
+        _recVisualMiddleDrag = true;
+        _recVisualMiddleDragStartX = x;
+        _recVisualMiddleDragStartScrollX = _recVisualScrollX;
+        return;
+      }
+      
+      var scrollTime = _recVisualScrollX / _recVisualScale;
+      var padding = 0;
+      
+      if (y < timelineH) {
+        var newTime = scrollTime + (x - padding) / _recVisualScale;
+        newTime = Math.max(0, Math.min(_recVisualMaxTime, newTime));
+        newTime = snapToBeat(newTime);
+        _recVisualPlayTime = newTime;
+        document.getElementById('recVisualTime').textContent = (newTime / 1000).toFixed(2) + 's';
+        renderRecVisual();
+        _recVisualTimelineDrag = true;
+        return;
+      }
+      
+      var totalMainTracks = _recVisualMainTrackCount;
+      var totalAccompTracks = _recVisualAccompTrackCount;
+      var fixedTrackH = 60;
+      var mainTrackH = fixedTrackH;
+      var accompTrackH = fixedTrackH;
+      var mainSectionTop = timelineH;
+      
+      if (!_recVisualMainSectionH) {
+        _recVisualMainSectionH = mainTrackH * totalMainTracks;
+      }
+      var mainSectionH = _recVisualMainSectionH;
+      
+      var gap = 8;
+      var accompSectionTop = mainSectionTop + mainSectionH + gap;
+      var noteAreaH = rect.height - timelineH;
+      var accompSectionH = noteAreaH - mainSectionH - gap;
+      
+      var dividerY = accompSectionTop - gap / 2;
+      if (y >= dividerY - 6 && y <= dividerY + 6) {
+        _recVisualDividerDrag = true;
+        _recVisualDividerDragStartY = y;
+        _recVisualDividerDragOrigH = mainSectionH;
+        renderRecVisual();
+        return;
+      }
+      
+      if (y >= mainSectionTop && y < accompSectionTop) {
+        _recVisualActiveTrack = 'main';
+      } else if (y >= accompSectionTop) {
+        _recVisualActiveTrack = 'accomp';
+      }
+      
+      var clickedNote = null;
+      for (var i = _recVisualNotes.length - 1; i >= 0; i--) {
+        var n = _recVisualNotes[i];
+        if (x >= n._x && x <= n._x + n._w && y >= n._y && y <= n._y + n._h) {
+          clickedNote = n;
+          break;
+        }
+      }
+      
+      if (clickedNote) {
+        if (e.ctrlKey) {
+          var idx = _recVisualSelectedNotes.indexOf(clickedNote);
+          if (idx !== -1) {
+            _recVisualSelectedNotes.splice(idx, 1);
+          } else {
+            _recVisualSelectedNotes.push(clickedNote);
+          }
+          _recVisualSelected = null;
+          renderRecVisual();
+          return;
+        }
+        
+        var isInSelection = _recVisualSelectedNotes.indexOf(clickedNote) !== -1;
+        
+        if (!isInSelection) {
+          _recVisualSelected = clickedNote;
+          _recVisualSelectedNotes = [clickedNote];
+        }
+        updatePropsPanel();
+        
+        var isRightEdge = (x >= clickedNote._x + clickedNote._w - 10);
+        
+        if (isRightEdge) {
+          saveVisualHistory();
+          _recVisualDrag = {
+            note: clickedNote,
+            startX: x,
+            origHoldMs: clickedNote.holdMs
+          };
+          _recVisualDragMode = 'resize';
+        } else {
+          saveVisualHistory();
+          _recVisualDrag = {
+            note: clickedNote,
+            startX: x,
+            startY: y,
+            origTime: clickedNote.timeMs,
+            origTrack: clickedNote.track,
+            multiNotes: _recVisualSelectedNotes.slice()
+          };
+          _recVisualDrag.multiOrig = _recVisualSelectedNotes.map(function(n) {
+            return { note: n, origTime: n.timeMs, origTrack: n.track };
+          });
+          _recVisualDragMode = 'move';
+        }
+        renderRecVisual();
+      } else if (e.shiftKey) {
+        saveVisualHistory();
+        var padding = 0;
+        var newTimeMs = Math.round(scrollTime + (x - padding) / _recVisualScale);
+        newTimeMs = Math.max(0, Math.min(_recVisualMaxTime - 50, newTimeMs));
+        newTimeMs = snapToBeat(newTimeMs);
+        
+        var totalMainTracks = _recVisualMainTrackCount;
+        var totalAccompTracks = _recVisualAccompTrackCount;
+        var fixedTrackH = 60;
+        var mainSectionTop = timelineH;
+        
+        if (!_recVisualMainSectionH) {
+          _recVisualMainSectionH = fixedTrackH * totalMainTracks;
+        }
+        var mainSectionH = _recVisualMainSectionH;
+        
+        var gap = 8;
+        var accompSectionTop = mainSectionTop + mainSectionH + gap;
+        var noteAreaH = rect.height - timelineH;
+        var accompSectionH = noteAreaH - mainSectionH - gap;
+        
+        var dynamicMainTrackH = totalMainTracks > 0 ? mainSectionH / totalMainTracks : fixedTrackH;
+        var dynamicAccompTrackH = totalAccompTracks > 1 ? accompSectionH / (totalAccompTracks - 1) : fixedTrackH;
+        
+        var newTrack;
+        if (y < accompSectionTop) {
+          newTrack = Math.floor((y - mainSectionTop) / dynamicMainTrackH);
+          newTrack = Math.max(0, Math.min(totalMainTracks - 1, newTrack));
+        } else {
+          newTrack = Math.floor((y - accompSectionTop) / dynamicAccompTrackH);
+          newTrack = Math.max(0, Math.min(totalAccompTracks - 2, newTrack));
+          newTrack = -(newTrack + 1);
+        }
+        
+        var durationVal = 1;
+        var durSelect = document.getElementById('recVisualDuration');
+        if (durSelect) durationVal = parseFloat(durSelect.value) || 1;
+        var newHoldMs = beatsToMs(durationVal);
+        
+        var instSelect = document.getElementById('recVisualInst');
+        var noteSelect = document.getElementById('recVisualNote');
+        var inst = instSelect ? instSelect.value : '钢琴';
+        var note = noteSelect ? noteSelect.value : 'C4';
+        
+        _recVisualNotes.push({
+          inst: inst,
+          note: note,
+          holdMs: newHoldMs,
+          timeMs: newTimeMs,
+          track: newTrack
+        });
+        _recVisualSelected = _recVisualNotes[_recVisualNotes.length - 1];
+        _recVisualSelectedNotes = [];
+        updatePropsPanel();
+        renderRecVisual();
+      } else {
+        _recVisualSelectBox = { startX: x, startY: y, x: x, y: y, w: 0, h: 0 };
+        _recVisualDragMode = 'select';
+        _recVisualSelected = null;
+        _recVisualSelectedNotes = [];
+      }
+    };
+    
+    _recVisualCanvas.onmousemove = function(e) {
+      var rect = _recVisualCanvas.getBoundingClientRect();
+      var x = e.clientX - rect.left;
+      var y = e.clientY - rect.top;
+      var timelineH = 28;
+      
+      if (_recVisualMiddleDrag) {
+        var dx = x - _recVisualMiddleDragStartX;
+        var newScrollX = _recVisualMiddleDragStartScrollX - dx;
+        _recVisualScrollX = Math.max(0, newScrollX);
+        renderRecVisual();
+        updateRangeBar();
+        return;
+      }
+      
+      if (_recVisualDividerDrag) {
+        var dy = y - _recVisualDividerDragStartY;
+        var minH = 60;
+        var maxH = rect.height - timelineH - 60 - 8;
+        var newMainSectionH = _recVisualDividerDragOrigH + dy;
+        newMainSectionH = Math.max(minH, Math.min(maxH, newMainSectionH));
+        _recVisualMainSectionH = newMainSectionH;
+        renderRecVisual();
+        return;
+      }
+      
+      _recVisualMousePos = { x: x, y: y };
+      
+      var isOnResizeEdge = false;
+      for (var i = 0; i < _recVisualNotes.length; i++) {
+        var n = _recVisualNotes[i];
+        if (x >= n._x + n._w - 10 && x <= n._x + n._w && y >= n._y && y <= n._y + n._h) {
+          isOnResizeEdge = true;
+          break;
+        }
+      }
+      
+      var isOnDivider = false;
+      var totalMainTracks = _recVisualMainTrackCount;
+      var totalAccompTracks = _recVisualAccompTrackCount;
+      var fixedTrackH = 60;
+      var mainTrackH = fixedTrackH;
+      var accompTrackH = fixedTrackH;
+      var mainSectionTop = timelineH;
+      
+      if (!_recVisualMainSectionH) {
+        _recVisualMainSectionH = mainTrackH * totalMainTracks;
+      }
+      var mainSectionH = _recVisualMainSectionH;
+      
+      var gap = 8;
+      var accompSectionTop = mainSectionTop + mainSectionH + gap;
+      var dividerY = accompSectionTop - gap / 2;
+      if (y >= dividerY - 6 && y <= dividerY + 6) {
+        isOnDivider = true;
+      }
+      
+      if (isOnResizeEdge) {
+        _recVisualCanvas.style.cursor = 'ew-resize';
+      } else if (isOnDivider) {
+        _recVisualCanvas.style.cursor = 'ns-resize';
+      } else {
+        _recVisualCanvas.style.cursor = 'default';
+      }
+      
+      var scrollTime = _recVisualScrollX / _recVisualScale;
+      
+      if (_recVisualTimelineDrag) {
+        if (y < timelineH) {
+          var padding = 0;
+          var newTime = scrollTime + (x - padding) / _recVisualScale;
+          newTime = Math.max(0, Math.min(_recVisualMaxTime, newTime));
+          newTime = snapToBeat(newTime);
+          _recVisualPlayTime = newTime;
+          document.getElementById('recVisualTime').textContent = (newTime / 1000).toFixed(2) + 's';
+          renderRecVisual();
+        }
+        return;
+      }
+      
+      if (_recVisualDragMode === 'select' && _recVisualSelectBox) {
+        _recVisualSelectBox.x = Math.min(x, _recVisualSelectBox.startX);
+        _recVisualSelectBox.y = Math.min(y, _recVisualSelectBox.startY);
+        _recVisualSelectBox.w = Math.abs(x - _recVisualSelectBox.startX);
+        _recVisualSelectBox.h = Math.abs(y - _recVisualSelectBox.startY);
+        renderRecVisual();
+        return;
+      }
+      
+      if (!_recVisualDrag) return;
+      var dx = x - _recVisualDrag.startX;
+      var dy = y - _recVisualDrag.startY;
+      
+      if (_recVisualDragMode === 'move') {
+        var dTime = dx / _recVisualScale;
+        var newTime = Math.max(0, Math.min(_recVisualMaxTime - 50, Math.round(_recVisualDrag.origTime + dTime)));
+        newTime = snapToBeat(newTime);
+        
+        _recVisualDrag.note.timeMs = newTime;
+        
+        var totalMainTracks = _recVisualMainTrackCount;
+        var totalAccompTracks = _recVisualAccompTrackCount;
+        var fixedTrackH = 60;
+        var mainSectionTop = timelineH;
+        
+        if (!_recVisualMainSectionH) {
+          _recVisualMainSectionH = fixedTrackH * totalMainTracks;
+        }
+        var mainSectionH = _recVisualMainSectionH;
+        
+        var gap = 8;
+        var accompSectionTop = mainSectionTop + mainSectionH + gap;
+        var noteAreaH = rect.height - timelineH;
+        var accompSectionH = noteAreaH - mainSectionH - gap;
+        
+        var dynamicMainTrackH = totalMainTracks > 0 ? mainSectionH / totalMainTracks : fixedTrackH;
+        var dynamicAccompTrackH = totalAccompTracks > 1 ? accompSectionH / (totalAccompTracks - 1) : fixedTrackH;
+        
+        var origTrack = _recVisualDrag.origTrack;
+        var isOrigMain = origTrack >= 0;
+        
+        var newTrack;
+        var deltaTrack = 0;
+        if (isOrigMain) {
+          if (y >= mainSectionTop && y < accompSectionTop) {
+            newTrack = Math.floor((y - mainSectionTop) / dynamicMainTrackH);
+            newTrack = Math.max(0, Math.min(totalMainTracks - 1, newTrack));
+            _recVisualDrag.note.track = newTrack;
+            
+            var origTrackIdx = origTrack;
+            var newTrackIdx = newTrack;
+            deltaTrack = newTrackIdx - origTrackIdx;
+          }
+        } else {
+          if (y >= accompSectionTop) {
+            newTrack = Math.floor((y - accompSectionTop) / dynamicAccompTrackH);
+            newTrack = Math.max(0, Math.min(totalAccompTracks - 2, newTrack));
+            _recVisualDrag.note.track = -(newTrack + 1);
+            
+            var origTrackIdx = -origTrack - 1;
+            var newTrackIdx = newTrack;
+            deltaTrack = newTrackIdx - origTrackIdx;
+          }
+        }
+        
+        if (_recVisualDrag.multiOrig) {
+          _recVisualDrag.multiOrig.forEach(function(item) {
+            if (item.note !== _recVisualDrag.note) {
+              item.note.timeMs = snapToBeat(Math.max(0, Math.min(_recVisualMaxTime - 50, Math.round(item.origTime + dTime))));
+              
+              var itemIsMain = item.origTrack >= 0;
+              if (itemIsMain === isOrigMain) {
+                if (itemIsMain) {
+                  var itemOrigIdx = item.origTrack;
+                  var itemNewIdx = itemOrigIdx + deltaTrack;
+                  itemNewIdx = Math.max(0, Math.min(totalMainTracks - 1, itemNewIdx));
+                  item.note.track = itemNewIdx;
+                } else {
+                  var itemOrigIdx = -item.origTrack - 1;
+                  var itemNewIdx = itemOrigIdx + deltaTrack;
+                  itemNewIdx = Math.max(0, Math.min(totalAccompTracks - 2, itemNewIdx));
+                  item.note.track = -(itemNewIdx + 1);
+                }
+              }
+            }
+          });
+        }
+      } else if (_recVisualDragMode === 'resize') {
+        var dHoldMs = dx / _recVisualScale;
+        var maxHoldMs = _recVisualMaxTime - _recVisualDrag.note.timeMs;
+        var newHoldMs = Math.max(50, Math.min(maxHoldMs, Math.round(_recVisualDrag.origHoldMs + dHoldMs)));
+        newHoldMs = snapToBeat(newHoldMs);
+        _recVisualDrag.note.holdMs = newHoldMs;
+      }
+      renderRecVisual();
+    };
+    
+    _recVisualCanvas.onmouseup = function() {
+      _recVisualTimelineDrag = false;
+      _recVisualMiddleDrag = false;
+      _recVisualDividerDrag = false;
+      
+      if (_recVisualDragMode === 'select' && _recVisualSelectBox) {
+        var box = _recVisualSelectBox;
+        _recVisualSelectedNotes = [];
+        _recVisualNotes.forEach(function(n) {
+          if (box.x < n._x + n._w && box.x + box.w > n._x &&
+              box.y < n._y + n._h && box.y + box.h > n._y) {
+            _recVisualSelectedNotes.push(n);
+          }
+        });
+        _recVisualSelectBox = null;
+        renderRecVisual();
+      }
+      
+      if (_recVisualDrag) {
+        if (_recVisualDrag.note) {
+          var track = _recVisualDrag.note.track;
+          if (track >= 0) {
+            _recVisualActiveTrack = 'main';
+          } else {
+            _recVisualActiveTrack = 'accomp';
+          }
+        }
+        _recVisualDrag = null;
+        _recVisualDragMode = null;
+      }
+    };
+    
+    _recVisualCanvas.onmouseleave = function() {
+      _recVisualMiddleDrag = false;
+      _recVisualDividerDrag = false;
+      if (_recVisualDrag) {
+        _recVisualDrag = null;
+        _recVisualDragMode = null;
+      }
+    };
+    
+    _recVisualCanvas.onwheel = function(e) {
+      e.preventDefault();
+      var wrap = document.getElementById('recVisualCanvasWrap');
+      var container = document.getElementById('recVisualCanvasContainer');
+      var w = container ? container.clientWidth : wrap.clientWidth;
+      var h = container ? container.clientHeight : wrap.clientHeight;
+      
+      if (e.shiftKey) {
+        var delta = e.deltaY;
+        var scrollDelta = delta * _recVisualScale * 0.5;
+        var visibleTime = w / _recVisualZoom;
+        var maxScroll = Math.max(0, (_recVisualMaxTime - visibleTime) * _recVisualZoom);
+        _recVisualScrollX = Math.max(0, Math.min(maxScroll, _recVisualScrollX + scrollDelta));
+      } else {
+        var delta = e.deltaY;
+        var totalMainTracks = _recVisualMainTrackCount || 1;
+        var totalAccompTracks = _recVisualAccompTrackCount || 0;
+        var totalTracks = totalMainTracks + totalAccompTracks;
+        var fixedTrackH = 70;
+        var gap = 8;
+        var timelineH = 28;
+        var totalContentHeight = timelineH + totalMainTracks * fixedTrackH + gap + (totalAccompTracks > 0 ? totalAccompTracks * fixedTrackH : 0);
+        var visibleHeight = h;
+        var maxScrollY = Math.max(0, totalContentHeight - visibleHeight);
+        _recVisualScrollY = Math.max(0, Math.min(maxScrollY, (_recVisualScrollY || 0) + delta));
+        updateVScrollbar();
+      }
+      renderRecVisual();
+      updateRangeBar();
+    };
+    
+    document.getElementById('recVisualVThumb').addEventListener('mousedown', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      _recVisualVScrollbarDragging = true;
+      _recVisualVScrollbarDragStartY = e.clientY;
+      _recVisualVScrollbarDragStartScrollY = _recVisualScrollY || 0;
+      document.addEventListener('mousemove', onVScrollbarDrag);
+      document.addEventListener('mouseup', onVScrollbarDragEnd);
+    });
+  }
 
   // ── Event delegation ──────────────────────────────────────────────
   document.addEventListener('click', function(e) {
@@ -3427,7 +6361,15 @@ function _noteColor(note) {
     if (tgt.id === 'recEditOk') {
       var overlay = document.getElementById('recEditOverlay');
       var name    = document.getElementById('recEditName').value.trim() || '\u672a\u547d\u540d\u5f55\u5236';
-      var display = document.getElementById('recEditScore').value.trim();
+      var userAccompText = document.getElementById('recEditScoreAccomp').value.trim();
+      parseVisualToText();
+      saveVisualEditorSettings();
+      var mainText = document.getElementById('recEditScoreMain').value.trim();
+      var accompText = userAccompText;
+      var display = mainText;
+      if (accompText) {
+        display = mainText + '\n' + accompText;
+      }
       var speed   = parseFloat(document.getElementById('recEditSpeed').value) || 1;
       var idx2    = overlay._editIdx;
       var dateStr = new Date().toLocaleDateString('zh-CN');
@@ -3439,6 +6381,14 @@ function _noteColor(note) {
         customRecordings[idx2].speed   = speed;
       }
       saveRecs();
+      _recVisualPlaying = false;
+      if (_recVisualPlayAnimId) {
+        cancelAnimationFrame(_recVisualPlayAnimId);
+        _recVisualPlayAnimId = null;
+      }
+      _recVisualNotes = [];
+      _recVisualSelected = null;
+      _recVisualSelectedNotes = [];
       overlay.classList.remove('show');
       overlay._editIdx = undefined;
       renderRecList();
@@ -3446,6 +6396,27 @@ function _noteColor(note) {
     }
     if (tgt.id === 'recEditCancel') {
       var overlay2 = document.getElementById('recEditOverlay');
+      _recVisualPlaying = false;
+      saveVisualEditorSettings();
+      if (_recVisualPlayAnimId) {
+        cancelAnimationFrame(_recVisualPlayAnimId);
+        _recVisualPlayAnimId = null;
+      }
+      if (overlay2._origScoreMain !== undefined) {
+        document.getElementById('recEditScoreMain').value = overlay2._origScoreMain;
+      }
+      if (overlay2._origScoreAccomp !== undefined) {
+        document.getElementById('recEditScoreAccomp').value = overlay2._origScoreAccomp;
+      }
+      if (overlay2._origName !== undefined) {
+        document.getElementById('recEditName').value = overlay2._origName;
+      }
+      if (overlay2._origSpeed !== undefined) {
+        document.getElementById('recEditSpeed').value = overlay2._origSpeed;
+      }
+      _recVisualNotes = [];
+      _recVisualSelected = null;
+      _recVisualSelectedNotes = [];
       overlay2.classList.remove('show');
       overlay2._editIdx = undefined;
       return;
@@ -4335,7 +7306,11 @@ window.onload = function(){
       _stopJianpuRingLoop();
     }
   };
-  feedbackBtn.onclick = () => { showAppAlert("个人开发，联系待定…"); settingOverlay.classList.remove("show"); };
+  feedbackBtn.onclick = () => {
+    msgContent.innerHTML = '抖音搜索 <span style="color:#0099ff;font-weight:600;">OA</span>啊 留言即可';
+    msgOverlay.classList.add("show");
+    settingOverlay.classList.remove("show");
+  };
   keybindingBtn.onclick = () => {
     keybindingBackup = JSON.parse(JSON.stringify(pcKeyMap));
     renderKeybindings();
@@ -5734,7 +8709,7 @@ window.onload = function(){
         if (e.target.closest(".item-actions")) return;
         loadSongWithDelay(song); closeModal(); startScrollingSync();
       };
-      item.querySelector(".edit-opt").onclick = (e) => { e.stopPropagation(); openEditDialog(song, globalIdx); };
+      item.querySelector(".edit-opt").onclick = (e) => { e.stopPropagation(); closeModal(); openEditDialog(song, globalIdx); };
       item.querySelector(".del-opt").onclick = (e) => {
         e.stopPropagation();
         if (globalIdx < BUILT_IN.length) showAppAlert("内置歌曲无法删除");
@@ -6123,7 +9098,7 @@ window.onload = function(){
         closeModal();
         startTupuScrolling();
       };
-      item.querySelector(".edit-opt").onclick = (e) => { e.stopPropagation(); openTupuEditDialog(tupu, idx); };
+      item.querySelector(".edit-opt").onclick = (e) => { e.stopPropagation(); closeModal(); openTupuEditDialog(tupu, idx); };
       item.querySelector(".del-opt").onclick = (e) => {
         e.stopPropagation();
         customTupus.splice(idx, 1);
@@ -7155,7 +10130,7 @@ window.onload = function(){
         // 暂停图谱播放（保持位置）
         stopTupuScrolling();
         playBtn.classList.remove("on");
-        playBtn.textContent = "▶";
+        togglePlayBtnIcon(false);
       } else {
         // 没在播放：检查是否已播完（tupuScrollX 到末尾）
         const atEnd = currentTupu.totalWidth && tupuScrollX >= currentTupu.totalWidth - 1;
@@ -7171,7 +10146,7 @@ window.onload = function(){
         currentTupuSpeed = (currentTupu.speed || 80) / 80;
         stepTupuScrolling();
         playBtn.classList.add("on");
-        playBtn.textContent = "⏸";
+        togglePlayBtnIcon(true);
       }
       return;
     }
@@ -7191,7 +10166,11 @@ window.onload = function(){
   autoBtn.onclick = () => {
     isMuted = !isMuted;
     autoBtn.classList.toggle("on", isMuted);
-    autoBtn.textContent = isMuted ? "🔇" : "🔊";
+    // 切换 SVG 图标显示
+    const waves = autoBtn.querySelectorAll('.volume-wave');
+    const muteX = autoBtn.querySelectorAll('.mute-x');
+    waves.forEach(el => el.style.display = isMuted ? 'none' : 'block');
+    muteX.forEach(el => el.style.display = isMuted ? 'block' : 'none');
     saveSettings();
     if(isMuted) {
       stopNote("auto");
@@ -7435,6 +10414,9 @@ window.onload = function(){
   }
 
   document.addEventListener("keydown", (e) => {
+    var visualEditor = document.getElementById('recVisualEditor');
+    if (visualEditor && visualEditor.style.display !== 'none') return;
+    
     if (e.repeat) return;
     if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey) return;
     const activeEl = document.activeElement;
@@ -7549,6 +10531,9 @@ window.onload = function(){
   });
 
   document.addEventListener("keyup", (e) => {
+    var visualEditor = document.getElementById('recVisualEditor');
+    if (visualEditor && visualEditor.style.display !== 'none') return;
+    
     const code = e.code;
     if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey) {
       pressedKeysMap.forEach((value, keyCode) => {
@@ -7600,7 +10585,11 @@ window.onload = function(){
       if (settings.isMuted !== undefined) {
         isMuted = settings.isMuted;
         autoBtn.classList.toggle("on", isMuted);
-        autoBtn.textContent = isMuted ? "🔇" : "🔊";
+        // 初始化 SVG 图标显示
+        const waves = autoBtn.querySelectorAll('.volume-wave');
+        const muteX = autoBtn.querySelectorAll('.mute-x');
+        waves.forEach(el => el.style.display = isMuted ? 'none' : 'block');
+        muteX.forEach(el => el.style.display = isMuted ? 'block' : 'none');
       }
       // 根据横屏/竖屏模式设置默认值
       const isLandscapeMode = document.body.classList.contains('landscape-mode');
@@ -7723,20 +10712,37 @@ function _applyFullPos(full){
 }
 function updateFullscreenBtn(h){
  var full=document.getElementById("scoreFullscreenBtn");
+ var settingBtn=document.getElementById("mainSettingBtn");
  var halfHeight=window.innerHeight/2;
  var shouldShow=h>halfHeight||isScoreFullscreen;
  if(shouldShow){
-   _snapAutoBtn();
+   // 先获取设置按钮位置
+   var rect=null;
+   if(settingBtn) rect=settingBtn.getBoundingClientRect();
+   // 立即隐藏设置按钮
+   if(settingBtn) settingBtn.style.visibility="hidden";
+   
    if(!full){
      full=document.createElement("button");
      full.id="scoreFullscreenBtn";
-     full.style.cssText="position:fixed;border-radius:8px;border:1px solid #444;background:#222;color:#0099ff;font-size:18px;cursor:pointer;z-index:10000;display:flex;align-items:center;justify-content:center;padding:0;touch-action:manipulation;width:36px;height:36px;";
+     full.style.cssText="position:fixed;border-radius:9px;border:1px solid rgba(140,140,140,0.25);background:rgba(255,255,255,0.05);color:rgba(140,140,140,0.85);cursor:pointer;z-index:10000;display:flex;align-items:center;justify-content:center;padding:0;touch-action:manipulation;transition:background 0.2s ease, color 0.2s ease, border-color 0.2s ease;";
+     full.onmouseover=function(){this.style.background='rgba(255,255,255,0.12)';this.style.borderColor='rgba(100,100,100,0.4)';this.style.color='rgba(100,100,100,0.95)';};
+     full.onmouseout=function(){this.style.background='rgba(255,255,255,0.05)';this.style.borderColor='rgba(140,140,140,0.25)';this.style.color='rgba(140,140,140,0.85)';};
      full.onclick=toggleScoreFullscreen;
-     full.innerHTML = '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6V2h4M16 6V2h-4M2 12v4h4M16 12v4h-4"/></svg>';
+     full.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>';
      document.body.appendChild(full);
    }
-   _applyFullPos(full);
+   // 定位到设置按钮位置
+   if(rect){
+     full.style.left=rect.left+"px";
+     full.style.top=rect.top+"px";
+     full.style.width=rect.width+"px";
+     full.style.height=rect.height+"px";
+   }
  }else{
+   // 先恢复设置按钮
+   if(settingBtn) settingBtn.style.visibility="";
+   // 再移除全屏按钮
    if(full)full.remove();
  }
 }
@@ -7797,8 +10803,20 @@ function toggleScoreFullscreen(){
    wrap.style.height = '';
    wrap.style.zIndex = '';
    
-   if(playBtn) playBtn.style.display = '';
-   if(autoBtn) autoBtn.style.display = '';
+   if(playBtn) {
+     playBtn.style.display = '';
+     playBtn.style.background = '';
+   }
+   if(autoBtn) {
+     autoBtn.style.display = '';
+     autoBtn.style.background = '';
+   }
+   
+   // 退出全屏时恢复按钮背景
+   if (control) {
+     var musicBtn = control.querySelector('.music-btn');
+     if(musicBtn) musicBtn.style.background = '';
+   }
    
    // 退出全屏时恢复钢琴键盘和布局工具栏
    var pianoWrap = document.querySelector('.piano-wrap');
@@ -7875,8 +10893,14 @@ function toggleScoreFullscreen(){
    
    // 全屏模式下隐藏乐器栏，按钮悬浮在滚动栏上面
    if(instScroll) instScroll.style.display = 'none';
-   if(playBtn) playBtn.style.display = '';
-   if(autoBtn) autoBtn.style.display = '';
+   if(playBtn) {
+     playBtn.style.display = '';
+     playBtn.style.background = 'transparent';
+   }
+   if(autoBtn) {
+     autoBtn.style.display = '';
+     autoBtn.style.background = 'transparent';
+   }
    if (control) {
      control.style.display = '';
      control.style.position = 'fixed';
@@ -7894,6 +10918,10 @@ function toggleScoreFullscreen(){
        settingBtnWrap.style.background = 'transparent';
        settingBtnWrap.style.borderRight = 'none';
      }
+     
+     // 全屏模式下按钮背景透明
+     var musicBtn = control.querySelector('.music-btn');
+     if(musicBtn) musicBtn.style.background = 'transparent';
    }
    
    // 全屏模式下隐藏钢琴键盘和布局工具栏
@@ -8046,7 +11074,28 @@ document.addEventListener("touchcancel",endResize);
 
 updateFullscreenBtn(wrap.offsetHeight);
 
-window.addEventListener("resize",function(){_snapAutoBtn();updateFullscreenBtn(wrap.offsetHeight);if(typeof _recPlayState!=='undefined'&&_recPlayState)drawRainbowGridBackground();});
-if(window.ResizeObserver){new ResizeObserver(function(){_snapAutoBtn();var f=document.getElementById("scoreFullscreenBtn");if(f)_applyFullPos(f);}).observe(musicBar);}
+// 节流优化：避免频繁调用导致卡顿
+var _resizeTimer=null;
+window.addEventListener("resize",function(){
+  if(_resizeTimer) return;
+  _resizeTimer=setTimeout(function(){
+    _resizeTimer=null;
+    _snapAutoBtn();
+    updateFullscreenBtn(wrap.offsetHeight);
+    if(typeof _recPlayState!=='undefined'&&_recPlayState)drawRainbowGridBackground();
+  },100);
+});
+if(window.ResizeObserver){
+  var _resizeObsTimer=null;
+  new ResizeObserver(function(){
+    if(_resizeObsTimer) return;
+    _resizeObsTimer=setTimeout(function(){
+      _resizeObsTimer=null;
+      _snapAutoBtn();
+      var f=document.getElementById("scoreFullscreenBtn");
+      if(f)_applyFullPos(f);
+    },100);
+  }).observe(musicBar);
+}
 
 })();
