@@ -11,10 +11,43 @@
 
 <div class="control">
   <div class="setting-btn-wrap">
-    <div class="setting-btn" id="mainSettingBtn">⚙️</div>
-    <button class="music-btn" id="musicBtn">🎵</button>
-    <button class="play-btn" id="playBtn">▶</button>
-    <button class="auto-btn" id="autoBtn">🔊</button>
+    <div class="setting-btn" id="mainSettingBtn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </div>
+    <button class="music-btn" id="musicBtn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 18V5l12-2v13"></path>
+        <circle cx="6" cy="18" r="3"></circle>
+        <circle cx="18" cy="16" r="3"></circle>
+      </svg>
+    </button>
+    <button class="play-btn" id="playBtn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+        <!-- 播放图标（默认显示） -->
+        <path class="play-icon" d="M6 4v16l14-8z"></path>
+        <!-- 暂停图标（默认隐藏） -->
+        <g class="pause-icon" style="display:none;">
+          <rect x="6" y="4" width="4" height="16" rx="1"></rect>
+          <rect x="14" y="4" width="4" height="16" rx="1"></rect>
+        </g>
+      </svg>
+    </button>
+    <button class="auto-btn" id="autoBtn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <!-- 喇叭主体 -->
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+        <!-- 两条扩散弧线（正常音量状态） -->
+        <path d="M14 8a4 4 0 0 1 0 8" class="volume-wave"></path>
+        <path d="M18 6a7 7 0 0 1 0 12" class="volume-wave"></path>
+        <!-- 静音叉号（默认隐藏） -->
+        <line x1="15" y1="7" x2="21" y2="17" class="mute-x" style="display:none;"></line>
+        <line x1="21" y1="7" x2="15" y2="17" class="mute-x" style="display:none;"></line>
+      </svg>
+    </button>
   </div>
   <div class="inst-scroll" id="instScroll"></div>
   <div class="inst-fade-right"></div>
@@ -74,7 +107,6 @@
 
 <div class="modal-overlay" id="settingOverlay">
   <div class="modal">
-    <div class="modal-title">设置</div>
     <div class="setting-list">
       <button class="setting-btn-text" id="layoutBtn">布局模式</button>
       <button class="setting-btn-text" id="keybindingBtn">按键设置</button>
@@ -196,21 +228,157 @@
 
 <!-- 录制保存/编辑弹窗 -->
 <div class="edit-overlay" id="recEditOverlay">
-  <div class="edit-modal" style="max-height:100vh;overflow-y:auto;">
-    <div style="display:flex;align-items:center;gap:8px;">
+  <div class="edit-modal">
+    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
       <label style="white-space:nowrap;">乐谱名称</label>
       <input type="text" id="recEditName" placeholder="例：我的演奏" style="flex:1;">
       <label style="white-space:nowrap;">播放倍率</label>
       <input type="number" id="recEditSpeed" value="1" min="0.25" max="4" step="0.25" style="width:60px;">
     </div>
-    <label style="margin-top:12px;">录制内容</label>
-    <textarea id="recEditScore" style="min-height:120px;font-size:11px;line-height:1.6;font-family:monospace;" placeholder="钢琴|C4|320ms|0ms_钢琴|G4|280ms|500ms"></textarea>
-    <div style="font-size:10px;color:#555;margin-top:6px;line-height:1.5;">
-      格式：<b style="color:#aaa">乐器|音域|按住时长ms|时间节点ms</b>，用 <b style="color:#aaa">_</b> 分隔音符。允许多个轨道播放。
+    <div style="display:flex;align-items:center;gap:8px;margin-top:12px;justify-content:space-between;flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button type="button" id="recVisualEditBtn" class="rec-edit-mode-btn">可视化编辑</button>
+        <label id="recTextEditLabel" style="cursor:pointer;color:#888;">文本</label>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="cancel-btn" id="recEditCancel" style="height:30px;line-height:1;padding:0 12px;">取消</button>
+        <button class="ok-btn" id="recEditOk" style="height:30px;line-height:1;padding:0 12px;">保存</button>
+      </div>
     </div>
-    <div class="row">
-      <button class="cancel-btn" id="recEditCancel">取消</button>
-      <button class="ok-btn" id="recEditOk">保存</button>
+    <div id="recTextEditor">
+      <div style="margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;">
+          <span style="font-size:12px;color:#ccc;">主旋律</span>
+        </div>
+        <textarea id="recEditScoreMain" style="min-height:100px;font-size:11px;line-height:1.6;font-family:monospace;" placeholder="钢琴|C4|320ms|0ms_钢琴|G4|280ms|500ms"></textarea>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;">
+          <span style="font-size:12px;color:#ccc;">伴奏</span>
+        </div>
+        <textarea id="recEditScoreAccomp" style="min-height:100px;font-size:11px;line-height:1.6;font-family:monospace;" placeholder="钢琴|C3|320ms|0ms_钢琴|E3|280ms|500ms"></textarea>
+      </div>
+      <div style="font-size:10px;color:#555;margin-top:6px;line-height:1.5;">
+        格式：<b style="color:#aaa">乐器|音域|按住时长ms|时间节点ms</b>，用 <b style="color:#aaa">_</b> 分隔音符。
+      </div>
+    </div>
+    <div id="recVisualEditor" style="display:none;flex:1;min-height:0;flex-direction:column;overflow:hidden;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px;flex-shrink:0;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button id="recVisualPlay" title="播放/暂停" style="background:#222;border:1px solid #444;color:#eee;padding:6px 10px;border-radius:4px;cursor:pointer;font-size:12px;">▶ 播放</button>
+          <span style="color:#666;font-size:12px;margin-left:8px;">时间：<span id="recVisualTime">0.0s</span></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <button id="recVisualUndo" title="撤销 (Ctrl+Z)" style="background:#222;border:1px solid #444;color:#eee;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;">↶</button>
+          <button id="recVisualRedo" title="重做 (Ctrl+Y)" style="background:#222;border:1px solid #444;color:#eee;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;">↷</button>
+          <button id="recVisualAdd" title="新建音符 (Shift+点击)" style="background:#222;border:1px solid #444;color:#eee;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;">新建</button>
+          <button id="recVisualCopy" title="复制 (Ctrl+C)" style="background:#222;border:1px solid #444;color:#eee;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;">复制</button>
+          <button id="recVisualPaste" title="粘贴 (Ctrl+V)" style="background:#222;border:1px solid #444;color:#eee;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;">粘贴</button>
+          <button id="recVisualDel" title="删除 (Delete)" style="background:#222;border:1px solid #444;color:#eee;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;">删除</button>
+          <button id="recVisualFit" title="最大化显示 (Shift+Z)" style="background:#222;border:1px solid #444;color:#eee;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;">🔍</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#888;">
+          <span>BPM</span>
+          <input type="number" id="recVisualBPM" min="30" max="240" value="120" style="width:50px;background:#222;border:1px solid #444;color:#eee;padding:2px 4px;border-radius:4px;font-size:11px;">
+          <span>拍号</span>
+          <input type="text" id="recVisualTimeSig" value="4/4" placeholder="如4/4" style="width:50px;background:#222;border:1px solid #444;color:#eee;padding:2px 4px;border-radius:4px;font-size:11px;text-align:center;">
+          <button id="recVisualSnap" title="网格吸附" style="background:#222;border:1px solid #444;color:#eee;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;">🧲 吸附</button>
+        </div>
+        <div id="recVisualProps" style="display:flex;align-items:center;gap:6px;font-size:12px;">
+          <span style="color:#666;">选中：</span>
+          <select id="recVisualInst" style="background:#222;border:1px solid #444;color:#eee;padding:3px 6px;border-radius:4px;font-size:11px;">
+            <option value="钢琴">钢琴</option>
+            <option value="吉他">吉他</option>
+            <option value="小提琴">小提琴</option>
+            <option value="大提琴">大提琴</option>
+            <option value="箫">箫</option>
+            <option value="笛子">笛子</option>
+            <option value="古筝">古筝</option>
+            <option value="二胡">二胡</option>
+            <option value="琵琶">琵琶</option>
+            <option value="鼓">鼓</option>
+            <option value="架子鼓">架子鼓</option>
+            <option value="钟声">钟声</option>
+            <option value="唢呐">唢呐</option>
+            <option value="贝斯">贝斯</option>
+            <option value="萨克斯">萨克斯</option>
+          </select>
+          <select id="recVisualNote" style="background:#222;border:1px solid #444;color:#eee;padding:3px 6px;border-radius:4px;font-size:11px;">
+            <option value="C3">C3</option><option value="C#3">C#3</option><option value="D3">D3</option><option value="D#3">D#3</option><option value="E3">E3</option><option value="F3">F3</option><option value="F#3">F#3</option><option value="G3">G3</option><option value="G#3">G#3</option><option value="A3">A3</option><option value="A#3">A#3</option><option value="B3">B3</option>
+            <option value="C4">C4</option><option value="C#4">C#4</option><option value="D4">D4</option><option value="D#4">D#4</option><option value="E4">E4</option><option value="F4">F4</option><option value="F#4">F#4</option><option value="G4">G4</option><option value="G#4">G#4</option><option value="A4">A4</option><option value="A#4">A#4</option><option value="B4">B4</option>
+            <option value="C5">C5</option><option value="C#5">C#5</option><option value="D5">D5</option><option value="D#5">D#5</option><option value="E5">E5</option><option value="F5">F5</option><option value="F#5">F#5</option><option value="G5">G5</option><option value="G#5">G#5</option><option value="A5">A5</option><option value="A#5">A#5</option><option value="B5">B5</option>
+          </select>
+          <select id="recVisualDuration" style="background:#222;border:1px solid #444;color:#eee;padding:3px 6px;border-radius:4px;font-size:11px;">
+            <option value="0.25">1/16</option>
+            <option value="0.5">1/8</option>
+            <option value="0.75">3/16</option>
+            <option value="1" selected>1/4</option>
+            <option value="1.5">3/8</option>
+            <option value="2">1/2</option>
+            <option value="3">3/4</option>
+            <option value="4">全音符</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#888;flex-shrink:0;">
+          <span>总时长</span>
+          <input type="number" id="recVisualMaxTimeInput" min="1" max="300" step="1" value="10" style="width:50px;background:#333;border:1px solid #444;color:#eee;padding:2px 4px;border-radius:3px;font-size:11px;">
+          <span>秒</span>
+          <span style="margin-left:8px;">区域</span>
+          <div id="recVisualRangeBar" style="position:relative;width:150px;height:20px;background:#333;border-radius:4px;">
+            <div id="recVisualRangeHandleLeft" style="position:absolute;top:1px;width:6px;height:18px;background:rgba(150,180,210,0.9);cursor:ew-resize;z-index:10;border-radius:2px;"></div>
+            <div id="recVisualRangeSel" style="position:absolute;top:2px;height:16px;background:rgba(100,140,180,0.6);border-radius:2px;cursor:move;z-index:5;"></div>
+            <div id="recVisualRangeHandleRight" style="position:absolute;top:1px;width:6px;height:18px;background:rgba(150,180,210,0.9);cursor:ew-resize;z-index:10;border-radius:2px;"></div>
+          </div>
+          <span style="margin-left:8px;">映射时长</span>
+          <input type="number" id="recVisualRegionTime" min="1" max="300" step="1" value="10" style="width:50px;background:#333;border:1px solid #444;color:#eee;padding:2px 4px;border-radius:3px;font-size:11px;">
+          <span>秒</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex:1;min-height:0;align-items:stretch;">
+        <div id="trackControlsWrap" style="display:flex;flex-direction:column;justify-content:flex-start;gap:0;padding:0;align-items:center;flex-shrink:0;">
+          <div id="mainTrackControls" style="text-align:center;display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:flex-start;min-width:24px;">
+            <button id="recVisualAddMainTrack" style="background:#222;border:1px solid #444;color:#eee;padding:2px;border-radius:3px;cursor:pointer;font-size:10px;width:14px;height:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">＋</button>
+            <div style="color:#888;font-size:10px;writing-mode:vertical-rl;text-orientation:mixed;line-height:1;letter-spacing:2px;width:14px;white-space:nowrap;">主旋律</div>
+            <button id="recVisualDelMainTrack" style="background:#222;border:1px solid #444;color:#eee;padding:2px;border-radius:3px;cursor:pointer;font-size:10px;width:14px;height:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">－</button>
+          </div>
+          <div id="accompTrackControls" style="text-align:center;display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:flex-start;min-width:24px;">
+            <button id="recVisualAddAccompTrack" style="background:#222;border:1px solid #444;color:#eee;padding:2px;border-radius:3px;cursor:pointer;font-size:10px;width:14px;height:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">＋</button>
+            <div style="color:#888;font-size:10px;writing-mode:vertical-rl;text-orientation:mixed;line-height:1;letter-spacing:2px;width:14px;white-space:nowrap;">伴奏</div>
+            <button id="recVisualDelAccompTrack" style="background:#222;border:1px solid #444;color:#eee;padding:2px;border-radius:3px;cursor:pointer;font-size:10px;width:14px;height:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">－</button>
+          </div>
+        </div>
+        <div id="recVisualCanvasWrap" style="background:#1a1a1a;border-radius:6px;overflow:hidden;position:relative;flex:1;min-height:0;display:flex;">
+          <div id="recVisualCanvasContainer" style="flex:1;position:relative;overflow:hidden;">
+            <canvas id="recVisualCanvas"></canvas>
+          </div>
+          <div id="recVisualVScrollbar" style="width:12px;background:#222;display:flex;flex-direction:column;align-items:center;padding:4px 0;flex-shrink:0;">
+            <div id="recVisualVThumb" style="width:8px;background:rgba(100,150,200,0.6);border-radius:4px;cursor:pointer;min-height:30px;max-height:80%;position:absolute;top:0;"></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <select id="recVisualPianoInst" style="background:#222;border:1px solid #444;color:#eee;padding:4px 8px;border-radius:4px;font-size:12px;flex-shrink:0;">
+          <option value="piano">钢琴</option>
+          <option value="guitar">吉他</option>
+          <option value="violin">小提琴</option>
+          <option value="cello">大提琴</option>
+          <option value="xiao">箫</option>
+          <option value="dizi">笛子</option>
+          <option value="guzheng">古筝</option>
+          <option value="erhu">二胡</option>
+          <option value="pipa">琵琶</option>
+          <option value="drum">鼓</option>
+          <option value="drumkit">架子鼓</option>
+          <option value="bell">钟声</option>
+          <option value="suona">唢呐</option>
+          <option value="bass">贝斯</option>
+          <option value="saxophone">萨克斯</option>
+        </select>
+        <div id="recVisualPiano" style="background:#1a1a1a;border-radius:4px;overflow:hidden;flex:1;"></div>
+      </div>
+      <div style="font-size:10px;color:#555;line-height:1.5;flex-shrink:0;padding-bottom:6px;">
+        点击选中，拖动移动，拖动右边缘调整时长。Shift+点击添加。Ctrl+拖动框选多音符。Ctrl+C复制，Ctrl+V粘贴，Delete删除。开启吸附后自动对齐节拍。
+      </div>
     </div>
   </div>
 </div>
@@ -292,7 +460,6 @@
 
 <div class="modal-overlay" id="msgOverlay">
   <div class="modal">
-    <div class="modal-title">提示</div>
     <div id="msgContent" style="font-size:13px;color:#ddd;line-height:1.6;margin-bottom:10px;"></div>
     <button class="modal-cancel" id="msgOk">确定</button>
   </div>
