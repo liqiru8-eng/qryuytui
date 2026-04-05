@@ -2924,47 +2924,88 @@ function startInstrumentNote(freq, autoVolume = 1, overrideInst = null){
   if (audioCtx.state === 'suspended') {
     audioCtx.resume();
   }
-  if (autoVolume <= 0) return {nodes:[], gain:null, env:null};
   
   var instName = overrideInst || currentInst;
-  console.log('[DEBUG] startInstrumentNote:', instName, 'freq:', freq);
-  console.log('[DEBUG] SAMPLES_DATA exists:', !!window.SAMPLES_DATA);
-  if (window.SAMPLES_DATA) {
-    console.log('[DEBUG] SAMPLES_DATA instruments:', Object.keys(window.SAMPLES_DATA));
-    console.log('[DEBUG] drumkit in SAMPLES_DATA:', !!window.SAMPLES_DATA['drumkit']);
-    if (window.SAMPLES_DATA['drumkit']) {
-      console.log('[DEBUG] drumkit notes:', Object.keys(window.SAMPLES_DATA['drumkit']));
-    }
-  }
+  
+  if (autoVolume <= 0) return {nodes:[], gain:null, env:null, instName: instName};
   
   if (typeof SimpleSampler !== 'undefined') {
     SimpleSampler.setAudioContext(audioCtx);
-    console.log('[DEBUG] SimpleSampler.isLoaded:', SimpleSampler.getIsLoaded());
     var midiNote = Math.round(69 + 12 * Math.log2(freq / 440));
     var velocity = Math.round(autoVolume * 127);
-    console.log('[DEBUG] Calling playNote with instName:', instName, 'midiNote:', midiNote);
     var result = SimpleSampler.playNote(instName, midiNote, velocity);
-    console.log('[DEBUG] playNote result:', result ? 'HAS BUFFER' : 'NULL');
     if (result) {
+      const p = toneParams[instName] || defaultToneParams[instName] || {};
+      const brightness = p.brightness !== undefined ? p.brightness : 0;
+      
       var samplerGain = audioCtx.createGain();
-      samplerGain.gain.value = autoVolume;
+      
+      const now = audioCtx.currentTime;
+      const peakVol = autoVolume;
+      
+      var sampleDuration = result.source.buffer ? result.source.buffer.duration : 2;
+      var sampAttackPct = p.attack !== undefined ? p.attack : 0;
+      var sampDecayPct = p.decay !== undefined ? p.decay : 30;
+      var sampSustain = Math.max(0, Math.min(1, p.sustain || 0.4));
+      
+      var attackTime = (sampAttackPct / 100) * sampleDuration * 0.8;
+      var decayTime = (sampDecayPct / 100) * sampleDuration * 0.5;
+      var sustainVol = peakVol * sampSustain;
+      
+      samplerGain.gain.setValueAtTime(0, now);
+      samplerGain.gain.linearRampToValueAtTime(peakVol, now + attackTime);
+      samplerGain.gain.linearRampToValueAtTime(sustainVol, now + attackTime + decayTime);
+      
       result.source.disconnect();
       result.source.connect(samplerGain);
       samplerGain.connect(audioCtx.destination);
-      console.log('[DEBUG] Playing SAMPLE sound for', instName);
-      return { nodes: [result.source], gain: samplerGain, env: samplerGain, samplerResult: result };
+      
+      if (brightness > 0.05) {
+        var wetGain = audioCtx.createGain();
+        wetGain.gain.value = brightness * 0.7;
+        
+        var convolver = audioCtx.createConvolver();
+        var reverbTime = 1 + brightness * 3;
+        var sampleRate = audioCtx.sampleRate;
+        var length = Math.floor(sampleRate * reverbTime);
+        var impulse = audioCtx.createBuffer(2, length, sampleRate);
+        
+        for (var channel = 0; channel < 2; channel++) {
+          var channelData = impulse.getChannelData(channel);
+          for (var i = 0; i < length; i++) {
+            var t = i / sampleRate;
+            var reverbDecay = Math.exp(-3 * t / reverbTime);
+            var noise = (Math.random() * 2 - 1);
+            var early = i < sampleRate * 0.1 ? Math.exp(-30 * t) : 0;
+            channelData[i] = (noise * reverbDecay + noise * early * 0.5) * 0.5;
+          }
+        }
+        
+        convolver.buffer = impulse;
+        
+        samplerGain.connect(convolver);
+        convolver.connect(wetGain);
+        wetGain.connect(audioCtx.destination);
+      }
+      
+      return { 
+        nodes: [result.source], 
+        gain: samplerGain, 
+        env: samplerGain, 
+        samplerResult: result, 
+        instName: instName
+      };
     }
   }
   
-  console.log('[DEBUG] No sample available, using SYNTHESIS for', instName);
   const now = audioCtx.currentTime;
   const m = audioCtx.createGain();
   m.connect(audioCtx.destination);
   
   const p = toneParams[instName] || defaultToneParams[instName] || {};
   const waveType = p.waveType || 'sine';
-  const attack = Math.max(0.001, p.attack || 0.01);
-  const decay = Math.max(0.05, p.decay || 0.3);
+  const attackPercent = p.attack !== undefined ? p.attack : 0;
+  const decayPercent = p.decay !== undefined ? p.decay : 30;
   const sustain = Math.max(0, Math.min(1, p.sustain || 0.4));
   const release = Math.max(0.1, p.release || 1.0);
   const harm2 = p.harm2 || 0;
@@ -2980,7 +3021,10 @@ function startInstrumentNote(freq, autoVolume = 1, overrideInst = null){
   const noiseLevel = p.noiseLevel || 0;
   const noiseDecay = p.noiseDecay || 0;
   const blendFactor = p.blendFactor || 0.5;
-  const brightness = p.brightness !== undefined ? p.brightness : 0.5;
+  const brightness = p.brightness !== undefined ? p.brightness : 0;
+  
+  const attack = (attackPercent / 100) * 0.5;
+  const decay = (decayPercent / 100) * 1;
   
   const oscillators = [];
   const totalDur = attack + decay + release + 1;
@@ -2988,9 +3032,8 @@ function startInstrumentNote(freq, autoVolume = 1, overrideInst = null){
   const g1 = audioCtx.createGain();
   
   const mainFilter = audioCtx.createBiquadFilter();
-  const validFilterTypes = ['lowpass', 'highpass', 'bandpass', 'notch', 'allpass', 'peaking'];
   mainFilter.type = validFilterTypes.includes(filterType) ? filterType : 'lowpass';
-  const adjustedFilterFreq = filterFreq * (0.2 + brightness * 3);
+  adjustedFilterFreq = filterFreq * (0.2 + brightness * 3);
   mainFilter.frequency.value = Math.min(20000, Math.max(50, adjustedFilterFreq));
   mainFilter.Q.value = Math.max(0.1, filterQ - brightness * 0.3);
   
@@ -3151,7 +3194,7 @@ function startInstrumentNote(freq, autoVolume = 1, overrideInst = null){
   
   g1.connect(m);
   
-  return { nodes: oscillators, gain: m, env: g1 };
+  return { nodes: oscillators, gain: m, env: g1, instName: instName };
 }
 
 // =====================================================
@@ -3419,11 +3462,14 @@ function stopNote(tid){
   const d=activeNodes.get(tid); if(!d) return;
   const now=audioCtx.currentTime;
   
+  // 获取正确的乐器名称（用于获取释放时间）
+  var instName = d.instName || currentInst;
+  
   if (d.samplerResult) {
     // 采样声音：根据释放时间延迟停止
     var release = 1.5;
-    if (toneParams[currentInst] && toneParams[currentInst].release) {
-      release = toneParams[currentInst].release;
+    if (toneParams[instName] && toneParams[instName].release) {
+      release = toneParams[instName].release;
     }
     // 使用 fadeOut 方式平滑停止，而不是立即 stop()
     if (d.gain && d.gain.gain) {
@@ -3450,10 +3496,10 @@ function stopNote(tid){
     d.env.gain.cancelScheduledValues(now);
     d.env.gain.setValueAtTime(d.env.gain.value, now);
 
-    // 所有乐器都使用音色调整中的释放值
+    // 使用存储的乐器名称获取释放值
     var release = 1.5;
-    if (toneParams[currentInst] && toneParams[currentInst].release) {
-      release = toneParams[currentInst].release;
+    if (toneParams[instName] && toneParams[instName].release) {
+      release = toneParams[instName].release;
     }
     release = Math.max(0.1, release);
 
@@ -3705,14 +3751,19 @@ function _noteColor(note) {
     _recVisualTextTrack = 'main';
     
     var playBtn = document.getElementById('recVisualPlay');
-    if (playBtn) playBtn.textContent = '▶ 播放';
+    if (playBtn) {
+      var playIcon = playBtn.querySelector('.play-icon');
+      var pauseIcon = playBtn.querySelector('.pause-icon');
+      if (playIcon) playIcon.style.display = '';
+      if (pauseIcon) pauseIcon.style.display = 'none';
+    }
     
     var visualBtn = document.getElementById('recVisualEditBtn');
-    var textLabel = document.getElementById('recTextEditLabel');
+    var textBtn = document.getElementById('recTextEditBtn');
     var textEditor = document.getElementById('recTextEditor');
     var visualEditor = document.getElementById('recVisualEditor');
     if (visualBtn) visualBtn.classList.add('active');
-    if (textLabel) textLabel.classList.remove('active');
+    if (textBtn) textBtn.classList.remove('active');
     if (textEditor) textEditor.style.display = 'none';
     if (visualEditor) visualEditor.style.display = 'flex';
     
@@ -3722,6 +3773,13 @@ function _noteColor(note) {
     applyVisualEditorSettings();
     parseTextToVisual();
     saveVisualHistory();
+    
+    // 延迟重新创建琴键，确保DOM完全渲染后高度正确
+    setTimeout(function() {
+      createRecVisualPiano();
+      renderRecVisual();
+      adjustToolbarResponsive();
+    }, 100);
     
     var wrap = document.getElementById('recVisualCanvasWrap');
     var w = wrap.clientWidth;
@@ -4524,29 +4582,28 @@ function _noteColor(note) {
     
     container.innerHTML = '';
     
-    // 获取琴键wrap高度作为琴键区域高度的基准
+    // 获取琴键wrap高度和轨道容器高度，使用相同的高度计算
     var pianoWrap = document.getElementById('recVisualPianoWrap');
     var trackContainer = document.getElementById('recVisualCanvasContainer');
     var wrap = document.getElementById('recVisualCanvasWrap');
     
-    var canvasHeight = trackContainer ? trackContainer.clientHeight : (wrap ? wrap.clientHeight : 300);
-    var pianoWrapHeight = pianoWrap ? pianoWrap.clientHeight : 0;
+    // 使用轨道区域的高度作为基准（与renderRecVisual保持一致）
+    var baseH = trackContainer ? trackContainer.clientHeight : (wrap ? wrap.clientHeight : 300);
     
-    // 琴键容器高度应该等于琴键wrap高度减去28px的header
-    var containerHeight = pianoWrapHeight - 28;
-    if (!containerHeight || containerHeight < 100) {
-      containerHeight = canvasHeight - 28; // 后备方案
+    // 如果高度为0，使用后备方案
+    if (!baseH || baseH <= 0) {
+      baseH = pianoWrap ? pianoWrap.clientHeight - 28 : 300;
     }
     
-    // 设置琴键容器高度与画布音符区域一致
-    container.style.height = containerHeight + 'px';
-    container.style.flex = 'none';
+    // 琴键容器高度 = 总高度 - 28px header
+    var containerHeight = Math.max(100, baseH - 28);
     
     // 使用与 renderRecVisual 完全相同的高度计算逻辑
     var visibleTracks = _recVisualEndTrack - _recVisualStartTrack;
     visibleTracks = Math.max(7, Math.min(49, visibleTracks));
-    // 琴键高度 = 琴键容器高度 / 可见轨道数（不是visibleTracks，而是与画布一致的计算）
-    var pianoViewH = containerHeight; // 使用与画布相同的高度
+    
+    // 琴键高度 = 琴键容器高度 / 可见轨道数
+    var pianoViewH = containerHeight;
     var whiteKeyHeight = pianoViewH / visibleTracks;
     whiteKeyHeight = Math.max(12, Math.min(100, whiteKeyHeight));
     var blackKeyHeight = whiteKeyHeight * 0.6;
@@ -4693,6 +4750,37 @@ function _noteColor(note) {
     
     outerDiv.appendChild(pianoScroll);
     container.appendChild(outerDiv);
+    
+    // 添加到DOM后，重新获取正确的高度并更新琴键
+    // 使用 requestAnimationFrame 确保DOM完全渲染
+    requestAnimationFrame(function() {
+      var actualHeight = pianoScroll.clientHeight;
+      if (actualHeight > 0 && actualHeight !== containerHeight) {
+        // 重新计算琴键高度
+        var newWhiteKeyHeight = actualHeight / visibleTracks;
+        newWhiteKeyHeight = Math.max(12, Math.min(100, newWhiteKeyHeight));
+        var newBlackKeyHeight = newWhiteKeyHeight * 0.6;
+        
+        // 更新所有琴键的高度和位置
+        if (_recVisualAllKeys) {
+          _recVisualAllKeys.forEach(function(keyInfo) {
+            if (keyInfo.isBlack) {
+              keyInfo.element.style.height = newBlackKeyHeight + 'px';
+              var whiteKeyPos = keyInfo.trackIndex;
+              keyInfo.element.style.top = (whiteKeyPos * newWhiteKeyHeight + newWhiteKeyHeight / 2 - newBlackKeyHeight / 2) + 'px';
+            } else {
+              keyInfo.element.style.height = newWhiteKeyHeight + 'px';
+              keyInfo.element.style.top = (keyInfo.trackIndex * newWhiteKeyHeight) + 'px';
+            }
+          });
+        }
+        
+        // 更新琴键容器总高度
+        if (_recVisualPianoContent) {
+          _recVisualPianoContent.style.height = (49 * newWhiteKeyHeight) + 'px';
+        }
+      }
+    });
     
     var isDragging = false;
     var startY = 0;
@@ -5071,16 +5159,18 @@ function _noteColor(note) {
     var editBtns = document.getElementById('recVisualEditBtns');
     var bpmArea = document.getElementById('recVisualBPMArea');
     var timeArea = document.getElementById('recVisualTimeArea');
+    var melodyControlBtn = document.getElementById('melodyControlBtn');
     var propsContainer = document.getElementById('propsPanelContainer');
     
     if (!hasSelection) {
       restoreToolbarOriginalContent();
       
-      // 取消选择时：显示播放、BPM、时长区域，隐藏编辑按钮区域
+      // 取消选择时：显示旋律控制、BPM、时长区域，隐藏编辑按钮区域
       if (playBtns) playBtns.style.display = 'flex';
       if (editBtns) editBtns.style.display = 'none';
       if (bpmArea) bpmArea.style.display = 'flex';
       if (timeArea) timeArea.style.display = 'flex';
+      if (melodyControlBtn) melodyControlBtn.style.display = '';
       
       if (propsContainer) {
         propsContainer.style.display = 'none';
@@ -5094,9 +5184,8 @@ function _noteColor(note) {
       return;
     }
     
-    // 选中音符时：隐藏所有功能区，显示属性面板（包含编辑按钮）
-    if (playBtns) playBtns.style.display = 'none';
-    if (editBtns) editBtns.style.display = 'none';
+    // 选中音符时：只隐藏旋律控制、BPM、拍号、吸附、时长，保留播放暂停按钮和顶部按钮
+    if (melodyControlBtn) melodyControlBtn.style.display = 'none';
     if (bpmArea) bpmArea.style.display = 'none';
     if (timeArea) timeArea.style.display = 'none';
     
@@ -5116,7 +5205,20 @@ function _noteColor(note) {
     if (!propsContainer) {
       propsContainer = document.createElement('div');
       propsContainer.id = 'propsPanelContainer';
-      toolbar.appendChild(propsContainer);
+      // 插入到播放按钮区域之后，确保左对齐
+      if (playBtns && playBtns.nextSibling) {
+        toolbar.insertBefore(propsContainer, playBtns.nextSibling);
+      } else {
+        toolbar.appendChild(propsContainer);
+      }
+    }
+    // 确保属性面板左对齐，不占用剩余空间
+    propsContainer.style.cssText = 'display:flex;align-items:center;gap:6px;flex-shrink:0;';
+    
+    // 确保toolbarRightBtns在最后（如果存在）
+    var toolbarRightBtns = document.getElementById('toolbarRightBtns');
+    if (toolbarRightBtns && toolbar.lastElementChild !== toolbarRightBtns) {
+      toolbar.appendChild(toolbarRightBtns);
     }
     
     // 响应式布局：检测屏幕宽度
@@ -5136,11 +5238,10 @@ function _noteColor(note) {
     
     var html = '<div style="display:flex;align-items:center;gap:' + gap + ';white-space:nowrap;flex-wrap:nowrap;height:36px;">';
     
-    // 编辑按钮：复制、粘贴、删除、最大化
+    // 编辑按钮：复制、粘贴、删除
     html += '<button id="propCopy" class="toolbar-btn" title="复制 (Ctrl+C)" style="background:#222;border:1px solid #444;color:#eee;padding:' + btnPadding + ';border-radius:4px;cursor:pointer;font-size:' + fontSize + ';height:' + btnHeight + ';">复制</button>';
     html += '<button id="propPaste" class="toolbar-btn" title="粘贴 (Ctrl+V)" style="background:#222;border:1px solid #444;color:#eee;padding:' + btnPadding + ';border-radius:4px;cursor:pointer;font-size:' + fontSize + ';height:' + btnHeight + ';">粘贴</button>';
     html += '<button id="propDel" class="toolbar-btn" title="删除 (Delete)" style="background:#222;border:1px solid #444;color:#eee;padding:' + btnPadding + ';border-radius:4px;cursor:pointer;font-size:' + fontSize + ';height:' + btnHeight + ';">删除</button>';
-    html += '<button id="propFit" class="toolbar-btn" title="最大化显示 (Shift+Z)" style="background:#222;border:1px solid #444;color:#eee;padding:' + btnPadding + ';border-radius:4px;cursor:pointer;font-size:' + fontSize + ';height:' + btnHeight + ';">🔍</button>';
     
     html += '<div style="width:1px;height:' + (isVeryNarrowScreen ? '16px' : '20px') + ';background:#444;margin:0 2px;"></div>';
     
@@ -5194,12 +5295,10 @@ function _noteColor(note) {
     var propCopy = document.getElementById('propCopy');
     var propPaste = document.getElementById('propPaste');
     var propDel = document.getElementById('propDel');
-    var propFit = document.getElementById('propFit');
     
     if (propCopy) propCopy.onclick = copyVisualNotes;
     if (propPaste) propPaste.onclick = pasteVisualNotes;
     if (propDel) propDel.onclick = deleteVisualNotes;
-    if (propFit) propFit.onclick = function() { fitRecVisual(); };
     
     var propMelody = document.getElementById('propMelody');
     var propInst = document.getElementById('propInst');
@@ -5301,6 +5400,12 @@ function _noteColor(note) {
         createRecVisualPiano();
       }
       adjustToolbarResponsive();
+    });
+    
+    window.addEventListener('orientationchange', function() {
+      setTimeout(function() {
+        adjustToolbarResponsive();
+      }, 300);
     });
     
     function setupRecVisualKeyboardEvents() {
@@ -5446,18 +5551,18 @@ function _noteColor(note) {
     createRecVisualPiano();
     
     var visualBtn = document.getElementById('recVisualEditBtn');
-    var textLabel = document.getElementById('recTextEditLabel');
+    var textBtn = document.getElementById('recTextEditBtn');
     var textEditor = document.getElementById('recTextEditor');
     var visualEditor = document.getElementById('recVisualEditor');
     
-    if (!visualBtn || !textLabel) {
-      console.warn('initRecVisualEditor: visualBtn or textLabel not found');
+    if (!visualBtn || !textBtn) {
+      console.warn('initRecVisualEditor: visualBtn or textBtn not found');
     }
 
     if (visualBtn) {
       visualBtn.onclick = function() {
       visualBtn.classList.add('active');
-      textLabel.classList.remove('active');
+      textBtn.classList.remove('active');
       textEditor.style.display = 'none';
       visualEditor.style.display = 'flex';
       parseTextToVisual();
@@ -5490,17 +5595,19 @@ function _noteColor(note) {
       renderRecVisual();
       setTimeout(function() {
         updateRangeBar();
+        adjustToolbarResponsive();
       }, 300);
     };
     }
     
-    textLabel.onclick = function() {
-      textLabel.classList.add('active');
+    textBtn.onclick = function() {
+      textBtn.classList.add('active');
       visualBtn.classList.remove('active');
       textEditor.style.display = 'block';
       visualEditor.style.display = 'none';
       parseVisualToText();
       removeRecVisualKeyboardEvents();
+      adjustToolbarResponsive();
     };
     
     _recVisualCanvas = document.getElementById('recVisualCanvas');
@@ -5977,7 +6084,10 @@ function _noteColor(note) {
         
         if (_recVisualPlaying) {
           _recVisualPlaying = false;
-          playBtn.textContent = '▶ 播放';
+          var playIcon = playBtn.querySelector('.play-icon');
+          var pauseIcon = playBtn.querySelector('.pause-icon');
+          if (playIcon) playIcon.style.display = '';
+          if (pauseIcon) pauseIcon.style.display = 'none';
           if (_recVisualPlayAnimId) {
             cancelAnimationFrame(_recVisualPlayAnimId);
             _recVisualPlayAnimId = null;
@@ -5994,7 +6104,10 @@ function _noteColor(note) {
           initAudio();
           _recVisualPlaying = true;
           _recVisualPlayStart = performance.now() - _recVisualPlayTime;
-          playBtn.textContent = '⏸ 暂停';
+          var playIcon = playBtn.querySelector('.play-icon');
+          var pauseIcon = playBtn.querySelector('.pause-icon');
+          if (playIcon) playIcon.style.display = 'none';
+          if (pauseIcon) pauseIcon.style.display = '';
           visualPlayLoop();
         }
       };
@@ -6056,7 +6169,10 @@ function _noteColor(note) {
         
         if (_recVisualPlaying) {
           _recVisualPlaying = false;
-          btn.textContent = '▶ 播放';
+          var playIcon = btn.querySelector('.play-icon');
+          var pauseIcon = btn.querySelector('.pause-icon');
+          if (playIcon) playIcon.style.display = '';
+          if (pauseIcon) pauseIcon.style.display = 'none';
           if (_recVisualPlayAnimId) {
             cancelAnimationFrame(_recVisualPlayAnimId);
             _recVisualPlayAnimId = null;
@@ -6073,7 +6189,10 @@ function _noteColor(note) {
           initAudio();
           _recVisualPlaying = true;
           _recVisualPlayStart = performance.now() - _recVisualPlayTime;
-          btn.textContent = '⏸ 暂停';
+          var playIcon = btn.querySelector('.play-icon');
+          var pauseIcon = btn.querySelector('.pause-icon');
+          if (playIcon) playIcon.style.display = 'none';
+          if (pauseIcon) pauseIcon.style.display = '';
           visualPlayLoop();
         }
       };
@@ -6218,7 +6337,12 @@ function _noteColor(note) {
         _recVisualNotes[k]._playing = false;
       }
       var playBtn = document.getElementById('recVisualPlay');
-      if (playBtn) playBtn.textContent = '▶ 播放';
+      if (playBtn) {
+        var playIcon = playBtn.querySelector('.play-icon');
+        var pauseIcon = playBtn.querySelector('.pause-icon');
+        if (playIcon) playIcon.style.display = '';
+        if (pauseIcon) pauseIcon.style.display = 'none';
+      }
       return;
     }
     
@@ -6743,6 +6867,87 @@ function _noteColor(note) {
     document.querySelectorAll('.toolbar-btns').forEach(function(div) {
       div.style.gap = btnGap;
     });
+    
+    // 检测是否将四个按钮移动到工具栏右边
+    var toolbar = document.getElementById('recVisualToolbar');
+    var topBtnRow = document.getElementById('recTopBtnRow');
+    var topBtnLeft = document.getElementById('recTopBtnLeft');
+    var topBtnRight = document.getElementById('recTopBtnRight');
+    
+    if (toolbar && topBtnRow && topBtnLeft && topBtnRight) {
+      var visualEditor = document.getElementById('recVisualEditor');
+      var isVisualMode = visualEditor && visualEditor.style.display !== 'none';
+      
+      if (isVisualMode) {
+        // 计算工具栏当前内容的总宽度（排除已经移动过去的按钮）
+        var toolbarChildren = toolbar.children;
+        var contentWidth = 0;
+        for (var i = 0; i < toolbarChildren.length; i++) {
+          var child = toolbarChildren[i];
+          // 跳过已经移动到工具栏的按钮容器和按钮行
+          if (child.id === 'toolbarRightBtns') continue;
+          if (child.id === 'recTopBtnRow') continue;
+          contentWidth += child.offsetWidth;
+        }
+        // 加上gap（假设8px）
+        contentWidth += (toolbarChildren.length - 1) * 8;
+        
+        // 计算四个按钮的总宽度
+        var btnsWidth = topBtnLeft.offsetWidth + topBtnRight.offsetWidth + 12; // 两个gap各6px
+        
+        // 计算剩余空间
+        var remainingSpace = toolbar.clientWidth - contentWidth;
+        
+        // 如果有足够空间（留一些余量），移动按钮到工具栏
+        if (remainingSpace >= btnsWidth + 20) {
+          // 创建或获取工具栏右侧按钮容器
+          var toolbarRightBtns = document.getElementById('toolbarRightBtns');
+          if (!toolbarRightBtns) {
+            toolbarRightBtns = document.createElement('div');
+            toolbarRightBtns.id = 'toolbarRightBtns';
+            toolbarRightBtns.style.cssText = 'display:flex;align-items:center;gap:6px;margin-left:auto;';
+            // 插入到工具栏最后
+            toolbar.appendChild(toolbarRightBtns);
+          }
+          
+          // 移动按钮到工具栏（只在按钮还在原位置时移动）
+          if (topBtnRow.contains(topBtnLeft) || topBtnRow.contains(topBtnRight)) {
+            toolbarRightBtns.appendChild(topBtnLeft);
+            toolbarRightBtns.appendChild(topBtnRight);
+            // 隐藏原来的行
+            topBtnRow.style.display = 'none';
+          }
+          
+          // 确保toolbarRightBtns在最后
+          if (toolbar.lastElementChild !== toolbarRightBtns) {
+            toolbar.appendChild(toolbarRightBtns);
+          }
+        } else {
+          // 空间不够，恢复按钮到原位
+          var toolbarRightBtns = document.getElementById('toolbarRightBtns');
+          if (toolbarRightBtns) {
+            // 先把按钮移回原位置（直接appendChild即可，按钮会自动从原容器移出）
+            topBtnRow.appendChild(topBtnLeft);
+            topBtnRow.appendChild(topBtnRight);
+            // 再移除容器
+            toolbarRightBtns.remove();
+          }
+          // 显示原来的行
+          topBtnRow.style.display = 'flex';
+        }
+      } else {
+        // 非可视化模式，确保按钮在原位
+        var toolbarRightBtns = document.getElementById('toolbarRightBtns');
+        if (toolbarRightBtns) {
+          // 先把按钮移回原位置
+          topBtnRow.appendChild(topBtnLeft);
+          topBtnRow.appendChild(topBtnRight);
+          // 再移除容器
+          toolbarRightBtns.remove();
+        }
+        topBtnRow.style.display = 'flex';
+      }
+    }
   }
 
   function renderRecVisual() {
@@ -6775,7 +6980,7 @@ function _noteColor(note) {
     var visibleTracks = _recVisualEndTrack - _recVisualStartTrack;
     visibleTracks = Math.max(7, Math.min(49, visibleTracks));
     // 使用琴键容器的可见高度来计算轨道高度，确保与琴键完全同步
-    var pianoViewH = _recVisualPianoScroll ? _recVisualPianoScroll.clientHeight : (h - timelineH);
+    var pianoViewH = (_recVisualPianoScroll && _recVisualPianoScroll.clientHeight > 0) ? _recVisualPianoScroll.clientHeight : (h - timelineH);
     var trackH = pianoViewH / visibleTracks;
     trackH = Math.max(12, Math.min(100, trackH));
     var whiteKeyHeight = trackH;
@@ -9156,15 +9361,11 @@ window.onload = function(){
     html += '</div>';
     html += '</div>';
     
-    html += '<div class="tone-control-group"><div class="tone-control-group-title">包络控制</div>';
-    html += createSliderRow('起音', 'attack', params.attack || defaults.attack || 0.01, 0.001, 1.0, 0.001, '秒', '');
-    html += createSliderRow('衰减', 'decay', params.decay || defaults.decay || 0.3, 0.1, 8, 0.1, '秒', '');
-    html += createSliderRow('延音', 'sustain', params.sustain || defaults.sustain || 0.4, 0, 1, 0.01, '', '');
-    html += createSliderRow('释放', 'release', params.release || defaults.release || 1.0, 0.1, 15, 0.1, '秒', '');
-    html += '</div>';
-    
-    html += '<div class="tone-control-group"><div class="tone-control-group-title">音色特性</div>';
-    html += createSliderRow('通透感', 'brightness', params.brightness !== undefined ? params.brightness : (defaults.brightness || 0.5), 0, 3, 0.01, '', '');
+    html += '<div class="tone-control-group"><div class="tone-control-group-title">音色调整</div>';
+    html += createSliderRow('起音', 'attack', params.attack !== undefined ? params.attack : (defaults.attack || 0), 0, 100, 1, '%', '');
+    html += createSliderRow('衰减', 'decay', params.decay !== undefined ? params.decay : (defaults.decay || 30), 0, 100, 1, '%', '');
+    html += createSliderRow('延音', 'release', params.release || defaults.release || 1.0, 0.1, 15, 0.1, '秒', '');
+    html += createSliderRow('空间感', 'brightness', params.brightness !== undefined ? params.brightness : (defaults.brightness || 0), 0, 1, 0.01, '', '');
     html += '</div>';
     
     toneControls.innerHTML = html;
@@ -9206,62 +9407,65 @@ window.onload = function(){
     var clickTimers = {};
     var CLICK_DELAY = 300;
     
+    // 存储当前正在播放的音符（用于长按支持）
+    var activeToneNotes = {};
+    
     noteBoxes.forEach(function(box) {
       var boxNote = box.dataset.note;
       
-      // 单击试听播放采样音色 - 延迟执行，等待判断是否为双击
-      box.onclick = function(e) {
-        if (clickTimers[boxNote]) {
-          clearTimeout(clickTimers[boxNote]);
-          delete clickTimers[boxNote];
-          return;
+      // 按下时开始播放声音（与主琴键一致）
+      box.onmousedown = function(e) {
+        if (e && e.preventDefault) {
+          e.preventDefault();
+        }
+        if (e && e.stopPropagation) {
+          e.stopPropagation();
         }
         
-        clickTimers[boxNote] = setTimeout(function() {
-          delete clickTimers[boxNote];
-          
-          var noteName = boxNote;
-          progressEl.innerHTML = '♪ 试听: ' + noteName;
-          
-          // 用全局的 startInstrumentNote 播放（与主窗口琴键完全一致）
-          if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-          }
-          if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-          }
-          
-          var freq = getFreq(noteName);
-          var result = startInstrumentNote(freq, 0.6, currentToneInst);
-          
-          if (result && result.env) {
-            result.env.gain.setValueAtTime(result.env.gain.value || 0.6, audioCtx.currentTime);
-            result.env.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 2);
-            
-            setTimeout(function() {
-              if (progressEl.innerHTML === '♪ 试听: ' + noteName) {
-                progressEl.innerHTML = '';
-              }
-              if (result.gain) { try { result.gain.disconnect(); } catch(e) {} }
-              if (result.nodes) { result.nodes.forEach(function(n) { try { n.disconnect(); } catch(e) {} }); }
-            }, 2100);
-          }
-          
-          // 同时尝试加载采样到SimpleSampler供后续使用
-          // 注意：本地文件无法通过fetch加载，只使用已嵌入的数据
-          // loadSampleToSampler(noteName);
-          
-          function loadSampleToSampler(note) {
-            // 检查是否已有嵌入数据
-            if (window.SAMPLES_DATA && window.SAMPLES_DATA[currentToneInst]) {
-              var instData = window.SAMPLES_DATA[currentToneInst];
-              if (instData[note]) {
-                console.log('[DEBUG] Using embedded sample for', currentToneInst, note);
-              }
-            }
-            // 不再尝试fetch本地文件，避免CORS错误
-          }
-        }, CLICK_DELAY);
+        var noteName = boxNote;
+        progressEl.innerHTML = '♪ 试听: ' + noteName;
+        box.classList.add('playing');
+        
+        // 用全局的 startNote 播放（与主窗口琴键完全一致）
+        initAudio();
+        
+        var freq = getFreq(noteName);
+        var tid = 'tone_preview_' + noteName;
+        
+        // 先停止之前的播放
+        stopNote(tid);
+        
+        // 开始播放
+        activeNodes.set(tid, startInstrumentNote(freq, 0.6, currentToneInst));
+        activeToneNotes[noteName] = tid;
+      };
+      
+      // 释放时停止播放（与主琴键一致）
+      box.onmouseup = function(e) {
+        var noteName = boxNote;
+        var tid = activeToneNotes[noteName];
+        if (tid) {
+          stopNote(tid);
+          delete activeToneNotes[noteName];
+        }
+        box.classList.remove('playing');
+        if (progressEl.innerHTML === '♪ 试听: ' + noteName) {
+          progressEl.innerHTML = '';
+        }
+      };
+      
+      // 鼠标离开时也停止播放
+      box.onmouseleave = function(e) {
+        var noteName = boxNote;
+        var tid = activeToneNotes[noteName];
+        if (tid) {
+          stopNote(tid);
+          delete activeToneNotes[noteName];
+        }
+        box.classList.remove('playing');
+        if (progressEl.innerHTML === '♪ 试听: ' + noteName) {
+          progressEl.innerHTML = '';
+        }
       };
       
       // 双击上传自己的采样音色
@@ -9273,6 +9477,14 @@ window.onload = function(){
           clearTimeout(clickTimers[noteName]);
           delete clickTimers[noteName];
         }
+        
+        // 先停止试听
+        var tid = activeToneNotes[noteName];
+        if (tid) {
+          stopNote(tid);
+          delete activeToneNotes[noteName];
+        }
+        box.classList.remove('playing');
         
         currentUploadNote = noteName;
         fileInput.click();
@@ -9413,7 +9625,8 @@ window.onload = function(){
   function formatParamValue(param, value) {
     if (param === 'vibrato') return value.toFixed(1) + ' Hz';
     if (param === 'filterFreq') return Math.round(value) + ' Hz';
-    if (param === 'attack' || param === 'decay' || param === 'release' || param === 'noiseDecay') return value.toFixed(1) + 's';
+    if (param === 'attack' || param === 'decay') return Math.round(value) + '%';
+    if (param === 'release' || param === 'noiseDecay') return value.toFixed(1) + 's';
     if (param === 'vibratoDepth' || param === 'blendFactor') return value.toFixed(3);
     if (param === 'filterQ') return value.toFixed(1);
     if (param === 'brightness') return (value * 100).toFixed(0) + '%';

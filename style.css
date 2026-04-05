@@ -283,12 +283,7 @@ body.rotated-90.toolbar-rotated-180 #layoutToolbar, body.rotated-270.toolbar-rot
   .modal button{padding:10px 16px;font-size:14px;}
   .modal-cancel{padding:10px 16px;font-size:14px;}
   .add-btn{padding:12px 16px;font-size:14px;}
-  
-  /* 移动端设置弹窗文字对齐 */
-  .setting-btn-text{padding:10px;line-height:1.5;}
-  .setting-row{padding:10px 10px 10px 0;}
-  .setting-label{line-height:1.5;padding-left:10px;}
-  
+
   /* 移动端虚拟按键弹窗适配 */
   #virtualKeyOverlay .modal{
     max-width:95%;
@@ -332,6 +327,14 @@ body.rotated-90.toolbar-rotated-180 #layoutToolbar, body.rotated-270.toolbar-rot
 .setting-slider-round:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background-color:#fff;transition:0.3s;border-radius:50%;}
 .setting-switch input:checked + .setting-slider-round{background-color:#0099ff;}
 .setting-switch input:checked + .setting-slider-round:before{transform:translateX(20px);}
+
+/* 移动端设置弹窗文字对齐（必须放在全局样式之后） */
+@media (max-width: 768px) {
+  .modal .setting-btn-text{padding:10px;line-height:1.5;}
+  .setting-row{padding:10px;}
+  .setting-label{line-height:1.5;}
+}
+
 @keyframes modalIn{from{opacity:0;transform:translate(-10px, -10px) scale(.95)}to{opacity:1;transform:none}}
 .song-list{display:flex;flex-direction:column;gap:12px;padding:8px 0;overflow-y:auto;flex:1;min-height:0;}
 .song-item{padding:0;background:#252525;border:1px solid #333;border-radius:14px;cursor:pointer;transition:all 0.2s;display:flex;flex-direction:row;align-items:stretch;position:relative;overflow:visible;min-height:70px;}
@@ -416,7 +419,7 @@ body.rotated-90.toolbar-rotated-180 #layoutToolbar, body.rotated-270.toolbar-rot
 
 .edit-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:1100;flex-direction:column;}
 .edit-overlay.show{display:flex;}
-.edit-modal{background:#1e1e1e;border:1px solid #333;border-radius:0;width:100%;height:100vh;padding:20px;box-shadow:none;display:flex;flex-direction:column;overflow-y:auto;}
+.edit-modal{background:#1e1e1e;border:1px solid #333;border-radius:0;width:100%;height:100vh;padding:4px;box-shadow:none;display:flex;flex-direction:column;overflow-y:auto;}
 .edit-modal h3{font-size:16px;color:#fff;margin-bottom:14px;text-align:center;flex-shrink:0;}
 .edit-modal label{display:block;font-size:12px;color:#888;margin-bottom:4px;margin-top:10px;}
 .edit-modal .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
@@ -425,12 +428,9 @@ body.rotated-90.toolbar-rotated-180 #layoutToolbar, body.rotated-270.toolbar-rot
 .hint{font-size:11px;color:#555;margin-top:6px;line-height:1.6;}
 .edit-modal .row{display:flex;gap:8px;margin-top:14px;flex-shrink:0;}
 .edit-modal .row button{flex:1;padding:11px;border-radius:9px;border:none;font-size:14px;cursor:pointer;touch-action:manipulation;}
-.ok-btn{background:#0099ff;color:#fff;}
-.cancel-btn{background:#2a2a2a;color:#888;border:1px solid #333!important;}
-.rec-edit-mode-btn{background:rgba(0,153,255,0.15);border:1px solid rgba(0,153,255,0.4);color:#0099ff;padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;transition:all 0.2s;}
-.rec-edit-mode-btn:hover{background:rgba(0,153,255,0.25);}
-.rec-edit-mode-btn.active{background:#0099ff;color:#fff;}
-#recTextEditLabel.active{color:#0099ff;}
+.rec-top-btn{background:#2a2a2a;border:1px solid #444;color:#aaa;padding:6px 10px;border-radius:6px;font-size:12px;cursor:pointer;transition:all 0.15s;}
+.rec-top-btn:hover{background:#333;color:#ddd;}
+.rec-top-btn.active{background:rgba(0,153,255,0.2);border-color:rgba(0,153,255,0.5);color:#4da6ff;}
 #recVisualCanvas{width:100%;height:100%;display:block;}
 
 #keybindingOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1200;align-items:center;justify-content:center;padding:16px;}

@@ -250,23 +250,23 @@
 <!-- 录制保存/编辑弹窗 -->
 <div class="edit-overlay" id="recEditOverlay">
   <div class="edit-modal">
-    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-      <label style="white-space:nowrap;">乐谱名称</label>
-      <input type="text" id="recEditName" placeholder="例：我的演奏" style="flex:1;">
-      <label style="white-space:nowrap;">播放倍率</label>
-      <input type="number" id="recEditSpeed" value="1" min="0.25" max="4" step="0.25" style="width:60px;">
-    </div>
-    <div style="display:flex;align-items:center;gap:8px;margin-top:12px;justify-content:space-between;flex-shrink:0;">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <button type="button" id="recVisualEditBtn" class="rec-edit-mode-btn">可视化编辑</button>
-        <label id="recTextEditLabel" style="cursor:pointer;color:#888;">文本</label>
+    <div id="recTopBtnRow" style="display:flex;align-items:center;gap:6px;margin-bottom:8px;justify-content:space-between;flex-shrink:0;">
+      <div id="recTopBtnLeft" style="display:flex;align-items:center;gap:6px;">
+        <button type="button" id="recVisualEditBtn" class="rec-top-btn active">编制</button>
+        <button type="button" id="recTextEditBtn" class="rec-top-btn">文本</button>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <button class="cancel-btn" id="recEditCancel" style="height:30px;line-height:1;padding:0 12px;">退出</button>
-        <button class="ok-btn" id="recEditOk" style="height:30px;line-height:1;padding:0 12px;">保存</button>
+      <div id="recTopBtnRight" style="display:flex;align-items:center;gap:6px;">
+        <button type="button" id="recEditCancel" class="rec-top-btn">退出</button>
+        <button type="button" id="recEditOk" class="rec-top-btn">保存</button>
       </div>
     </div>
     <div id="recTextEditor">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <label style="white-space:nowrap;">乐谱名称</label>
+        <input type="text" id="recEditName" placeholder="例：我的演奏" style="flex:1;">
+        <label style="white-space:nowrap;">播放倍率</label>
+        <input type="number" id="recEditSpeed" value="1" min="0.25" max="4" step="0.25" style="width:60px;">
+      </div>
       <div style="margin-bottom:8px;">
         <div id="textTrackBtnContainer" style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">
           <button id="recTextTrackMain" class="rec-text-track-btn" style="background:#0099ff;border:1px solid #0099ff;color:#fff;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px;">主旋律</button>
@@ -281,14 +281,27 @@
     <div id="recVisualEditor" style="display:none;flex:1;min-height:0;flex-direction:column;overflow:hidden;">
       <div id="recVisualToolbar" style="display:flex;align-items:center;margin-bottom:8px;flex-wrap:nowrap;gap:8px;flex-shrink:0;height:36px;white-space:nowrap;overflow-x:auto;overflow-y:hidden;">
         <div id="recVisualPlayBtns" class="toolbar-btns" style="display:flex;align-items:center;gap:8px;">
-          <button id="recVisualPlay" class="toolbar-btn" title="播放/暂停" style="background:#222;border:1px solid #444;color:#eee;padding:0 10px;border-radius:4px;cursor:pointer;font-size:12px;height:28px;">▶ 播放</button>
+          <button id="recVisualPlay" class="play-btn" title="播放/暂停" style="width:28px;height:28px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path class="play-icon" d="M6 4v16l14-8z"></path>
+              <g class="pause-icon" style="display:none;">
+                <rect x="6" y="4" width="4" height="16" rx="1"></rect>
+                <rect x="14" y="4" width="4" height="16" rx="1"></rect>
+              </g>
+            </svg>
+          </button>
+          <button id="recVisualFit" class="play-btn" title="最大化显示 (Shift+Z)" style="width:28px;height:28px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="M21 21l-4.35-4.35"></path>
+            </svg>
+          </button>
           <button id="melodyControlBtn" class="toolbar-btn" title="旋律控制" style="background:#222;border:1px solid #444;color:#eee;padding:0 10px;border-radius:4px;cursor:pointer;font-size:12px;height:28px;">旋律控制</button>
         </div>
         <div id="recVisualEditBtns" class="toolbar-btns" style="display:flex;align-items:center;gap:4px;">
           <button id="recVisualCopy" class="toolbar-btn" title="复制 (Ctrl+C)" style="background:#222;border:1px solid #444;color:#eee;padding:0 8px;border-radius:4px;cursor:pointer;font-size:11px;height:28px;">复制</button>
           <button id="recVisualPaste" class="toolbar-btn" title="粘贴 (Ctrl+V)" style="background:#222;border:1px solid #444;color:#eee;padding:0 8px;border-radius:4px;cursor:pointer;font-size:11px;height:28px;">粘贴</button>
           <button id="recVisualDel" class="toolbar-btn" title="删除 (Delete)" style="background:#222;border:1px solid #444;color:#eee;padding:0 8px;border-radius:4px;cursor:pointer;font-size:11px;height:28px;">删除</button>
-          <button id="recVisualFit" class="toolbar-btn" title="最大化显示 (Shift+Z)" style="background:#222;border:1px solid #444;color:#eee;padding:0 8px;border-radius:4px;cursor:pointer;font-size:11px;height:28px;">🔍</button>
         </div>
         <div id="recVisualBPMArea" class="toolbar-area" style="display:flex;align-items:center;gap:6px;font-size:11px;color:#888;flex-wrap:nowrap;min-width:0;flex-shrink:0;">
           <span class="toolbar-label">BPM</span>
@@ -305,9 +318,9 @@
         </div>
       </div>
       <div style="display:flex;gap:0;flex:1;min-height:0;align-items:stretch;">
-        <!-- 琴键区域：包含琴键和右侧对齐空白区域 -->
-        <div style="display:flex;flex-direction:column;flex-shrink:0;">
-          <div id="recVisualPianoWrap" style="display:flex;flex-direction:column;align-items:center;justify-content:flex-start;background:#1a1a1a;border-radius:6px 0 0 0;overflow:hidden;width:60px;flex:1;">
+        <!-- 琴键区域 -->
+        <div style="display:flex;flex-direction:column;flex-shrink:0;min-height:0;">
+          <div id="recVisualPianoWrap" style="display:flex;flex-direction:column;align-items:center;justify-content:flex-start;background:#1a1a1a;border-radius:6px 0 0 0;overflow:hidden;width:60px;flex:1;min-height:0;">
             <div id="recVisualPianoHeader" style="height:28px;width:100%;background:#252535;display:flex;align-items:center;justify-content:center;flex-shrink:0;border-bottom:1px solid #3a3a4a;">
               <select id="recVisualPianoInst" style="background:#333;border:1px solid #444;color:#eee;border-radius:4px;font-size:10px;width:54px;height:22px;padding:0 2px;">
                 <option value="piano">钢琴</option>
@@ -327,13 +340,11 @@
                 <option value="saxophone">萨克斯</option>
               </select>
             </div>
-            <div id="recVisualPiano" style="background:#1a1a1a;overflow:hidden;flex:1;width:100%;"></div>
+            <div id="recVisualPiano" style="background:#1a1a1a;overflow:hidden;flex:1;width:100%;min-height:0;"></div>
           </div>
-          <!-- 对齐区域：用于对齐琴键和轨道，高度与右侧水平滚动条一致(12px)，请勿删除 -->
+          <!-- 对齐区域：用于对齐琴键和轨道，高度与右侧水平滚动条一致(12px) -->
           <div style="height:12px;background:#222;flex-shrink:0;width:60px;border-radius:0 0 0 6px;"></div>
         </div>
-        <!-- 对齐区域：用于对齐琴键和轨道，宽度与右侧垂直滚动条一致(12px)，请勿删除 -->
-        <div style="width:12px;background:#222;flex-shrink:0;"></div>
         <div style="display:flex;flex-direction:column;flex:1;min-height:0;">
           <div id="recVisualCanvasWrap" style="background:#1a1a1a;overflow:hidden;position:relative;flex:1;min-height:0;display:flex;">
             <div style="display:flex;flex-direction:column;flex:1;min-height:0;">

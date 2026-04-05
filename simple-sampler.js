@@ -52,10 +52,8 @@ var SimpleSampler = (function() {
 
   function setAudioContext(ctx) {
     audioCtx = ctx;
-    console.log('[DEBUG] setAudioContext called, audioCtx:', !!audioCtx);
     
     if (window._pendingSampleData && audioCtx) {
-      console.log('[DEBUG] Processing pending sample data...');
       var instruments = Object.keys(window._pendingSampleData);
       var totalPending = 0;
       var decoded = 0;
@@ -65,8 +63,6 @@ var SimpleSampler = (function() {
         totalPending += Object.keys(window._pendingSampleData[inst]).length;
       });
       
-      console.log('[DEBUG] Total pending samples to decode:', totalPending);
-      
       if (totalPending === 0) {
         window._pendingSampleData = {};
         return;
@@ -74,7 +70,6 @@ var SimpleSampler = (function() {
       
       instruments.forEach(function(inst) {
         var notes = Object.keys(window._pendingSampleData[inst]);
-        console.log('[DEBUG] Processing instrument:', inst, 'notes:', notes);
         
         if (!sampleBuffers[inst]) sampleBuffers[inst] = {};
         
@@ -84,23 +79,18 @@ var SimpleSampler = (function() {
             audioCtx.decodeAudioData(buffer.slice(0), function(decodedBuffer) {
               sampleBuffers[inst][note] = decodedBuffer;
               decoded++;
-              console.log('[DEBUG] Decoded pending sample:', inst, note, 'duration:', decodedBuffer.duration, 'progress:', decoded + '/' + totalPending);
               
               if (decoded + failed === totalPending) {
-                console.log('[DEBUG] All pending samples decoded! Success:', decoded, 'Failed:', failed);
                 window._pendingSampleData = {};
               }
             }, function(e) {
               failed++;
-              console.log('[DEBUG] Failed to decode pending sample:', inst, note, 'error:', e);
               if (decoded + failed === totalPending) {
-                console.log('[DEBUG] All pending samples processed. Success:', decoded, 'Failed:', failed);
                 window._pendingSampleData = {};
               }
             });
           } catch(e) {
             failed++;
-            console.log('[DEBUG] Exception decoding pending sample:', inst, note, e);
             if (decoded + failed === totalPending) {
               window._pendingSampleData = {};
             }
@@ -119,20 +109,16 @@ var SimpleSampler = (function() {
   }
 
   function loadAllSamples(onProgress, onComplete, onError) {
-    console.log('[DEBUG] loadAllSamples called, SAMPLES_DATA exists:', !!window.SAMPLES_DATA);
     if (window.SAMPLES_DATA) {
-      console.log('[DEBUG] SAMPLES_DATA instruments:', Object.keys(window.SAMPLES_DATA));
       loadFromEmbeddedData(onProgress, onComplete);
       return;
     }
     
-    console.log('[DEBUG] No embedded sample data found, samples will not be available');
     isLoaded = true;
     if (onComplete) onComplete();
   }
   
   function loadMissingInstruments(onProgress, onComplete) {
-    console.log('[DEBUG] loadMissingInstruments: skipped - local file access not allowed');
     if (onComplete) onComplete();
   }
   
@@ -208,8 +194,6 @@ var SimpleSampler = (function() {
       totalNotes += Object.keys(window.SAMPLES_DATA[inst]).length;
     });
     
-    console.log('[DEBUG] loadFromEmbeddedData - instruments:', instruments, 'totalNotes:', totalNotes);
-    
     if (totalNotes === 0) {
       isLoaded = true;
       if (onComplete) onComplete();
@@ -218,11 +202,6 @@ var SimpleSampler = (function() {
     
     function checkComplete() {
       if (loadedNotes + failedNotes === totalNotes) {
-        console.log('[DEBUG] loadFromEmbeddedData complete. Loaded:', loadedNotes, 'Failed:', failedNotes);
-        console.log('[DEBUG] sampleBuffers keys:', Object.keys(sampleBuffers));
-        Object.keys(sampleBuffers).forEach(function(inst) {
-          console.log('[DEBUG] sampleBuffers[' + inst + '] notes:', Object.keys(sampleBuffers[inst]));
-        });
         isLoaded = true;
         if (onComplete) onComplete();
       }
@@ -231,8 +210,6 @@ var SimpleSampler = (function() {
     instruments.forEach(function(inst) {
       sampleBuffers[inst] = {};
       var notes = Object.keys(window.SAMPLES_DATA[inst]);
-      
-      console.log('[DEBUG] Loading embedded:', inst, 'notes:', notes);
       
       notes.forEach(function(note) {
         var sampleData = window.SAMPLES_DATA[inst][note];
@@ -244,17 +221,14 @@ var SimpleSampler = (function() {
           }
           
           if (audioCtx) {
-            console.log('[DEBUG] Decoding', inst, note, '...');
             audioCtx.decodeAudioData(bytes.buffer.slice(0), function(buffer) {
               sampleBuffers[inst][note] = buffer;
               loadedNotes++;
               loadProgress = loadedNotes / totalNotes;
-              console.log('[DEBUG] Decoded OK:', inst, note, 'buffer duration:', buffer.duration);
               if (onProgress) onProgress(loadProgress);
               checkComplete();
             }, function(e) {
               failedNotes++;
-              console.log('[DEBUG] Decode FAILED:', inst, note, 'error:', e);
               if (onProgress) onProgress(loadProgress);
               checkComplete();
             });
@@ -262,7 +236,6 @@ var SimpleSampler = (function() {
             if (!window._pendingSampleData) window._pendingSampleData = {};
             if (!window._pendingSampleData[inst]) window._pendingSampleData[inst] = {};
             window._pendingSampleData[inst][note] = bytes.buffer;
-            console.log('[DEBUG] Stored pending sample data for', inst, note);
             loadedNotes++;
             loadProgress = loadedNotes / totalNotes;
             if (onProgress) onProgress(loadProgress);
@@ -270,7 +243,6 @@ var SimpleSampler = (function() {
           }
         } catch(e) {
           failedNotes++;
-          console.log('[DEBUG] Exception processing', inst, note, ':', e);
           checkComplete();
         }
       });
@@ -333,17 +305,12 @@ var SimpleSampler = (function() {
 
   function playNote(instName, midiNote, velocity, duration) {
     if (!audioCtx) {
-      console.log('[DEBUG] playNote: no audioCtx');
       return null;
     }
 
     var targetNoteName = midiToNoteName(midiNote);
     
-    console.log('[DEBUG] playNote:', instName, 'midi:', midiNote, 'targetNote:', targetNoteName);
-    
     var instBuffers = sampleBuffers[instName];
-    
-    console.log('[DEBUG] instBuffers exists:', !!instBuffers, 'keys:', instBuffers ? Object.keys(instBuffers) : []);
     
     var buffer = null;
     var playbackRate = 1.0;
@@ -355,7 +322,6 @@ var SimpleSampler = (function() {
           buffer = instBuffers[noteKey];
           usedSample = noteKey;
           playbackRate = 1.0;
-          console.log('[DEBUG] Found EXACT match:', instName, noteKey, 'playbackRate:', playbackRate);
           break;
         }
       }
@@ -368,13 +334,11 @@ var SimpleSampler = (function() {
           var sampleMidi = noteToMidi(closestNote);
           var pitchDiff = midiNote - sampleMidi;
           playbackRate = Math.pow(2, pitchDiff / 12);
-          console.log('[DEBUG] Using CLOSEST note:', instName, closestNote, 'playbackRate:', playbackRate);
         }
       }
     }
     
     if (!buffer) {
-      console.log('[DEBUG] No sample found for', instName, targetNoteName, '- falling back to piano');
       var pianoBuffers = sampleBuffers['piano'];
       if (pianoBuffers && Object.keys(pianoBuffers).length > 0) {
         for (var noteKey in pianoBuffers) {
@@ -400,11 +364,8 @@ var SimpleSampler = (function() {
     }
     
     if (!buffer) {
-      console.log('[DEBUG] No buffer available, returning null');
       return null;
     }
-
-    console.log('[DEBUG] Playing sample:', usedSample, 'playbackRate:', playbackRate);
 
     var source = audioCtx.createBufferSource();
     source.buffer = buffer;
