@@ -1,4 +1,4 @@
-// Global custom confirm - replaces window.confirm() for WebView compatibility
+﻿﻿﻿﻿﻿﻿﻿// Global custom confirm - replaces window.confirm() for WebView compatibility
 window.appConfirm = function(msg, onOk, onCancel) {
   var ov  = document.getElementById('appConfirmOverlay');
   var txt = document.getElementById('appConfirmContent');
@@ -643,7 +643,7 @@ function drawRainbowGridBackground() {
     // Draw lane dividers (fixed, doesn't scroll)
     var LANE_COUNT_DIV = 7;
     var laneHDiv = h / LANE_COUNT_DIV;
-    ctx.strokeStyle = 'rgba(42, 68, 107, 0.77)';
+    ctx.strokeStyle = 'rgba(60, 60, 60, 0.8)';
     ctx.lineWidth = 1;
     for (var i = 1; i < LANE_COUNT_DIV; i++) {
       ctx.beginPath(); ctx.moveTo(0, i * laneHDiv); ctx.lineTo(scoreW, i * laneHDiv); ctx.stroke();
@@ -1666,7 +1666,7 @@ function _recLoop() {
         if (elapsed >= n.atMs - 60) {
           _recPlayState.scheduled[key] = true;
           var instEn = _INST_EN[n.inst] || n.inst;
-          var noteVolume = n.volume || 100;
+          var noteVolume = (typeof n.volume === 'number') ? n.volume : 100;
           // Note: playhead vibration is only triggered by user key presses, not auto-playback
           // Delay slightly if we're early so sound lands at visual crossing
           var fireDelay = Math.max(0, (n.atMs - elapsed) / _recPlayState.speed);
@@ -2933,7 +2933,10 @@ function startInstrumentNote(freq, autoVolume = 1, overrideInst = null){
     SimpleSampler.setAudioContext(audioCtx);
     var midiNote = Math.round(69 + 12 * Math.log2(freq / 440));
     var velocity = Math.round(autoVolume * 127);
-    var result = SimpleSampler.playNote(instName, midiNote, velocity);
+    const tp = toneParams[instName] || defaultToneParams[instName] || {};
+    var trimS = tp.trimStart || 0;
+    var trimE = tp.trimEnd !== undefined ? tp.trimEnd : 1;
+    var result = SimpleSampler.playNote(instName, midiNote, velocity, undefined, trimS, trimE);
     if (result) {
       const p = toneParams[instName] || defaultToneParams[instName] || {};
       const brightness = p.brightness !== undefined ? p.brightness : 0;
@@ -3294,8 +3297,16 @@ function startNote(tid, ns, overrideInst, noteVolume){
   const isUserPlay = (tid !== "auto" && tid !== "test" && !String(tid).startsWith("rec_"));
   if(isUserPlay && window._REC && window._REC.active) window._REC.onPress(tid, ns, overrideInst || currentInst, 80);
   if(isUserPlay && window._checkRecHit) window._checkRecHit(ns, overrideInst || currentInst, performance.now());
-  // 用户弹奏时检查琴弦位置是否有音符块经过，触发碰触特效
-  if(isUserPlay && typeof checkTouchCollision === 'function') checkTouchCollision();
+  // 用户弹奏时，直接用弹奏的音符在琴弦位置创建碰触特效
+  if(isUserPlay && typeof _recPlayState !== "undefined" && _recPlayState && !_recPlayState.finished) {
+    var _tScoreW = scoreWrap ? scoreWrap.clientWidth : 300;
+    var _tScreenX = _tScoreW / 4;
+    var _tCurrentH = scoreWrap ? scoreWrap.offsetHeight : 170;
+    var _tLaneH = _tCurrentH / 7;
+    var _tUserLane = _getNoteLane(ns);
+    var _tNoteCol = _noteOctColor(ns);
+    addTouchExplosion(_tScreenX, _tUserLane, _tLaneH, _tNoteCol);
+  }
   // 用户弹奏时触发琴弦振动效果
   if(isUserPlay && typeof triggerPlayheadVibration === 'function') triggerPlayheadVibration(3);
   // 跟弹模式下启动特效绘制循环
@@ -3782,18 +3793,11 @@ function _noteColor(note) {
     }, 100);
     
     var wrap = document.getElementById('recVisualCanvasWrap');
-    var w = wrap.clientWidth;
+    var container = document.getElementById('recVisualCanvasContainer');
+    var w = container ? container.clientWidth : wrap.clientWidth;
     
-    var hasSaved = false;
-    try {
-      var saved = localStorage.getItem('visualEditorSettings');
-      if (saved) hasSaved = true;
-    } catch(e) {}
-    
-    if (!hasSaved) {
-      _recVisualZoom = w / _recVisualMaxTime;
-      _recVisualScrollX = 0;
-    }
+    _recVisualZoom = w / _recVisualMaxTime;
+    _recVisualScrollX = 0;
     
     renderRecVisual();
     setTimeout(function() {
@@ -3820,7 +3824,8 @@ function _noteColor(note) {
   var _recVisualScrollY = 0;
   var _recVisualStartTrack = 0;
   var _recVisualEndTrack = 14;
-  var _recVisualMaxTracks = 49;
+  var _recVisualTotalTracks = 84;
+  var _recVisualTotalWhiteKeys = 49;
   var _recVisualSelected = null;
   var _recVisualSelectedNotes = [];
   var _recVisualDragMode = null;
@@ -3836,12 +3841,14 @@ function _noteColor(note) {
   var _recVisualPianoScroll = null;
   var _recVisualAllKeys = []; // 保存所有琴键元素
   var _recVisualPianoContent = null; // 保存琴键容器元素
+  var _recVisualBlackKeyOffsetRatio = 0; // 黑键Y轴偏移比例（相对于白键高度，0=不偏移，负值=上移，正值=下移）
   var _isSyncingFromCanvas = false; // 防止从代码控制滚动时触发循环
   var _recVisualTrackIndexMap = {};
   var _recVisualDisplayToTrackMap = {};
   var _recVisualTrackToDisplayMap = {};
   var _recVisualTrackToNoteMap = {};
   var _recVisualNoteToTrackMap = {};
+  var _recVisualTrackIsBlack = {};
   var _recVisualBPM = 120;
   var _recVisualTimeSig = "4/4";
   var _recVisualSnapEnabled = false;
@@ -3875,31 +3882,25 @@ function _noteColor(note) {
   function syncPianoScrollImmediate() {
     if (!_recVisualPianoScroll) return;
     
-    var totalTracks = 49;
+    var totalTracks = _recVisualTotalTracks;
     var visibleTracks = _recVisualEndTrack - _recVisualStartTrack;
-    visibleTracks = Math.max(7, Math.min(49, visibleTracks));
+    visibleTracks = Math.max(7, Math.min(totalTracks, visibleTracks));
     
-    var pianoViewH = _recVisualPianoScroll ? _recVisualPianoScroll.clientHeight : 300;
-    var trackH = pianoViewH / visibleTracks;
-    trackH = Math.max(12, Math.min(100, trackH));
+    var container = document.getElementById('recVisualCanvasContainer');
+    var wrap = document.getElementById('recVisualCanvasWrap');
+    var baseH = container ? container.clientHeight : (wrap ? wrap.clientHeight : 300);
+    var timelineH = 28;
+    var trackAreaH = baseH - timelineH;
+    var whiteKeyH = trackAreaH / visibleTracks;
+    whiteKeyH = Math.max(12, Math.min(100, whiteKeyH));
     
-    var totalContentHeight = totalTracks * trackH;
-    var maxScrollTop = Math.max(0, totalContentHeight - _recVisualPianoScroll.clientHeight);
-    
-    var scrollRatio = 0;
-    if (totalTracks > visibleTracks) {
-      scrollRatio = _recVisualStartTrack / (totalTracks - visibleTracks);
-    }
-    scrollRatio = Math.max(0, Math.min(1, scrollRatio));
-    
-    var newScrollTop = scrollRatio * maxScrollTop;
+    var targetScrollTop = _recVisualStartTrack * whiteKeyH;
     
     _isSyncingFromCanvas = true;
-    _recVisualPianoScroll.scrollTop = newScrollTop;
-    // 使用 RAF 而不是 setTimeout 来释放标志，确保在同一帧内完成
-    requestAnimationFrame(function() {
+    _recVisualPianoScroll.scrollTop = targetScrollTop;
+    setTimeout(function() {
       _isSyncingFromCanvas = false;
-    });
+    }, 50);
   }
   
   var _melodyList = [
@@ -3951,7 +3952,7 @@ function _noteColor(note) {
       
       var displayIdx;
       if (trackInfo < 0) {
-        displayIdx = Math.abs(trackInfo) % 49;
+        displayIdx = Math.abs(trackInfo) % _recVisualTotalTracks;
       } else {
         displayIdx = trackInfo;
         if (_recVisualTrackToDisplayMap[trackInfo] !== undefined) {
@@ -3965,11 +3966,11 @@ function _noteColor(note) {
     
     var wrap = document.getElementById('recVisualCanvasWrap');
     var container = document.getElementById('recVisualCanvasContainer');
-    var viewW = wrap ? wrap.clientWidth : 600;
+    var viewW = container ? container.clientWidth : (wrap ? wrap.clientWidth : 600);
     var viewH = container ? container.clientHeight : (wrap ? wrap.clientHeight : 400);
     
     var displayTracks = _recVisualEndTrack - _recVisualStartTrack;
-    displayTracks = Math.max(7, Math.min(49, displayTracks));
+    displayTracks = Math.max(7, Math.min(_recVisualTotalTracks, displayTracks));
     var trackH = (viewH - 28) / displayTracks;
     trackH = Math.max(12, Math.min(100, trackH));
     var whiteKeyHeight = trackH;
@@ -4054,40 +4055,49 @@ function _noteColor(note) {
       card.className = 'melody-card';
       card.dataset.track = melody.id;
       
-      var bgColor = isShowInEditor ? '#1a4a2a' : '#2a2a2a';
-      var borderColor = isShowInEditor ? '#00cc66' : '#444';
+      var bgColor = isActive ? '#1a2a4a' : '#2a2a2a';
+      var borderColor = isActive ? '#0099ff' : '#444';
       card.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;cursor:pointer;width:100%;box-sizing:border-box;background:' + bgColor + ';border:2px solid ' + borderColor + ';';
       
-      var editDot = document.createElement('span');
-      editDot.title = '点击切换编辑状态';
-      editDot.style.cssText = 'width:14px;height:14px;border-radius:50%;cursor:pointer;flex-shrink:0;border:2px solid #666;background:' + (isActive ? '#00ff00' : 'transparent') + ';';
+      var eyeEl = document.createElement('span');
+      eyeEl.className = 'melody-eye ' + (isShowInEditor ? 'open' : 'closed');
+      eyeEl.title = isShowInEditor ? '点击隐藏音符' : '点击显示音符';
+      if (isShowInEditor) {
+        var pupil = document.createElement('span');
+        pupil.className = 'melody-eye-pupil';
+        eyeEl.appendChild(pupil);
+      }
       
-      editDot.onclick = function(e) {
+      eyeEl.onclick = function(e) {
         e.stopPropagation();
-        _recVisualTempSelectedTrack = melody.id;
+        var idx = _recVisualTempShowMelodies.indexOf(melody.id);
+        if (idx !== -1) {
+          _recVisualTempShowMelodies.splice(idx, 1);
+        } else {
+          _recVisualTempShowMelodies.push(melody.id);
+        }
+        _recVisualShowMelodies = _recVisualTempShowMelodies.slice();
         renderMelodyListModal();
+        renderRecVisual();
       };
       
       var nameSpan = document.createElement('span');
       nameSpan.textContent = melody.name;
       nameSpan.style.cssText = 'flex:1;min-width:60px;color:#aaa;font-size:14px;font-weight:' + (isActive || isShowInEditor ? 'bold' : 'normal') + ';';
       
-      var showBtn = document.createElement('button');
-      showBtn.className = 'melody-show-toggle';
-      showBtn.dataset.track = melody.id;
-      showBtn.title = '主窗口显示音符块';
-      showBtn.textContent = '显';
-      showBtn.style.cssText = 'padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;font-weight:bold;min-width:36px;';
-      
-      if (isShowNotes) {
-        showBtn.style.background = '#0099ff';
-        showBtn.style.color = '#fff';
-        showBtn.style.border = 'none';
-      } else {
-        showBtn.style.background = '#222';
-        showBtn.style.color = '#888';
-        showBtn.style.border = '1px solid #444';
-      }
+      var showBtn = document.createElement('span');
+      showBtn.className = 'melody-piano-icon ' + (isShowNotes ? 'active' : 'inactive');
+      showBtn.title = isShowNotes ? '点击隐藏音符块' : '点击显示音符块';
+      var wk1 = document.createElement('span'); wk1.className = 'wk wk1';
+      var wk2 = document.createElement('span'); wk2.className = 'wk wk2';
+      var wk3 = document.createElement('span'); wk3.className = 'wk wk3';
+      var bk1 = document.createElement('span'); bk1.className = 'bk bk1';
+      var bk2 = document.createElement('span'); bk2.className = 'bk bk2';
+      showBtn.appendChild(wk1);
+      showBtn.appendChild(wk2);
+      showBtn.appendChild(wk3);
+      showBtn.appendChild(bk1);
+      showBtn.appendChild(bk2);
       
       showBtn.onclick = (function(m) {
         return function(e) {
@@ -4112,17 +4122,14 @@ function _noteColor(note) {
       toggleBtn.className = 'melody-play-toggle';
       toggleBtn.dataset.track = melody.id;
       toggleBtn.title = '轨道显示/播放开关';
-      toggleBtn.textContent = '轨';
-      toggleBtn.style.cssText = 'padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;font-weight:bold;min-width:36px;';
+      toggleBtn.style.cssText = 'padding:0;border-radius:3px;cursor:pointer;width:24px;height:24px;display:flex;align-items:center;justify-content:center;background:transparent;';
       
       if (isPlayEnabled) {
-        toggleBtn.style.background = '#0099ff';
-        toggleBtn.style.color = '#fff';
-        toggleBtn.style.border = 'none';
+        toggleBtn.style.border = '1px solid #0099ff';
+        toggleBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0099ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M14 8a4 4 0 0 1 0 8" style="display:block;"></path><path d="M18 6a7 7 0 0 1 0 12" style="display:block;"></path><line x1="15" y1="7" x2="21" y2="17" style="display:none;"></line><line x1="21" y1="7" x2="15" y2="17" style="display:none;"></line></svg>';
       } else {
-        toggleBtn.style.background = '#222';
-        toggleBtn.style.color = '#888';
         toggleBtn.style.border = '1px solid #444';
+        toggleBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M14 8a4 4 0 0 1 0 8" style="display:none;"></path><path d="M18 6a7 7 0 0 1 0 12" style="display:none;"></path><line x1="15" y1="7" x2="21" y2="17" style="display:block;"></line><line x1="21" y1="7" x2="15" y2="17" style="display:block;"></line></svg>';
       }
       
       toggleBtn.onclick = (function(m) {
@@ -4137,25 +4144,16 @@ function _noteColor(note) {
         };
       })(melody);
       
-      card.appendChild(editDot);
+      card.appendChild(eyeEl);
       card.appendChild(nameSpan);
       card.appendChild(showBtn);
       card.appendChild(toggleBtn);
       
       card.onclick = function(e) {
-        if (e.target.tagName === 'BUTTON') return;
+        if (e.target.tagName === 'BUTTON' || e.target.classList.contains('melody-eye') || e.target.classList.contains('melody-eye-pupil') || e.target.classList.contains('melody-piano-icon') || e.target.classList.contains('wk') || e.target.classList.contains('bk')) return;
         
-        var idx = _recVisualTempShowMelodies.indexOf(melody.id);
-        if (idx !== -1) {
-          _recVisualTempShowMelodies.splice(idx, 1);
-        } else {
-          _recVisualTempShowMelodies.push(melody.id);
-        }
-        
-        _recVisualShowMelodies = _recVisualTempShowMelodies.slice();
-        
+        _recVisualTempSelectedTrack = melody.id;
         renderMelodyListModal();
-        renderRecVisual();
       };
       
       container.appendChild(card);
@@ -4283,14 +4281,11 @@ function _noteColor(note) {
         _recVisualBPM = settings.bpm || 120;
         _recVisualTimeSig = settings.timeSig || "4/4";
         _recVisualSnapEnabled = settings.snapEnabled || false;
-        _recVisualZoom = settings.zoom || 1;
-        _recVisualScrollX = settings.scrollX || 0;
-        _recVisualScrollY = settings.scrollY || 0;
-        _recVisualScale = settings.scale || 0.2;
-        _recVisualStartTrack = settings.startTrack || 0;
-        _recVisualEndTrack = settings.endTrack || 14;
         _recVisualMaxTime = settings.maxTime || 10000;
         _recVisualRegionTime = settings.regionTime || 10000;
+        _recVisualScrollY = settings.scrollY || 0;
+        _recVisualStartTrack = settings.startTrack || 0;
+        _recVisualEndTrack = settings.endTrack || 14;
         _recVisualMainTrackCount = settings.mainTrackCount || 1;
         _recVisualAccompTrackCount = settings.accompTrackCount || 1;
       }
@@ -4379,7 +4374,7 @@ function _noteColor(note) {
   function copyVisualNotes() {
     if (_recVisualSelectedNotes.length > 0) {
       _recVisualClipboard = _recVisualSelectedNotes.map(function(n) {
-        return { inst: n.inst, note: n.note, volume: n.volume || 100, holdMs: n.holdMs, timeMs: n.timeMs, track: n.track };
+        return { inst: n.inst, note: n.note, volume: (typeof n.volume === 'number') ? n.volume : 100, holdMs: n.holdMs, timeMs: n.timeMs, track: n.track };
       });
     } else if (_recVisualSelected) {
       _recVisualClipboard = [{ inst: _recVisualSelected.inst, note: _recVisualSelected.note, volume: _recVisualSelected.volume || 100, holdMs: _recVisualSelected.holdMs, timeMs: _recVisualSelected.timeMs, track: _recVisualSelected.track }];
@@ -4465,7 +4460,7 @@ function _noteColor(note) {
       var newNote = {
         inst: n.inst,
         note: n.note,
-        volume: n.volume || 100,
+        volume: (typeof n.volume === 'number') ? n.volume : 100,
         holdMs: n.holdMs,
         timeMs: pasteTimeMs + (n.timeMs - minTime),
         track: newTrack,
@@ -4507,6 +4502,8 @@ function _noteColor(note) {
   var _recVisualBaseOctave = 4;
   var _recVisualHoldUpdateTimer = null;
 
+  var _recVisualHoldRenderPending = false;
+
   function updateHeldNotesHoldMs() {
     var now = performance.now();
     for (var keyNote in _recVisualPressedKeys) {
@@ -4516,7 +4513,13 @@ function _noteColor(note) {
         _recVisualNotes[pressedInfo.noteIndex].holdMs = holdMs;
       }
     }
-    renderRecVisual();
+    if (!_recVisualHoldRenderPending) {
+      _recVisualHoldRenderPending = true;
+      requestAnimationFrame(function() {
+        _recVisualHoldRenderPending = false;
+        renderRecVisual();
+      });
+    }
   }
 
   function handleRecVisualPianoKey(note, instZh, instEn, keyElement, trackIndex) {
@@ -4537,7 +4540,7 @@ function _noteColor(note) {
     
     var melodyIndex = _melodyList.findIndex(function(m) { return m.id === _recVisualActiveTrack; });
     if (melodyIndex > 0) {
-      newTrack = -(melodyIndex * 49 + Math.abs(newTrack));
+      newTrack = -(melodyIndex * _recVisualTotalTracks + Math.abs(newTrack));
     } else {
       newTrack = Math.abs(newTrack);
     }
@@ -4600,22 +4603,28 @@ function _noteColor(note) {
     
     // 使用与 renderRecVisual 完全相同的高度计算逻辑
     var visibleTracks = _recVisualEndTrack - _recVisualStartTrack;
-    visibleTracks = Math.max(7, Math.min(49, visibleTracks));
+    visibleTracks = Math.max(7, Math.min(_recVisualTotalTracks, visibleTracks));
     
-    // 琴键高度 = 琴键容器高度 / 可见轨道数
     var pianoViewH = containerHeight;
     var whiteKeyHeight = pianoViewH / visibleTracks;
     whiteKeyHeight = Math.max(12, Math.min(100, whiteKeyHeight));
     var blackKeyHeight = whiteKeyHeight * 0.6;
+    var blackKeyOffsetY = whiteKeyHeight * _recVisualBlackKeyOffsetRatio;
     
     var displayOrder = [7, 6, 5, 4, 3, 2, 1];
-    var reversedWhiteKeys = ['B', 'A', 'G', 'F', 'E', 'D', 'C'];
-    var reversedBlackKeys = [
-      {note: 'A#', after: 0},
-      {note: 'G#', after: 1},
-      {note: 'F#', after: 3},
-      {note: 'D#', after: 4},
-      {note: 'C#', after: 5}
+    var octaveDisplayOrder = [
+      {note: 'B', isBlack: false},
+      {note: 'A#', isBlack: true},
+      {note: 'A', isBlack: false},
+      {note: 'G#', isBlack: true},
+      {note: 'G', isBlack: false},
+      {note: 'F#', isBlack: true},
+      {note: 'F', isBlack: false},
+      {note: 'E', isBlack: false},
+      {note: 'D#', isBlack: true},
+      {note: 'D', isBlack: false},
+      {note: 'C#', isBlack: true},
+      {note: 'C', isBlack: false}
     ];
     
     _recVisualTrackIndexMap = {};
@@ -4623,18 +4632,20 @@ function _noteColor(note) {
     _recVisualTrackToDisplayMap = {};
     _recVisualTrackToNoteMap = {};
     _recVisualNoteToTrackMap = {};
+    _recVisualTrackIsBlack = {};
     
     var noteIndex = 0;
     var displayIndex = 0;
     displayOrder.forEach(function(octNum) {
-      reversedWhiteKeys.forEach(function(n) {
-        var noteName = n + octNum;
+      octaveDisplayOrder.forEach(function(item) {
+        var noteName = item.note + octNum;
         var tIdx = noteIndex;
         _recVisualTrackIndexMap[noteName] = tIdx;
         _recVisualDisplayToTrackMap[displayIndex] = tIdx;
         _recVisualTrackToDisplayMap[tIdx] = displayIndex;
         _recVisualTrackToNoteMap[noteIndex] = noteName;
         _recVisualNoteToTrackMap[noteName] = noteIndex;
+        _recVisualTrackIsBlack[noteIndex] = item.isBlack;
         noteIndex++;
         displayIndex++;
       });
@@ -4654,50 +4665,45 @@ function _noteColor(note) {
     
     var pianoContent = document.createElement('div');
     pianoContent.style.cssText = 'display:flex;flex-direction:column;align-items:flex-start;flex-shrink:0;position:relative;width:100%;';
-    // 设置琴键容器总高度为49个白键的高度
-    pianoContent.style.height = (49 * whiteKeyHeight) + 'px';
+    pianoContent.style.height = (_recVisualTotalTracks * whiteKeyHeight) + 'px';
     
     displayOrder.forEach(function(octNum, octIdx) {
-      reversedWhiteKeys.forEach(function(n, i) {
+      octaveDisplayOrder.forEach(function(item) {
+        var noteName = item.note + octNum;
         var k = document.createElement('div');
-        k.className = 'key white';
-        k.dataset.note = n + octNum;
-        k.dataset.trackIndex = keyIndex;
-        // 使用绝对定位来确保琴键位置正确
-        k.style.cssText = 'position:absolute;width:100%;height:' + whiteKeyHeight + 'px;top:' + (keyIndex * whiteKeyHeight) + 'px;left:0;display:flex;align-items:center;justify-content:center;';
         
-        var label = document.createElement('span');
-        label.textContent = n + octNum;
-        label.style.cssText = 'font-size:10px;color:#333;user-select:none;pointer-events:none;position:absolute;right:4px;top:50%;transform:translateY(-50%);';
-        k.appendChild(label);
-        
-        pianoContent.appendChild(k);
-        allKeys.push({
-          element: k,
-          note: n + octNum,
-          trackIndex: keyIndex,
-          isBlack: false
-        });
+        if (item.isBlack) {
+          k.className = 'key black';
+          k.dataset.note = noteName;
+          k.dataset.trackIndex = keyIndex;
+          k.style.cssText = 'position:absolute;width:100%;height:' + whiteKeyHeight + 'px;top:' + (keyIndex * whiteKeyHeight) + 'px;left:0;z-index:2;';
+          pianoContent.appendChild(k);
+          allKeys.push({
+            element: k,
+            note: noteName,
+            trackIndex: keyIndex,
+            isBlack: true
+          });
+        } else {
+          k.className = 'key white';
+          k.dataset.note = noteName;
+          k.dataset.trackIndex = keyIndex;
+          k.style.cssText = 'position:absolute;width:100%;height:' + whiteKeyHeight + 'px;top:' + (keyIndex * whiteKeyHeight) + 'px;left:0;display:flex;align-items:center;justify-content:center;';
+          
+          var label = document.createElement('span');
+          label.textContent = noteName;
+          label.style.cssText = 'font-size:10px;color:#333;user-select:none;pointer-events:none;position:absolute;right:4px;top:50%;transform:translateY(-50%);';
+          k.appendChild(label);
+          
+          pianoContent.appendChild(k);
+          allKeys.push({
+            element: k,
+            note: noteName,
+            trackIndex: keyIndex,
+            isBlack: false
+          });
+        }
         keyIndex++;
-      });
-    });
-    
-    displayOrder.forEach(function(octNum, octIdx) {
-      reversedBlackKeys.forEach(function(b) {
-        var kb = document.createElement('div');
-        kb.className = 'key black';
-        kb.dataset.note = b.note + octNum;
-        var whiteKeyPos = octIdx * 7 + b.after;
-        var topPos = whiteKeyPos * whiteKeyHeight + whiteKeyHeight / 2 - blackKeyHeight / 2;
-        kb.style.cssText = 'position:absolute;top:' + topPos + 'px;left:0;width:60%;height:' + blackKeyHeight + 'px;z-index:2;';
-        
-        pianoContent.appendChild(kb);
-        allKeys.push({
-          element: kb,
-          note: b.note + octNum,
-          trackIndex: whiteKeyPos,
-          isBlack: true
-        });
       });
     });
     
@@ -4754,30 +4760,26 @@ function _noteColor(note) {
     // 添加到DOM后，重新获取正确的高度并更新琴键
     // 使用 requestAnimationFrame 确保DOM完全渲染
     requestAnimationFrame(function() {
-      var actualHeight = pianoScroll.clientHeight;
+      var container5 = document.getElementById('recVisualCanvasContainer');
+      var wrap5 = document.getElementById('recVisualCanvasWrap');
+      var baseH5 = container5 ? container5.clientHeight : (wrap5 ? wrap5.clientHeight : 300);
+      var timelineH5 = 28;
+      var trackAreaH5 = baseH5 - timelineH5;
+      var actualHeight = trackAreaH5;
       if (actualHeight > 0 && actualHeight !== containerHeight) {
-        // 重新计算琴键高度
         var newWhiteKeyHeight = actualHeight / visibleTracks;
         newWhiteKeyHeight = Math.max(12, Math.min(100, newWhiteKeyHeight));
-        var newBlackKeyHeight = newWhiteKeyHeight * 0.6;
         
-        // 更新所有琴键的高度和位置
         if (_recVisualAllKeys) {
           _recVisualAllKeys.forEach(function(keyInfo) {
-            if (keyInfo.isBlack) {
-              keyInfo.element.style.height = newBlackKeyHeight + 'px';
-              var whiteKeyPos = keyInfo.trackIndex;
-              keyInfo.element.style.top = (whiteKeyPos * newWhiteKeyHeight + newWhiteKeyHeight / 2 - newBlackKeyHeight / 2) + 'px';
-            } else {
-              keyInfo.element.style.height = newWhiteKeyHeight + 'px';
-              keyInfo.element.style.top = (keyInfo.trackIndex * newWhiteKeyHeight) + 'px';
-            }
+            keyInfo.element.style.height = newWhiteKeyHeight + 'px';
+            keyInfo.element.style.top = (keyInfo.trackIndex * newWhiteKeyHeight) + 'px';
           });
         }
         
         // 更新琴键容器总高度
         if (_recVisualPianoContent) {
-          _recVisualPianoContent.style.height = (49 * newWhiteKeyHeight) + 'px';
+          _recVisualPianoContent.style.height = (_recVisualTotalTracks * newWhiteKeyHeight) + 'px';
         }
       }
     });
@@ -4806,15 +4808,18 @@ function _noteColor(note) {
       pianoScroll.scrollTop = newScrollTop;
       _recVisualScrollY = newScrollTop;
       
-      var visibleTracks = _recVisualEndTrack - _recVisualStartTrack;
-      visibleTracks = Math.max(7, Math.min(49, visibleTracks));
-      // 使用琴键容器的可见高度来计算轨道高度，与滚动事件一致
-      var pianoViewH = pianoScroll.clientHeight;
-      var trackH = pianoViewH / visibleTracks;
-      trackH = Math.max(12, Math.min(100, trackH));
+      var visibleWhiteKeys = _recVisualEndTrack - _recVisualStartTrack;
+      visibleWhiteKeys = Math.max(7, Math.min(_recVisualTotalTracks, visibleWhiteKeys));
+      var container4 = document.getElementById('recVisualCanvasContainer');
+      var wrap4 = document.getElementById('recVisualCanvasWrap');
+      var baseH4 = container4 ? container4.clientHeight : (wrap4 ? wrap4.clientHeight : 300);
+      var timelineH4 = 28;
+      var trackAreaH4 = baseH4 - timelineH4;
+      var whiteKeyH = trackAreaH4 / visibleWhiteKeys;
+      whiteKeyH = Math.max(12, Math.min(100, whiteKeyH));
       
-      var newStartTrack = Math.round(_recVisualScrollY / trackH);
-      newStartTrack = Math.max(0, Math.min(49 - visibleTracks, newStartTrack));
+      var newStartTrack = Math.round(_recVisualScrollY / whiteKeyH);
+      newStartTrack = Math.max(0, Math.min(_recVisualTotalTracks - visibleWhiteKeys, newStartTrack));
       
       if (_recVisualStartTrack !== newStartTrack) {
         _recVisualStartTrack = newStartTrack;
@@ -4834,35 +4839,31 @@ function _noteColor(note) {
     var _scrollRenderPending = false;
     
     pianoScroll.addEventListener('scroll', function() {
-      if (_isSyncingFromCanvas) return;
+      if (_isSyncingFromCanvas) {
+        return;
+      }
       
-      var totalTracks = 49;
+      var totalTracks = _recVisualTotalTracks;
       var visibleTracks = _recVisualEndTrack - _recVisualStartTrack;
-      visibleTracks = Math.max(7, Math.min(49, visibleTracks));
+      visibleTracks = Math.max(7, Math.min(totalTracks, visibleTracks));
       
-      // 使用琴键容器的可见高度来计算轨道高度，确保与琴键同步
-      var pianoViewH = pianoScroll.clientHeight;
-      var trackH = pianoViewH / visibleTracks;
-      trackH = Math.max(12, Math.min(100, trackH));
+      var container2 = document.getElementById('recVisualCanvasContainer');
+      var wrap2 = document.getElementById('recVisualCanvasWrap');
+      var baseH2 = container2 ? container2.clientHeight : (wrap2 ? wrap2.clientHeight : 300);
+      var timelineH2 = 28;
+      var trackAreaH2 = baseH2 - timelineH2;
+      var whiteKeyH = trackAreaH2 / visibleTracks;
+      whiteKeyH = Math.max(12, Math.min(100, whiteKeyH));
       
-      var totalContentHeight = totalTracks * trackH;
-      var maxScrollTop = Math.max(0, totalContentHeight - pianoScroll.clientHeight);
-      
-      var scrollRatio = maxScrollTop > 0 ? pianoScroll.scrollTop / maxScrollTop : 0;
-      scrollRatio = Math.max(0, Math.min(1, scrollRatio));
-      
+      var newStartTrack = Math.round(pianoScroll.scrollTop / whiteKeyH);
       var maxStartTrack = totalTracks - visibleTracks;
-      var newStartTrack = Math.round(scrollRatio * maxStartTrack);
       newStartTrack = Math.max(0, Math.min(maxStartTrack, newStartTrack));
       
-      if (_recVisualStartTrack !== newStartTrack) {
-        _recVisualStartTrack = newStartTrack;
-        _recVisualEndTrack = _recVisualStartTrack + visibleTracks;
-      }
+      _recVisualStartTrack = newStartTrack;
+      _recVisualEndTrack = _recVisualStartTrack + visibleTracks;
       
       _recVisualScrollY = pianoScroll.scrollTop;
       
-      // 使用 RAF 合并多次 scroll 事件为一次渲染
       if (!_scrollRenderPending) {
         _scrollRenderPending = true;
         requestAnimationFrame(function() {
@@ -4877,36 +4878,28 @@ function _noteColor(note) {
     window.syncPianoScrollFromCanvas = function(targetStartTrack) {
       if (!_recVisualPianoScroll || _isSyncingFromCanvas) return;
       
-      var totalTracks = 49;
+      var totalTracks = _recVisualTotalTracks;
       var visibleTracks = _recVisualEndTrack - _recVisualStartTrack;
-      visibleTracks = Math.max(7, Math.min(49, visibleTracks));
+      visibleTracks = Math.max(7, Math.min(totalTracks, visibleTracks));
       
-      var pianoViewH = _recVisualPianoScroll ? _recVisualPianoScroll.clientHeight : 300;
-      var trackH = pianoViewH / visibleTracks;
-      trackH = Math.max(12, Math.min(100, trackH));
+      var container3 = document.getElementById('recVisualCanvasContainer');
+      var wrap3 = document.getElementById('recVisualCanvasWrap');
+      var baseH3 = container3 ? container3.clientHeight : (wrap3 ? wrap3.clientHeight : 300);
+      var timelineH3 = 28;
+      var trackAreaH3 = baseH3 - timelineH3;
+      var whiteKeyH = trackAreaH3 / visibleTracks;
+      whiteKeyH = Math.max(12, Math.min(100, whiteKeyH));
       
-      var totalContentHeight = totalTracks * trackH;
-      var maxScrollTop = Math.max(0, totalContentHeight - _recVisualPianoScroll.clientHeight);
+      var startTrack = (targetStartTrack !== undefined) ? targetStartTrack : _recVisualStartTrack;
+      var targetScrollTop = startTrack * whiteKeyH;
       
-      var scrollRatio = 0;
-      if (totalTracks > visibleTracks && targetStartTrack !== undefined) {
-        scrollRatio = targetStartTrack / (totalTracks - visibleTracks);
-      } else if (totalTracks > visibleTracks) {
-        scrollRatio = _recVisualStartTrack / (totalTracks - visibleTracks);
-      }
-      scrollRatio = Math.max(0, Math.min(1, scrollRatio));
-      
-      var targetScrollTop = scrollRatio * maxScrollTop;
-      
-      // 只在差值较大时才更新，避免微小变化导致循环
       if (Math.abs(_recVisualPianoScroll.scrollTop - targetScrollTop) < 1) return;
       
       _isSyncingFromCanvas = true;
       _recVisualPianoScroll.scrollTop = targetScrollTop;
-      // 使用 RAF 解锁，确保 scroll 事件处理完毕后再解锁
-      requestAnimationFrame(function() { 
+      setTimeout(function() { 
         _isSyncingFromCanvas = false; 
-      });
+      }, 50);
     };
     
     // 触摸滚动支持
@@ -4932,22 +4925,26 @@ function _noteColor(note) {
     setTimeout(function() {
       var c4NoteName = 'C4';
       var c4TrackIndex = _recVisualNoteToTrackMap[c4NoteName];
-      if (c4TrackIndex === undefined) c4TrackIndex = 24;
+      if (c4TrackIndex === undefined) c4TrackIndex = 47;
       
-      var totalTracks = 49;
+      var totalTracks = _recVisualTotalTracks;
       var visibleTracks = _recVisualEndTrack - _recVisualStartTrack;
-      visibleTracks = Math.max(7, Math.min(49, visibleTracks));
+      visibleTracks = Math.max(7, Math.min(totalTracks, visibleTracks));
       
-      var pianoViewH = pianoScroll ? pianoScroll.clientHeight : 300;
-      var trackH = pianoViewH / visibleTracks;
-      trackH = Math.max(12, Math.min(100, trackH));
+      var container6 = document.getElementById('recVisualCanvasContainer');
+      var wrap6 = document.getElementById('recVisualCanvasWrap');
+      var baseH6 = container6 ? container6.clientHeight : (wrap6 ? wrap6.clientHeight : 300);
+      var timelineH6 = 28;
+      var trackAreaH6 = baseH6 - timelineH6;
+      var whiteKeyH = trackAreaH6 / visibleTracks;
+      whiteKeyH = Math.max(12, Math.min(100, whiteKeyH));
       
-      var totalContentHeight = totalTracks * trackH;
-      var maxScrollTop = Math.max(0, totalContentHeight - pianoScroll.clientHeight);
+      var totalContentHeight = totalTracks * whiteKeyH;
+      var pianoScrollH = pianoScroll ? pianoScroll.clientHeight : trackAreaH6;
+      var maxScrollTop = Math.max(0, totalContentHeight - pianoScrollH);
       
-      // 将 C4 显示在中间位置
-      var c4Position = c4TrackIndex * trackH;
-      var targetScroll = c4Position - (pianoScroll.clientHeight / 2) + (trackH / 2);
+      var c4Position = c4TrackIndex * whiteKeyH;
+      var targetScroll = c4Position - (pianoScrollH / 2) + (whiteKeyH / 2);
       targetScroll = Math.max(0, Math.min(maxScrollTop, targetScroll));
       
       pianoScroll.scrollTop = targetScroll;
@@ -5363,7 +5360,8 @@ function _noteColor(note) {
     if (!rangeBar || !rangeSel || !rangeHandleLeft || !rangeHandleRight) return;
     var wrap = document.getElementById('recVisualCanvasWrap');
     if (!wrap) return;
-    var w = wrap.clientWidth;
+    var _cvc = document.getElementById('recVisualCanvasContainer');
+    var w = _cvc ? _cvc.clientWidth : wrap.clientWidth;
 
     var totalTime = _recVisualMaxTime;
     var visibleTime = w / _recVisualZoom;
@@ -5579,18 +5577,11 @@ function _noteColor(note) {
       setupRecVisualKeyboardEvents();
       
       var wrap = document.getElementById('recVisualCanvasWrap');
-      var w = wrap.clientWidth;
+      var container = document.getElementById('recVisualCanvasContainer');
+      var w = container ? container.clientWidth : wrap.clientWidth;
       
-      var hasSaved = false;
-      try {
-        var saved = localStorage.getItem('visualEditorSettings');
-        if (saved) hasSaved = true;
-      } catch(e) {}
-      
-      if (!hasSaved) {
-        _recVisualZoom = w / _recVisualMaxTime;
-        _recVisualScrollX = 0;
-      }
+      _recVisualZoom = w / _recVisualMaxTime;
+      _recVisualScrollX = 0;
       
       renderRecVisual();
       setTimeout(function() {
@@ -5620,7 +5611,9 @@ function _noteColor(note) {
     if (fitBtn) {
       fitBtn.onclick = function() {
         var wrap = document.getElementById('recVisualCanvasWrap');
-        var w = wrap.clientWidth;
+        var container = document.getElementById('recVisualCanvasContainer');
+        var w = container ? container.clientWidth : (wrap ? wrap.clientWidth : 600);
+        var h = container ? container.clientHeight : (wrap ? wrap.clientHeight : 400);
         
         var notesToConsider = [];
         
@@ -5633,29 +5626,60 @@ function _noteColor(note) {
         }
         
         if (notesToConsider.length === 0) {
-          var newZoom = w / _recVisualMaxTime;
-          _recVisualZoom = Math.max(0.1, newZoom);
+          _recVisualZoom = w / _recVisualMaxTime;
           _recVisualScrollX = 0;
+          _recVisualStartTrack = 0;
+          _recVisualEndTrack = _recVisualTotalTracks;
         } else {
           var minTime = Infinity;
           var maxTime = 0;
+          var minTrack = Infinity;
+          var maxTrack = -Infinity;
           
           notesToConsider.forEach(function(n) {
             if (n.timeMs < minTime) minTime = n.timeMs;
             if (n.timeMs + n.holdMs > maxTime) maxTime = n.timeMs + n.holdMs;
+            
+            var trackInfo = parseInt(n.track);
+            if (isNaN(trackInfo)) trackInfo = 0;
+            var displayIdx;
+            if (trackInfo < 0) {
+              displayIdx = Math.abs(trackInfo) % _recVisualTotalTracks;
+            } else {
+              displayIdx = trackInfo;
+            }
+            minTrack = Math.min(minTrack, displayIdx);
+            maxTrack = Math.max(maxTrack, displayIdx);
           });
           
           var timeSpan = maxTime - minTime;
           if (timeSpan <= 0) timeSpan = 1000;
+          var trackRange = maxTrack - minTrack + 1;
           
           var padding = 50;
-          var newZoom = (w - padding * 2) / timeSpan;
-          _recVisualZoom = Math.max(0.1, newZoom);
-          _recVisualScrollX = Math.max(0, minTime * _recVisualZoom - padding);
+          var viewH = h - 28;
+          var zoomX = (w - padding * 2) / timeSpan;
+          var zoomY = viewH / Math.max(trackRange, 7);
+          var newZoom = Math.min(zoomX, zoomY);
+          var minZoom = w / _recVisualMaxTime;
+          newZoom = Math.max(minZoom, newZoom);
+          _recVisualZoom = newZoom;
+          
+          var centerTime = (minTime + maxTime) / 2;
+          _recVisualScrollX = Math.max(0, centerTime * newZoom - w / 2);
+          
+          var visibleTracks = Math.max(trackRange, 7);
+          visibleTracks = Math.min(_recVisualTotalTracks, visibleTracks);
+          
+          var centerTrack = (minTrack + maxTrack) / 2;
+          _recVisualStartTrack = Math.max(0, Math.min(_recVisualTotalTracks - visibleTracks, Math.round(centerTrack - visibleTracks / 2)));
+          _recVisualEndTrack = _recVisualStartTrack + visibleTracks;
         }
         
         renderRecVisual();
         updateRangeBar();
+        updateVScrollbar();
+        syncPianoScrollImmediate();
       };
     }
     
@@ -5760,7 +5784,8 @@ function _noteColor(note) {
         e.stopPropagation();
         this.style.background = 'rgba(0, 170, 255, 1)';
         var wrap = document.getElementById('recVisualCanvasWrap');
-        var w = wrap.clientWidth;
+        var _cvc = document.getElementById('recVisualCanvasContainer');
+        var w = _cvc ? _cvc.clientWidth : wrap.clientWidth;
         var startTime = _recVisualScrollX / _recVisualZoom;
         var endTime = startTime + w / _recVisualZoom;
         _rangeDrag = {
@@ -5776,7 +5801,8 @@ function _noteColor(note) {
         this.style.background = 'rgba(0, 170, 255, 1)';
         var touch = e.touches[0];
         var wrap = document.getElementById('recVisualCanvasWrap');
-        var w = wrap.clientWidth;
+        var _cvc = document.getElementById('recVisualCanvasContainer');
+        var w = _cvc ? _cvc.clientWidth : wrap.clientWidth;
         var startTime = _recVisualScrollX / _recVisualZoom;
         var endTime = startTime + w / _recVisualZoom;
         _rangeDrag = {
@@ -5794,7 +5820,8 @@ function _noteColor(note) {
         e.stopPropagation();
         this.style.background = 'rgba(0, 170, 255, 1)';
         var wrap = document.getElementById('recVisualCanvasWrap');
-        var w = wrap.clientWidth;
+        var _cvc = document.getElementById('recVisualCanvasContainer');
+        var w = _cvc ? _cvc.clientWidth : wrap.clientWidth;
         var startTime = _recVisualScrollX / _recVisualZoom;
         var endTime = startTime + w / _recVisualZoom;
         _rangeDrag = {
@@ -5810,7 +5837,8 @@ function _noteColor(note) {
         this.style.background = 'rgba(0, 170, 255, 1)';
         var touch = e.touches[0];
         var wrap = document.getElementById('recVisualCanvasWrap');
-        var w = wrap.clientWidth;
+        var _cvc = document.getElementById('recVisualCanvasContainer');
+        var w = _cvc ? _cvc.clientWidth : wrap.clientWidth;
         var startTime = _recVisualScrollX / _recVisualZoom;
         var endTime = startTime + w / _recVisualZoom;
         _rangeDrag = {
@@ -5828,7 +5856,8 @@ function _noteColor(note) {
         e.stopPropagation();
         this.style.background = 'rgba(100, 150, 200, 0.7)';
         var wrap = document.getElementById('recVisualCanvasWrap');
-        var w = wrap.clientWidth;
+        var _cvc = document.getElementById('recVisualCanvasContainer');
+        var w = _cvc ? _cvc.clientWidth : wrap.clientWidth;
         var startTime = _recVisualScrollX / _recVisualZoom;
         var visibleTime = w / _recVisualZoom;
         _rangeDrag = {
@@ -5844,7 +5873,8 @@ function _noteColor(note) {
         this.style.background = 'rgba(100, 150, 200, 0.7)';
         var touch = e.touches[0];
         var wrap = document.getElementById('recVisualCanvasWrap');
-        var w = wrap.clientWidth;
+        var _cvc = document.getElementById('recVisualCanvasContainer');
+        var w = _cvc ? _cvc.clientWidth : wrap.clientWidth;
         var startTime = _recVisualScrollX / _recVisualZoom;
         var visibleTime = w / _recVisualZoom;
         _rangeDrag = {
@@ -5864,7 +5894,8 @@ function _noteColor(note) {
         var ratio = x / rect.width;
 
         var wrap = document.getElementById('recVisualCanvasWrap');
-        var w = wrap.clientWidth;
+        var _cvc = document.getElementById('recVisualCanvasContainer');
+        var w = _cvc ? _cvc.clientWidth : wrap.clientWidth;
         var visibleTime = w / _recVisualZoom;
         var newStartTime = ratio * _recVisualMaxTime - visibleTime / 2;
         newStartTime = Math.max(0, Math.min(_recVisualMaxTime - visibleTime, newStartTime));
@@ -5882,7 +5913,8 @@ function _noteColor(note) {
         var ratio = x / rect.width;
 
         var wrap = document.getElementById('recVisualCanvasWrap');
-        var w = wrap.clientWidth;
+        var _cvc = document.getElementById('recVisualCanvasContainer');
+        var w = _cvc ? _cvc.clientWidth : wrap.clientWidth;
         var visibleTime = w / _recVisualZoom;
         var newStartTime = ratio * _recVisualMaxTime - visibleTime / 2;
         newStartTime = Math.max(0, Math.min(_recVisualMaxTime - visibleTime, newStartTime));
@@ -5900,7 +5932,8 @@ function _noteColor(note) {
       var barW = rangeBar.clientWidth;
       var dx = e.clientX - _rangeDrag.startX;
       var wrap = document.getElementById('recVisualCanvasWrap');
-      var w = wrap.clientWidth;
+      var _cvc = document.getElementById('recVisualCanvasContainer');
+      var w = _cvc ? _cvc.clientWidth : wrap.clientWidth;
       
       if (_rangeDrag.type === 'drag') {
         var timeDelta = dx / barW * _recVisualMaxTime;
@@ -5917,6 +5950,7 @@ function _noteColor(note) {
         
         var newVisibleTime = endTime - newStartTime;
         newVisibleTime = Math.max(4000, newVisibleTime);
+        newVisibleTime = Math.min(newVisibleTime, _recVisualMaxTime);
         var newZoom = w / newVisibleTime;
         _recVisualZoom = newZoom;
         _recVisualScrollX = newStartTime * newZoom;
@@ -5929,6 +5963,7 @@ function _noteColor(note) {
         
         var newVisibleTime = newEndTime - startTime;
         newVisibleTime = Math.max(4000, newVisibleTime);
+        newVisibleTime = Math.min(newVisibleTime, _recVisualMaxTime);
         var newZoom = w / newVisibleTime;
         _recVisualZoom = newZoom;
         _recVisualScrollX = startTime * newZoom;
@@ -5952,8 +5987,9 @@ function _noteColor(note) {
       var barW = rangeBar.clientWidth;
       var dx = touch.clientX - _rangeDrag.startX;
       var wrap = document.getElementById('recVisualCanvasWrap');
-      var w = wrap.clientWidth;
-
+      var _cvc = document.getElementById('recVisualCanvasContainer');
+      var w = _cvc ? _cvc.clientWidth : wrap.clientWidth;
+      
       if (_rangeDrag.type === 'drag') {
         var timeDelta = dx / barW * _recVisualMaxTime;
         var newStartTime = _rangeDrag.startTime + timeDelta;
@@ -5969,6 +6005,7 @@ function _noteColor(note) {
 
         var newVisibleTime = endTime - newStartTime;
         newVisibleTime = Math.max(4000, newVisibleTime);
+        newVisibleTime = Math.min(newVisibleTime, _recVisualMaxTime);
         var newZoom = w / newVisibleTime;
         _recVisualZoom = newZoom;
         _recVisualScrollX = newStartTime * newZoom;
@@ -5981,6 +6018,7 @@ function _noteColor(note) {
 
         var newVisibleTime = newEndTime - startTime;
         newVisibleTime = Math.max(4000, newVisibleTime);
+        newVisibleTime = Math.min(newVisibleTime, _recVisualMaxTime);
         var newZoom = w / newVisibleTime;
         _recVisualZoom = newZoom;
         _recVisualScrollX = startTime * newZoom;
@@ -6008,11 +6046,20 @@ function _noteColor(note) {
         _recVisualMaxTime = seconds * 1000;
 
         var wrap = document.getElementById('recVisualCanvasWrap');
-        var w = wrap.clientWidth;
+        var _cvc = document.getElementById('recVisualCanvasContainer');
+        var w = _cvc ? _cvc.clientWidth : wrap.clientWidth;
 
-        var newZoom = w / _recVisualMaxTime;
-        _recVisualZoom = Math.max(0.1, newZoom);
-        _recVisualScrollX = 0;
+        var minZoom = w / _recVisualMaxTime;
+        if (_recVisualZoom < minZoom) _recVisualZoom = minZoom;
+        _recVisualScale = _recVisualZoom;
+        
+        var visibleTime = w / _recVisualScale;
+        var maxScrollTime = _recVisualMaxTime - visibleTime;
+        if (maxScrollTime < 0) maxScrollTime = 0;
+        var scrollTime = _recVisualScrollX / _recVisualScale;
+        if (scrollTime > maxScrollTime) {
+          _recVisualScrollX = maxScrollTime * _recVisualScale;
+        }
 
         if (_recVisualPlayTime > _recVisualMaxTime) {
           _recVisualPlayTime = _recVisualMaxTime;
@@ -6289,7 +6336,7 @@ function _noteColor(note) {
       if (_recVisualPlayTime >= n.timeMs && _recVisualPlayTime < n.timeMs + n.holdMs) {
         if (!n._playing) {
           var instEn = _INST_EN[n.inst] || n.inst;
-          var noteVolume = n.volume || 100;
+          var noteVolume = (typeof n.volume === 'number') ? n.volume : 100;
           startNote(noteKey, n.note, instEn, noteVolume);
           n._playing = true;
         }
@@ -6303,12 +6350,6 @@ function _noteColor(note) {
     
     var wrap = document.getElementById('recVisualCanvasWrap');
     if (wrap) {
-      var centerX = wrap.clientWidth / 2;
-      var targetScrollTime = _recVisualPlayTime - (centerX - 0) / _recVisualScale;
-      targetScrollTime = Math.max(0, targetScrollTime);
-      var maxScrollTime = _recVisualMaxTime - wrap.clientWidth / _recVisualScale;
-      targetScrollTime = Math.min(targetScrollTime, maxScrollTime);
-      _recVisualScrollX = targetScrollTime * _recVisualScale;
       updateHScrollbar();
       updateRangeBar();
     }
@@ -6444,7 +6485,7 @@ function _noteColor(note) {
           
           var isNewFormat = parts.length >= 5 && !isNaN(parseInt(parts[2])) && String(parts[2]).indexOf('ms') === -1;
           if (isNewFormat) {
-            volume = parseInt(parts[2]) || 100;
+            volume = !isNaN(parseInt(parts[2])) ? parseInt(parts[2]) : 100;
             holdMs = parseInt(parts[3]) || 200;
             timeMs = parseInt(parts[4]) || 0;
             trackFromText = parseInt(parts[5]);
@@ -6454,7 +6495,7 @@ function _noteColor(note) {
             trackFromText = parseInt(parts[4]);
           }
           
-          volume = Math.max(30, Math.min(100, volume));
+          volume = Math.max(0, Math.min(100, volume));
           
           var trackFromNote = getTrackFromNote(note);
           
@@ -6462,7 +6503,7 @@ function _noteColor(note) {
           if (melodyIndex === 0) {
             trackValue = trackFromNote;
           } else {
-            trackValue = -(melodyIndex * 49 + trackFromNote);
+            trackValue = -(melodyIndex * _recVisualTotalTracks + trackFromNote);
           }
           
           _recVisualNotes.push({
@@ -6505,11 +6546,11 @@ function _noteColor(note) {
       
       var displayTrack = t;
       if (t < 0) {
-        displayTrack = Math.abs(t) % 49;
+        displayTrack = Math.abs(t) % _recVisualTotalTracks;
       }
       
-      var volume = n.volume || 100;
-      volume = Math.max(30, Math.min(100, volume));
+      var volume = (typeof n.volume === 'number') ? n.volume : 100;
+      volume = Math.max(0, Math.min(100, volume));
       
       var noteName = (typeof n.note === 'string') ? n.note : String(n.note);
       var noteStr = n.inst + '|' + noteName + '|' + volume + '|' + n.holdMs + '|' + n.timeMs + '|' + displayTrack;
@@ -6580,18 +6621,17 @@ function _noteColor(note) {
     
     var h = container ? container.clientHeight : wrap.clientHeight;
     var barH = scrollbar.clientHeight;
-    var visibleTracks = _recVisualEndTrack - _recVisualStartTrack;
-    var totalContentHeight = _recVisualMaxTracks;
-    var maxScrollY = Math.max(0, totalContentHeight - visibleTracks);
+    var visibleWhiteKeys = _recVisualEndTrack - _recVisualStartTrack;
+    var totalContentHeight = _recVisualTotalTracks;
+    var maxScrollY = Math.max(0, totalContentHeight - visibleWhiteKeys);
     
     var thumbHeight, thumbTop;
     
     if (maxScrollY <= 0) {
-      // 当完全占满时，滑块占满整个滚动条，但留出一点边距
       thumbHeight = Math.max(20, barH - 4);
       thumbTop = 2;
     } else {
-      thumbHeight = Math.max(20, Math.floor((visibleTracks / totalContentHeight) * barH));
+      thumbHeight = Math.max(20, Math.floor((visibleWhiteKeys / totalContentHeight) * barH));
       thumbTop = Math.floor((_recVisualStartTrack / maxScrollY) * (barH - thumbHeight));
     }
     
@@ -6622,44 +6662,41 @@ function _noteColor(note) {
     var h = container ? container.clientHeight : wrap.clientHeight;
     
     if (_recVisualVScrollbarDragType === 'resize-top') {
-      // 拖动上端点，下端点保持不动 - 完全照着功能映射区
-      var trackDelta = dy / barH * _recVisualMaxTracks;
+      var trackDelta = dy / barH * _recVisualTotalTracks;
       var newStartTrack = _recVisualVScrollbarDragStartStartTrack + trackDelta;
       var endTrack = _recVisualVScrollbarDragStartEndTrack;
       
       newStartTrack = Math.max(0, newStartTrack);
       
       var newVisibleTracks = endTrack - newStartTrack;
-      newVisibleTracks = Math.max(7, newVisibleTracks); // 一个音域最少7个轨道
+      newVisibleTracks = Math.max(7, newVisibleTracks);
       
       _recVisualStartTrack = newStartTrack;
       _recVisualEndTrack = _recVisualStartTrack + newVisibleTracks;
     } else if (_recVisualVScrollbarDragType === 'resize-bottom') {
-      // 拖动下端点，上端点保持不动 - 完全照着功能映射区
-      var trackDelta = dy / barH * _recVisualMaxTracks;
+      var trackDelta = dy / barH * _recVisualTotalTracks;
       var newEndTrack = _recVisualVScrollbarDragStartEndTrack + trackDelta;
       var startTrack = _recVisualVScrollbarDragStartStartTrack;
       
-      newEndTrack = Math.min(_recVisualMaxTracks, newEndTrack);
+      newEndTrack = Math.min(_recVisualTotalTracks, newEndTrack);
       
       var newVisibleTracks = newEndTrack - startTrack;
-      newVisibleTracks = Math.max(7, newVisibleTracks); // 一个音域最少7个轨道
+      newVisibleTracks = Math.max(7, newVisibleTracks);
       
       _recVisualEndTrack = newEndTrack;
       _recVisualStartTrack = _recVisualEndTrack - newVisibleTracks;
     } else {
-      // 拖动滑块中间，实现滚动
       var thumb = document.getElementById('recVisualVThumb');
       var thumbHeight = parseInt(thumb.style.height) || 30;
-      var visibleTracks = _recVisualEndTrack - _recVisualStartTrack;
-      var totalContentHeight = _recVisualMaxTracks;
-      var maxScrollY = Math.max(0, totalContentHeight - visibleTracks);
+      var visibleWhiteKeys = _recVisualEndTrack - _recVisualStartTrack;
+      var totalContentHeight = _recVisualTotalTracks;
+      var maxScrollY = Math.max(0, totalContentHeight - visibleWhiteKeys);
       var scrollRange = barH - thumbHeight;
       var scrollDelta = (dy / scrollRange) * maxScrollY;
       var newStartTrack = _recVisualVScrollbarDragStartStartTrack + scrollDelta;
       newStartTrack = Math.max(0, Math.min(maxScrollY, newStartTrack));
       _recVisualStartTrack = newStartTrack;
-      _recVisualEndTrack = _recVisualStartTrack + visibleTracks;
+      _recVisualEndTrack = _recVisualStartTrack + visibleWhiteKeys;
     }
     
     renderRecVisual();
@@ -6701,7 +6738,8 @@ function _noteColor(note) {
     var scrollbar = document.getElementById('recVisualHScrollbar');
     if (!thumb || !wrap || !scrollbar) return;
     
-    var w = wrap.clientWidth;
+    var _cvc = document.getElementById('recVisualCanvasContainer');
+    var w = _cvc ? _cvc.clientWidth : wrap.clientWidth;
     var barW = scrollbar.clientWidth;
     var visibleTime = w / _recVisualZoom;
     var totalContentWidth = _recVisualMaxTime * _recVisualZoom;
@@ -6741,7 +6779,8 @@ function _noteColor(note) {
     var coords = getEventCoords(e);
     var barW = scrollbar.clientWidth;
     var dx = coords.x - _recVisualHScrollbarDragStartX;
-    var w = wrap.clientWidth;
+    var _cvc = document.getElementById('recVisualCanvasContainer');
+    var w = _cvc ? _cvc.clientWidth : wrap.clientWidth;
     
     if (_recVisualHScrollbarDragType === 'resize-left') {
       // 拖动左端点，右端点保持不动 - 完全照着功能映射区
@@ -6753,6 +6792,7 @@ function _noteColor(note) {
       
       var newVisibleTime = endTime - newStartTime;
       newVisibleTime = Math.max(4000, newVisibleTime);
+      newVisibleTime = Math.min(newVisibleTime, _recVisualMaxTime);
       var newZoom = w / newVisibleTime;
       _recVisualZoom = newZoom;
       _recVisualScrollX = newStartTime * newZoom;
@@ -6766,6 +6806,7 @@ function _noteColor(note) {
       
       var newVisibleTime = newEndTime - startTime;
       newVisibleTime = Math.max(4000, newVisibleTime);
+      newVisibleTime = Math.min(newVisibleTime, _recVisualMaxTime);
       var newZoom = w / newVisibleTime;
       _recVisualZoom = newZoom;
       _recVisualScrollX = startTime * newZoom;
@@ -6963,7 +7004,7 @@ function _noteColor(note) {
     if (w <= 0 || baseH <= 0) return;
     
     var displayTracks = _recVisualEndTrack - _recVisualStartTrack;
-    displayTracks = Math.max(7, Math.min(49, displayTracks));
+    displayTracks = Math.max(7, Math.min(_recVisualTotalTracks, displayTracks));
     
     var h = baseH;
     
@@ -6976,26 +7017,26 @@ function _noteColor(note) {
     
     var padding = 0;
     var timelineH = 28;
-    // 使用可见轨道数来计算轨道高度（支持垂直缩放）
-    var visibleTracks = _recVisualEndTrack - _recVisualStartTrack;
-    visibleTracks = Math.max(7, Math.min(49, visibleTracks));
-    // 使用琴键容器的可见高度来计算轨道高度，确保与琴键完全同步
-    var pianoViewH = (_recVisualPianoScroll && _recVisualPianoScroll.clientHeight > 0) ? _recVisualPianoScroll.clientHeight : (h - timelineH);
-    var trackH = pianoViewH / visibleTracks;
-    trackH = Math.max(12, Math.min(100, trackH));
-    var whiteKeyHeight = trackH;
+    var visibleWhiteKeys = _recVisualEndTrack - _recVisualStartTrack;
+    visibleWhiteKeys = Math.max(7, Math.min(_recVisualTotalTracks, visibleWhiteKeys));
+    var trackAreaH = h - timelineH;
+    var whiteKeyHeight = trackAreaH / visibleWhiteKeys;
+    if (!isFinite(whiteKeyHeight) || isNaN(whiteKeyHeight)) whiteKeyHeight = 20;
+    whiteKeyHeight = Math.max(12, Math.min(100, whiteKeyHeight));
     var blackKeyHeight = whiteKeyHeight * 0.6;
+    var blackKeyOffsetY = whiteKeyHeight * _recVisualBlackKeyOffsetRatio;
+    var blackKeyTrackH = whiteKeyHeight * 0.6;
     
     // 更新琴键高度以匹配轨道缩放（带缓存，避免不必要的DOM操作）
     if (_recVisualAllKeys && _recVisualAllKeys.length > 0) {
       _recVisualAllKeys.forEach(function(keyInfo) {
         if (keyInfo.isBlack) {
-          var newH = blackKeyHeight + 'px';
-          var whiteKeyPos = keyInfo.trackIndex;
-          var newTop = (whiteKeyPos * whiteKeyHeight + whiteKeyHeight / 2 - blackKeyHeight / 2) + 'px';
-          // 只在值变化时才更新
+          var newH = whiteKeyHeight + 'px';
+          var newTop = (keyInfo.trackIndex * whiteKeyHeight) + 'px';
           if (keyInfo.element.style.height !== newH) keyInfo.element.style.height = newH;
           if (keyInfo.element.style.top !== newTop) keyInfo.element.style.top = newTop;
+          keyInfo.element.style.width = '100%';
+          keyInfo.element.style.transform = 'none';
         } else {
           var newH2 = whiteKeyHeight + 'px';
           var newTop2 = (keyInfo.trackIndex * whiteKeyHeight) + 'px';
@@ -7005,36 +7046,36 @@ function _noteColor(note) {
       });
     }
     
-    // 更新琴键容器总高度（带缓存）
     if (_recVisualPianoContent) {
-      var totalHeight = 49 * whiteKeyHeight;
+      var totalHeight = _recVisualTotalTracks * whiteKeyHeight;
       var totalHeightStr = totalHeight + 'px';
       if (_recVisualPianoContent.style.height !== totalHeightStr) {
         _recVisualPianoContent.style.height = totalHeightStr;
       }
     }
     
-    if (_recVisualZoom <= 0) _recVisualZoom = 1;
+    var minZoom = w / _recVisualMaxTime;
+    if (_recVisualZoom < minZoom) _recVisualZoom = minZoom;
+    if (_recVisualZoom <= 0) _recVisualZoom = minZoom;
     var visibleTime = w / _recVisualZoom;
     _recVisualScale = w / visibleTime;
     if (_recVisualScale <= 0) _recVisualScale = 1;
     
-    var scrollTime = _recVisualScrollX / _recVisualScale;
+    if (_recVisualPlaying || _recVisualTimelineDrag) {
+      var centerScrollTime = _recVisualPlayTime - (w / 2) / _recVisualScale;
+      centerScrollTime = Math.max(0, centerScrollTime);
+      var centerMaxScrollTime = _recVisualMaxTime - visibleTime;
+      if (centerMaxScrollTime < 0) centerMaxScrollTime = 0;
+      centerScrollTime = Math.min(centerScrollTime, centerMaxScrollTime);
+      _recVisualScrollX = centerScrollTime * _recVisualScale;
+    }
     
-    var endX = padding + (_recVisualMaxTime - scrollTime) * _recVisualScale;
-    if (endX >= 0 && endX <= w) {
-      ctx.strokeStyle = '#ff4444';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(endX, timelineH);
-      ctx.lineTo(endX, h);
-      ctx.stroke();
-      
-      ctx.fillStyle = '#ff4444';
-      ctx.font = 'bold 10px Arial';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'bottom';
-      ctx.fillText((_recVisualMaxTime / 1000).toFixed(1) + 's', endX, timelineH - 2);
+    var scrollTime = _recVisualScrollX / _recVisualScale;
+    var maxScrollTime = _recVisualMaxTime - visibleTime;
+    if (maxScrollTime < 0) maxScrollTime = 0;
+    if (scrollTime > maxScrollTime) {
+      scrollTime = maxScrollTime;
+      _recVisualScrollX = scrollTime * _recVisualScale;
     }
     
     var beatMs = getBeatDuration();
@@ -7073,19 +7114,32 @@ function _noteColor(note) {
     ctx.stroke();
     
     var startTick = Math.floor(scrollTime / thirtySecondMs);
-    var totalTicks = Math.ceil((scrollTime + visibleTime) / thirtySecondMs);
-    for (var t = startTick; t <= totalTicks; t++) {
-      var tickTime = t * thirtySecondMs;
+    var maxTick = Math.ceil(_recVisualMaxTime / thirtySecondMs);
+    var totalTicks = Math.min(Math.ceil((scrollTime + visibleTime) / thirtySecondMs), maxTick);
+    
+    var secInterval = 1;
+    if (visibleTime > 60000) secInterval = 10;
+    else if (visibleTime > 30000) secInterval = 5;
+    else if (visibleTime > 15000) secInterval = 2;
+    else if (visibleTime < 3000) secInterval = 0.5;
+    else if (visibleTime < 1500) secInterval = 0.25;
+    else if (visibleTime < 800) secInterval = 0.1;
+    var subInterval = secInterval / 5;
+    
+    var startSec = Math.floor(scrollTime / 1000 / subInterval) * subInterval;
+    var endSec = Math.ceil((scrollTime + visibleTime) / 1000 / subInterval) * subInterval;
+    endSec = Math.min(endSec, _recVisualMaxTime / 1000);
+    
+    for (var sec = startSec; sec <= endSec; sec += subInterval) {
+      var tickTime = sec * 1000;
+      if (tickTime > _recVisualMaxTime) break;
       var tx = padding + (tickTime - scrollTime) * _recVisualScale;
       if (tx < -10) continue;
       if (tx > w + 10) break;
       
-      var isMeasureStart = (t % (beatsPerMeasure * 8) === 0);
-      var isQuarter = (t % 8 === 0);
-      var isEighth = (t % 4 === 0);
-      var isSixteenth = (t % 2 === 0);
+      var isMajor = Math.abs(sec % secInterval) < 0.001 || Math.abs(sec % secInterval - secInterval) < 0.001;
       
-      if (isMeasureStart) {
+      if (isMajor) {
         ctx.strokeStyle = '#7080a0';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -7097,36 +7151,64 @@ function _noteColor(note) {
         ctx.font = 'bold 11px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        var measureNum = Math.floor(t / (beatsPerMeasure * 8));
-        ctx.fillText(measureNum, tx, timelineH / 2);
-      } else if (isQuarter) {
-        drawTimelineMark(tx, timelineH, '#506070');
-      } else if (isEighth) {
-        drawTimelineMark(tx, timelineH * 0.7, '#404858');
-      } else if (isSixteenth) {
-        drawTimelineMark(tx, timelineH * 0.4, '#303848');
+        var secLabel = sec % 1 === 0 ? sec.toFixed(0) + 's' : sec.toFixed(1) + 's';
+        ctx.fillText(secLabel, tx, timelineH / 2);
       } else {
-        drawTimelineMark(tx, timelineH * 0.25, '#303848');
+        drawTimelineMark(tx, timelineH * 0.5, '#404858');
       }
     }
     
-    // ========== 音符绘制（时间轴层级之下）==========
+    function getTrackYPos(trackIdx) {
+      return timelineH + (trackIdx - _recVisualStartTrack) * whiteKeyHeight;
+    }
     
-    ctx.strokeStyle = 'rgba(60, 60, 80, 0.3)';
+    function getTrackHeight2(trackIdx) {
+      return whiteKeyHeight;
+    }
+    
+    function isTrackVisible(trackIdx) {
+      var trackY = getTrackYPos(trackIdx);
+      var trackH2 = getTrackHeight2(trackIdx);
+      return trackY + trackH2 > timelineH && trackY < h;
+    }
+    
+    function getTrackIdxFromY(canvasY) {
+      var trackIdx = Math.floor((canvasY - timelineH) / whiteKeyHeight) + _recVisualStartTrack;
+      if (isNaN(trackIdx) || !isFinite(trackIdx)) trackIdx = 0;
+      trackIdx = Math.max(0, Math.min(_recVisualTotalTracks - 1, trackIdx));
+      return trackIdx;
+    }
+    
+    _recVisualGetTrackYPos = getTrackYPos;
+    _recVisualGetTrackHeight = getTrackHeight2;
+    _recVisualGetTrackIdxFromY = getTrackIdxFromY;
+    
+    ctx.strokeStyle = 'rgba(60, 60, 60, 0.5)';
     ctx.lineWidth = 1;
-    // 轨道线使用与音符完全相同的计算逻辑，绘制所有49条轨道的顶部边界线
-    for (var lineIdx = 0; lineIdx < 49; lineIdx++) {
-      var relativeIdx = lineIdx - _recVisualStartTrack;
-      var trackY = timelineH + relativeIdx * trackH;
-      // 只绘制在画布可见范围内的轨道线
-      if (trackY < -trackH || trackY > h + trackH) continue;
+    for (var lineIdx = 0; lineIdx < _recVisualTotalTracks; lineIdx++) {
+      if (!isTrackVisible(lineIdx)) continue;
+      var trackY = getTrackYPos(lineIdx);
       ctx.beginPath();
       ctx.moveTo(0, trackY);
       ctx.lineTo(w, trackY);
       ctx.stroke();
     }
     
-
+    ctx.fillStyle = 'rgba(40, 40, 40, 0.1)';
+    for (var wkIdx = 0; wkIdx < _recVisualTotalTracks; wkIdx++) {
+      if (_recVisualTrackIsBlack[wkIdx]) continue;
+      if (!isTrackVisible(wkIdx)) continue;
+      var wkTrackY = getTrackYPos(wkIdx);
+      ctx.fillRect(0, wkTrackY, w, whiteKeyHeight);
+    }
+    
+    ctx.fillStyle = 'rgba(25, 25, 25, 0.5)';
+    for (var bkIdx = 0; bkIdx < _recVisualTotalTracks; bkIdx++) {
+      if (!_recVisualTrackIsBlack[bkIdx]) continue;
+      if (!isTrackVisible(bkIdx)) continue;
+      var bkTrackY = getTrackYPos(bkIdx);
+      ctx.fillRect(0, bkTrackY, w, whiteKeyHeight);
+    }
     
     var measureMs = beatMs * beatsPerMeasure;
     var startMeasure = Math.floor(scrollTime / measureMs);
@@ -7145,9 +7227,10 @@ function _noteColor(note) {
     }
     
     var startTick2 = Math.floor(scrollTime / thirtySecondMs);
-    var totalTicks2 = Math.ceil((scrollTime + visibleTime) / thirtySecondMs);
+    var totalTicks2 = Math.min(Math.ceil((scrollTime + visibleTime) / thirtySecondMs), maxTick);
     for (var t = startTick2; t <= totalTicks2; t++) {
       var tickTime = t * thirtySecondMs;
+      if (tickTime > _recVisualMaxTime) break;
       var tx2 = padding + (tickTime - scrollTime) * _recVisualScale;
       if (tx2 < -10) continue;
       if (tx2 > w + 10) break;
@@ -7190,7 +7273,7 @@ function _noteColor(note) {
       var displayIdx;
       
       if (trackIdx < 0) {
-        displayIdx = Math.abs(trackIdx) % 49;
+        displayIdx = Math.abs(trackIdx) % _recVisualTotalTracks;
       } else {
         displayIdx = trackIdx;
         if (_recVisualTrackToDisplayMap[trackIdx] !== undefined) {
@@ -7198,9 +7281,8 @@ function _noteColor(note) {
         }
       }
       
-      var relativeDisplayIdx = displayIdx - _recVisualStartTrack;
-      var y = timelineH + relativeDisplayIdx * trackH;
-      var noteH = trackH;
+      var y = getTrackYPos(displayIdx);
+      var noteH = getTrackHeight2(displayIdx);
       
       // 设置位置属性（用于点击检测）
       n._x = x;
@@ -7256,74 +7338,50 @@ function _noteColor(note) {
     ctx.fillStyle = '#252535';
     ctx.fillRect(0, 0, w, timelineH);
     
-    // 绘制时间刻度 - 使用与前面相同的 thirtySecondMs 基准
-    for (var t = startTick; t <= totalTicks; t++) {
-      var tickTime = t * thirtySecondMs;
-      var tx = padding + (tickTime - scrollTime) * _recVisualScale;
-      if (tx < -10) continue;
-      if (tx > w + 10) break;
+    for (var sec2 = startSec; sec2 <= endSec; sec2 += subInterval) {
+      var tickTime2 = sec2 * 1000;
+      if (tickTime2 > _recVisualMaxTime) break;
+      var tx2 = padding + (tickTime2 - scrollTime) * _recVisualScale;
+      if (tx2 < -10) continue;
+      if (tx2 > w + 10) break;
       
-      var isMeasureStart = (t % (beatsPerMeasure * 8) === 0);
-      var isQuarter = (t % 8 === 0);
-      var isEighth = (t % 4 === 0);
-      var isSixteenth = (t % 2 === 0);
+      var isMajor2 = Math.abs(sec2 % secInterval) < 0.001 || Math.abs(sec2 % secInterval - secInterval) < 0.001;
       
-      if (isMeasureStart) {
+      if (isMajor2) {
         ctx.strokeStyle = '#445566';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(tx, 0);
-        ctx.lineTo(tx, timelineH);
+        ctx.moveTo(tx2, 0);
+        ctx.lineTo(tx2, timelineH);
         ctx.stroke();
         
         ctx.fillStyle = '#778899';
         ctx.font = 'bold 11px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        var measureNum = Math.floor(t / (beatsPerMeasure * 8));
-        ctx.fillText(measureNum, tx, timelineH / 2);
-      } else if (isQuarter) {
-        ctx.strokeStyle = '#445566';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(tx, 0);
-        ctx.lineTo(tx, timelineH * 0.6);
-        ctx.stroke();
-      } else if (isEighth) {
-        ctx.strokeStyle = '#445566';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(tx, 0);
-        ctx.lineTo(tx, timelineH * 0.4);
-        ctx.stroke();
-      } else if (isSixteenth) {
-        ctx.strokeStyle = '#445566';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(tx, 0);
-        ctx.lineTo(tx, timelineH * 0.3);
-        ctx.stroke();
+        var secLabel2 = sec2 % 1 === 0 ? sec2.toFixed(0) + 's' : sec2.toFixed(1) + 's';
+        ctx.fillText(secLabel2, tx2, timelineH / 2);
       } else {
         ctx.strokeStyle = '#445566';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(tx, 0);
-        ctx.lineTo(tx, timelineH * 0.2);
+        ctx.moveTo(tx2, 0);
+        ctx.lineTo(tx2, timelineH * 0.4);
         ctx.stroke();
       }
     }
     
-    // 时间刻度线一直显示
     var playX = padding + (_recVisualPlayTime - scrollTime) * _recVisualScale;
     if (playX >= 0 && playX <= w) {
-      ctx.strokeStyle = '#ff4444';
+      var playheadColor = _recVisualPlaying ? '#ff4444' : '#ff8800';
+      ctx.strokeStyle = playheadColor;
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(playX, 0);
       ctx.lineTo(playX, h);
       ctx.stroke();
       
-      ctx.fillStyle = '#ff4444';
+      ctx.fillStyle = playheadColor;
       ctx.beginPath();
       ctx.moveTo(playX - 6, 0);
       ctx.lineTo(playX + 6, 0);
@@ -7348,6 +7406,7 @@ function _noteColor(note) {
     
     updateVScrollbar();
     updateHScrollbar();
+    updateRangeBar();
   }
 
   function setupRecVisualEvents() {
@@ -7364,11 +7423,15 @@ function _noteColor(note) {
       var x = coords.x - rect.left;
       var y = coords.y - rect.top;
       
-      var pianoViewH = _recVisualPianoScroll ? _recVisualPianoScroll.clientHeight : 300;
-      var visibleTracks = _recVisualEndTrack - _recVisualStartTrack;
-      visibleTracks = Math.max(7, Math.min(49, visibleTracks));
-      var trackH = pianoViewH / visibleTracks;
-      trackH = Math.max(12, Math.min(100, trackH));
+      var container7 = document.getElementById('recVisualCanvasContainer');
+      var wrap7 = document.getElementById('recVisualCanvasWrap');
+      var baseH7 = container7 ? container7.clientHeight : (wrap7 ? wrap7.clientHeight : 300);
+      var timelineH7 = 28;
+      var trackAreaH7 = baseH7 - timelineH7;
+      var visibleWhiteKeys = _recVisualEndTrack - _recVisualStartTrack;
+      visibleWhiteKeys = Math.max(7, Math.min(_recVisualTotalTracks, visibleWhiteKeys));
+      var whiteKeyH = trackAreaH7 / visibleWhiteKeys;
+      whiteKeyH = Math.max(12, Math.min(100, whiteKeyH));
       
       var timelineH = 28;
       
@@ -7431,17 +7494,11 @@ function _noteColor(note) {
         } else {
           saveVisualHistory();
           var clickOffsetTime = (x - clickedNote._x) / _recVisualScale;
-          var visibleTracks = _recVisualEndTrack - _recVisualStartTrack;
-          visibleTracks = Math.max(7, Math.min(49, visibleTracks));
-          var actualTrackH = pianoViewH / visibleTracks;
-          actualTrackH = Math.max(12, Math.min(100, actualTrackH));
-          var timelineH = 28;
           
-          // 计算原始显示索引
           var origTrackIdx = parseInt(clickedNote.track) || 0;
           var origDisplayIdx;
           if (origTrackIdx < 0) {
-            origDisplayIdx = Math.abs(origTrackIdx) % 49;
+            origDisplayIdx = Math.abs(origTrackIdx) % _recVisualTotalTracks;
           } else {
             origDisplayIdx = _recVisualTrackToDisplayMap[origTrackIdx] !== undefined ? _recVisualTrackToDisplayMap[origTrackIdx] : origTrackIdx;
           }
@@ -7454,7 +7511,6 @@ function _noteColor(note) {
             origTrack: parseInt(clickedNote.track) || 0,
             origDisplayIdx: origDisplayIdx,
             clickOffsetTime: clickOffsetTime,
-            trackH: actualTrackH,
             multiNotes: _recVisualSelectedNotes.slice()
           };
           _recVisualDrag.multiOrig = _recVisualSelectedNotes.map(function(n) {
@@ -7469,24 +7525,25 @@ function _noteColor(note) {
         newTimeMs = Math.max(0, Math.min(_recVisualMaxTime - 50, newTimeMs));
         newTimeMs = snapToBeatForCreation(newTimeMs);
         
-        var newTrack = Math.floor((y - timelineH) / trackH) + _recVisualStartTrack;
-        newTrack = Math.max(_recVisualStartTrack, Math.min(_recVisualEndTrack - 1, newTrack));
-        newTrack = Math.round(newTrack);
+        var newTrack = _recVisualGetTrackIdxFromY ? _recVisualGetTrackIdxFromY(y) : Math.floor((y - 28) / 20);
+        if (isNaN(newTrack) || !isFinite(newTrack)) newTrack = 0;
+        newTrack = Math.max(0, Math.min(_recVisualTotalTracks - 1, newTrack));
         
         // 获取音符名称，优先使用映射表
         var note = _recVisualTrackToNoteMap[newTrack];
         if (!note || typeof note !== 'string') {
           // 备用算法：根据显示索引计算音符名称
-          var allNotes2 = ['B','A','G','F','E','D','C'];
+          var allNotes2 = ['B','A#','A','G#','G','F#','F','E','D#','D','C#','C'];
           var octaves2 = [7, 6, 5, 4, 3, 2, 1];
-          var noteInOctave2 = newTrack % 7;
-          var octaveIndex2 = Math.floor(newTrack / 7);
-          note = allNotes2[noteInOctave2] + octaves2[octaveIndex2];
+          var noteInOctave2 = newTrack % 12;
+          var octaveIndex2 = Math.floor(newTrack / 12);
+          note = allNotes2[noteInOctave2] + (octaves2[octaveIndex2] !== undefined ? octaves2[octaveIndex2] : 4);
         }
+        if (!note || typeof note !== 'string') note = 'C4';
         
         var melodyIndex = _melodyList.findIndex(function(m) { return m.id === _recVisualActiveTrack; });
         if (melodyIndex > 0) {
-          newTrack = -(melodyIndex * 49 + newTrack);
+          newTrack = -(melodyIndex * _recVisualTotalTracks + newTrack);
         }
         
         var durationVal = 0.5;
@@ -7525,7 +7582,6 @@ function _noteColor(note) {
           
           var clickX = x;
           var clickY = y;
-          var clickTrackH = trackH;
           var clickScrollY = _recVisualScrollY || 0;
           
           if (_recVisualClickTimer) {
@@ -7540,30 +7596,25 @@ function _noteColor(note) {
               newTimeMs = Math.max(0, Math.min(_recVisualMaxTime - 50, newTimeMs));
               newTimeMs = snapToBeatForCreation(newTimeMs);
             
-              var pianoViewH = _recVisualPianoScroll ? _recVisualPianoScroll.clientHeight : 300;
-              var visibleTracks = _recVisualEndTrack - _recVisualStartTrack;
-              visibleTracks = Math.max(7, Math.min(49, visibleTracks));
-              var actualTrackH = pianoViewH / visibleTracks;
-              actualTrackH = Math.max(12, Math.min(100, actualTrackH));
-            
-              var newTrack = Math.floor((clickY - 28) / actualTrackH) + _recVisualStartTrack;
-              newTrack = Math.max(_recVisualStartTrack, Math.min(_recVisualEndTrack - 1, newTrack));
-              newTrack = Math.round(newTrack);
+              var newTrack = _recVisualGetTrackIdxFromY ? _recVisualGetTrackIdxFromY(clickY) : Math.floor((clickY - 28) / 20);
+              if (isNaN(newTrack) || !isFinite(newTrack)) newTrack = 0;
+              newTrack = Math.max(0, Math.min(_recVisualTotalTracks - 1, newTrack));
             
               // 获取音符名称，优先使用映射表
               var note = _recVisualTrackToNoteMap[newTrack];
               if (!note || typeof note !== 'string') {
                 // 备用算法：根据显示索引计算音符名称
-                var allNotes3 = ['B','A','G','F','E','D','C'];
-                var octaves3 = [7, 6, 5, 4, 3, 2, 1];
-                var noteInOctave3 = newTrack % 7;
-                var octaveIndex3 = Math.floor(newTrack / 7);
-                note = allNotes3[noteInOctave3] + octaves3[octaveIndex3];
+                var allNotes3 = ['B','A#','A','G#','G','F#','F','E','D#','D','C#','C'];
+              var octaves3 = [7, 6, 5, 4, 3, 2, 1];
+              var noteInOctave3 = newTrack % 12;
+              var octaveIndex3 = Math.floor(newTrack / 12);
+              note = allNotes3[noteInOctave3] + (octaves3[octaveIndex3] !== undefined ? octaves3[octaveIndex3] : 4);
               }
+              if (!note || typeof note !== 'string') note = 'C4';
             
               var melodyIndex = _melodyList.findIndex(function(m) { return m.id === _recVisualActiveTrack; });
               if (melodyIndex > 0) {
-                newTrack = -(melodyIndex * 49 + newTrack);
+                newTrack = -(melodyIndex * _recVisualTotalTracks + newTrack);
               }
             
               var durationVal = 0.5;
@@ -7642,15 +7693,19 @@ function _noteColor(note) {
         var newScrollX = _recVisualTwoFingerStartScrollX - dx;
         _recVisualScrollX = Math.max(0, newScrollX);
         
-        var visibleTracks = _recVisualTwoFingerStartEndTrack - _recVisualTwoFingerStartStartTrack;
-        var pianoViewH = _recVisualPianoScroll ? _recVisualPianoScroll.clientHeight : 300;
-        var trackH = pianoViewH / visibleTracks;
-        var trackDelta = dy / trackH;
-        var maxStartTrack = _recVisualMaxTracks - visibleTracks;
+        var visibleWhiteKeys = _recVisualTwoFingerStartEndTrack - _recVisualTwoFingerStartStartTrack;
+        var container8 = document.getElementById('recVisualCanvasContainer');
+        var wrap8 = document.getElementById('recVisualCanvasWrap');
+        var baseH8 = container8 ? container8.clientHeight : (wrap8 ? wrap8.clientHeight : 300);
+        var timelineH8 = 28;
+        var trackAreaH8 = baseH8 - timelineH8;
+        var whiteKeyH = trackAreaH8 / visibleWhiteKeys;
+        var trackDelta = dy / whiteKeyH;
+        var maxStartTrack = _recVisualTotalTracks - visibleWhiteKeys;
         var newStartTrack = _recVisualTwoFingerStartStartTrack - trackDelta;
         newStartTrack = Math.max(0, Math.min(maxStartTrack, newStartTrack));
         _recVisualStartTrack = newStartTrack;
-        _recVisualEndTrack = _recVisualStartTrack + visibleTracks;
+        _recVisualEndTrack = _recVisualStartTrack + visibleWhiteKeys;
         
         renderRecVisual();
         updateRangeBar();
@@ -7697,30 +7752,30 @@ function _noteColor(note) {
           
           _recVisualDrag.note.timeMs = newTime;
           
-          var displayTracks = _recVisualEndTrack - _recVisualStartTrack;
-          displayTracks = Math.max(7, Math.min(49, displayTracks));
-          var pianoViewH = _recVisualPianoScroll ? _recVisualPianoScroll.clientHeight : 300;
-          var trackH = pianoViewH / displayTracks;
-          trackH = Math.max(12, Math.min(100, trackH));
-          
-          var origDisplayIdx = _recVisualDrag.origDisplayIdx || 0;
-          var trackDelta = Math.round(dy / trackH);
-          var newDisplayIdx = origDisplayIdx + trackDelta;
-          newDisplayIdx = Math.max(0, Math.min(48, newDisplayIdx));
+          var newDisplayIdx;
+          if (_recVisualGetTrackIdxFromY) {
+            newDisplayIdx = _recVisualGetTrackIdxFromY(y);
+          } else {
+            newDisplayIdx = _recVisualDrag.origDisplayIdx || 0;
+          }
+          if (isNaN(newDisplayIdx) || !isFinite(newDisplayIdx)) newDisplayIdx = _recVisualDrag.origDisplayIdx || 0;
+          newDisplayIdx = Math.max(0, Math.min(_recVisualTotalTracks - 1, newDisplayIdx));
           
           var noteName = _recVisualTrackToNoteMap[newDisplayIdx];
-          if (!noteName) {
-            var allNotes = ['B','A','G','F','E','D','C'];
+          if (!noteName || typeof noteName !== 'string') {
+            var allNotes = ['B','A#','A','G#','G','F#','F','E','D#','D','C#','C'];
             var octaves = [7, 6, 5, 4, 3, 2, 1];
-            var noteInOctave = newDisplayIdx % 7;
-            var octaveIndex = Math.floor(newDisplayIdx / 7);
-            noteName = allNotes[noteInOctave] + octaves[octaveIndex];
+            var noteInOctave = newDisplayIdx % 12;
+            var octaveIndex = Math.floor(newDisplayIdx / 12);
+            noteName = allNotes[noteInOctave] + (octaves[octaveIndex] !== undefined ? octaves[octaveIndex] : 4);
           }
+          if (!noteName || typeof noteName !== 'string') noteName = 'C4';
           
           _recVisualDrag.note.track = newDisplayIdx;
-          if (typeof noteName === 'string') {
-            _recVisualDrag.note.note = noteName;
-          }
+          _recVisualDrag.note.note = noteName;
+          
+          var origDisplayIdx2 = _recVisualDrag.origDisplayIdx || 0;
+          var trackDelta = newDisplayIdx - origDisplayIdx2;
           
           if (_recVisualDrag.multiOrig) {
             var timeDelta = newTime - _recVisualDrag.origTime;
@@ -7728,23 +7783,29 @@ function _noteColor(note) {
               if (item.note !== _recVisualDrag.note) {
                 item.note.timeMs = Math.max(0, Math.min(_recVisualMaxTime - 50, item.origTime + timeDelta));
                 
-                var itemOrigDisplayIdx = parseInt(item.origTrack) || 0;
+                var itemOrigTrackIdx = parseInt(item.origTrack) || 0;
+                var itemOrigDisplayIdx;
+                if (itemOrigTrackIdx < 0) {
+                  itemOrigDisplayIdx = Math.abs(itemOrigTrackIdx) % _recVisualTotalTracks;
+                } else {
+                  itemOrigDisplayIdx = _recVisualTrackToDisplayMap[itemOrigTrackIdx] !== undefined ? _recVisualTrackToDisplayMap[itemOrigTrackIdx] : itemOrigTrackIdx;
+                }
                 var itemNewDisplayIdx = itemOrigDisplayIdx + trackDelta;
-                itemNewDisplayIdx = Math.max(0, Math.min(48, itemNewDisplayIdx));
+                if (isNaN(itemNewDisplayIdx) || !isFinite(itemNewDisplayIdx)) itemNewDisplayIdx = itemOrigDisplayIdx;
+                itemNewDisplayIdx = Math.max(0, Math.min(_recVisualTotalTracks - 1, itemNewDisplayIdx));
                 
                 var itemNoteName = _recVisualTrackToNoteMap[itemNewDisplayIdx];
-                if (!itemNoteName) {
-                  var allNotes2 = ['B','A','G','F','E','D','C'];
-                  var octaves2 = [7, 6, 5, 4, 3, 2, 1];
-                  var itemNoteInOctave = itemNewDisplayIdx % 7;
-                  var itemOctaveIndex = Math.floor(itemNewDisplayIdx / 7);
-                  itemNoteName = allNotes2[itemNoteInOctave] + octaves2[itemOctaveIndex];
+                if (!itemNoteName || typeof itemNoteName !== 'string') {
+                  var allNotesX = ['B','A#','A','G#','G','F#','F','E','D#','D','C#','C'];
+                  var octavesX = [7, 6, 5, 4, 3, 2, 1];
+                  var itemNoteInOctave = itemNewDisplayIdx % 12;
+                  var itemOctaveIndex = Math.floor(itemNewDisplayIdx / 12);
+                  itemNoteName = allNotesX[itemNoteInOctave] + (octavesX[itemOctaveIndex] !== undefined ? octavesX[itemOctaveIndex] : 4);
                 }
+                if (!itemNoteName || typeof itemNoteName !== 'string') itemNoteName = 'C4';
                 
                 item.note.track = itemNewDisplayIdx;
-                if (typeof itemNoteName === 'string') {
-                  item.note.note = itemNoteName;
-                }
+                item.note.note = itemNoteName;
               }
             });
           }
@@ -7817,17 +7878,26 @@ function _noteColor(note) {
         var dy = y - _recVisualMiddleDragStartY;
         
         var newScrollX = _recVisualMiddleDragStartScrollX - dx;
-        _recVisualScrollX = Math.max(0, newScrollX);
+        var containerMd = document.getElementById('recVisualCanvasContainer');
+        var wrapMd = document.getElementById('recVisualCanvasWrap');
+        var wMd = containerMd ? containerMd.clientWidth : (wrapMd ? wrapMd.clientWidth : 300);
+        var visibleTimeMd = wMd / _recVisualScale;
+        var maxScrollMd = Math.max(0, (_recVisualMaxTime - visibleTimeMd) * _recVisualScale);
+        _recVisualScrollX = Math.max(0, Math.min(maxScrollMd, newScrollX));
         
-        var visibleTracks = _recVisualMiddleDragStartEndTrack - _recVisualMiddleDragStartStartTrack;
-        var pianoViewH = _recVisualPianoScroll ? _recVisualPianoScroll.clientHeight : 300;
-        var trackH = pianoViewH / visibleTracks;
-        var trackDelta = dy / trackH;
-        var maxStartTrack = _recVisualMaxTracks - visibleTracks;
+        var visibleWhiteKeys = _recVisualMiddleDragStartEndTrack - _recVisualMiddleDragStartStartTrack;
+        var container9 = document.getElementById('recVisualCanvasContainer');
+        var wrap9 = document.getElementById('recVisualCanvasWrap');
+        var baseH9 = container9 ? container9.clientHeight : (wrap9 ? wrap9.clientHeight : 300);
+        var timelineH9 = 28;
+        var trackAreaH9 = baseH9 - timelineH9;
+        var whiteKeyH = trackAreaH9 / visibleWhiteKeys;
+        var trackDelta = dy / whiteKeyH;
+        var maxStartTrack = _recVisualTotalTracks - visibleWhiteKeys;
         var newStartTrack = _recVisualMiddleDragStartStartTrack - trackDelta;
         newStartTrack = Math.max(0, Math.min(maxStartTrack, newStartTrack));
         _recVisualStartTrack = newStartTrack;
-        _recVisualEndTrack = _recVisualStartTrack + visibleTracks;
+        _recVisualEndTrack = _recVisualStartTrack + visibleWhiteKeys;
         
         // 使用 requestAnimationFrame 优化渲染
         if (!_recVisualMiddleDragRAF) {
@@ -7893,31 +7963,30 @@ function _noteColor(note) {
         
         _recVisualDrag.note.timeMs = newTime;
         
-        var displayTracks = _recVisualEndTrack - _recVisualStartTrack;
-        displayTracks = Math.max(7, Math.min(49, displayTracks));
-        var pianoViewH = _recVisualPianoScroll ? _recVisualPianoScroll.clientHeight : 300;
-        var trackH = pianoViewH / displayTracks;
-        trackH = Math.max(12, Math.min(100, trackH));
-        
-        var origDisplayIdx = _recVisualDrag.origDisplayIdx || 0;
-        var trackDelta = Math.round(dy / trackH);
-        var newDisplayIdx = origDisplayIdx + trackDelta;
-        newDisplayIdx = Math.max(0, Math.min(48, newDisplayIdx));
-        
-        // 使用 _recVisualTrackToNoteMap 获取正确的音符名称
-        var noteName = _recVisualTrackToNoteMap[newDisplayIdx];
-        if (!noteName) {
-          var allNotes = ['B','A','G','F','E','D','C'];
-          var octaves = [7, 6, 5, 4, 3, 2, 1];
-          var noteInOctave = newDisplayIdx % 7;
-          var octaveIndex = Math.floor(newDisplayIdx / 7);
-          noteName = allNotes[noteInOctave] + octaves[octaveIndex];
+        var newDisplayIdx;
+        if (_recVisualGetTrackIdxFromY) {
+          newDisplayIdx = _recVisualGetTrackIdxFromY(y);
+        } else {
+          newDisplayIdx = _recVisualDrag.origDisplayIdx || 0;
         }
+        if (isNaN(newDisplayIdx) || !isFinite(newDisplayIdx)) newDisplayIdx = _recVisualDrag.origDisplayIdx || 0;
+        newDisplayIdx = Math.max(0, Math.min(_recVisualTotalTracks - 1, newDisplayIdx));
+        
+        var noteName = _recVisualTrackToNoteMap[newDisplayIdx];
+        if (!noteName || typeof noteName !== 'string') {
+          var allNotes = ['B','A#','A','G#','G','F#','F','E','D#','D','C#','C'];
+          var octaves = [7, 6, 5, 4, 3, 2, 1];
+          var noteInOctave = newDisplayIdx % 12;
+          var octaveIndex = Math.floor(newDisplayIdx / 12);
+          noteName = allNotes[noteInOctave] + (octaves[octaveIndex] !== undefined ? octaves[octaveIndex] : 4);
+        }
+        if (!noteName || typeof noteName !== 'string') noteName = 'C4';
         
         _recVisualDrag.note.track = newDisplayIdx;
-        if (typeof noteName === 'string') {
-          _recVisualDrag.note.note = noteName;
-        }
+        _recVisualDrag.note.note = noteName;
+        
+        var origDisplayIdx2 = _recVisualDrag.origDisplayIdx || 0;
+        var trackDelta = newDisplayIdx - origDisplayIdx2;
         
         if (_recVisualDrag.multiOrig) {
           var timeDelta = newTime - _recVisualDrag.origTime;
@@ -7925,23 +7994,29 @@ function _noteColor(note) {
             if (item.note !== _recVisualDrag.note) {
               item.note.timeMs = Math.max(0, Math.min(_recVisualMaxTime - 50, item.origTime + timeDelta));
               
-              var itemOrigDisplayIdx = parseInt(item.origTrack) || 0;
+              var itemOrigTrackIdx = parseInt(item.origTrack) || 0;
+              var itemOrigDisplayIdx;
+              if (itemOrigTrackIdx < 0) {
+                itemOrigDisplayIdx = Math.abs(itemOrigTrackIdx) % _recVisualTotalTracks;
+              } else {
+                itemOrigDisplayIdx = _recVisualTrackToDisplayMap[itemOrigTrackIdx] !== undefined ? _recVisualTrackToDisplayMap[itemOrigTrackIdx] : itemOrigTrackIdx;
+              }
               var itemNewDisplayIdx = itemOrigDisplayIdx + trackDelta;
-              itemNewDisplayIdx = Math.max(0, Math.min(48, itemNewDisplayIdx));
+              if (isNaN(itemNewDisplayIdx) || !isFinite(itemNewDisplayIdx)) itemNewDisplayIdx = itemOrigDisplayIdx;
+              itemNewDisplayIdx = Math.max(0, Math.min(_recVisualTotalTracks - 1, itemNewDisplayIdx));
               
               var itemNoteName = _recVisualTrackToNoteMap[itemNewDisplayIdx];
-              if (!itemNoteName) {
-                var allNotes2 = ['B','A','G','F','E','D','C'];
+              if (!itemNoteName || typeof itemNoteName !== 'string') {
+                var allNotes2 = ['B','A#','A','G#','G','F#','F','E','D#','D','C#','C'];
                 var octaves2 = [7, 6, 5, 4, 3, 2, 1];
-                var itemNoteInOctave = itemNewDisplayIdx % 7;
-                var itemOctaveIndex = Math.floor(itemNewDisplayIdx / 7);
-                itemNoteName = allNotes2[itemNoteInOctave] + octaves2[itemOctaveIndex];
+                var itemNoteInOctave = itemNewDisplayIdx % 12;
+                var itemOctaveIndex = Math.floor(itemNewDisplayIdx / 12);
+                itemNoteName = allNotes2[itemNoteInOctave] + (octaves2[itemOctaveIndex] !== undefined ? octaves2[itemOctaveIndex] : 4);
               }
+              if (!itemNoteName || typeof itemNoteName !== 'string') itemNoteName = 'C4';
               
               item.note.track = itemNewDisplayIdx;
-              if (typeof itemNoteName === 'string') {
-                item.note.note = itemNoteName;
-              }
+              item.note.note = itemNoteName;
             }
           });
         }
@@ -8004,36 +8079,118 @@ function _noteColor(note) {
       }
     };
     
-    _recVisualCanvas.onwheel = function(e) {
+    _recVisualCanvas.addEventListener('wheel', function(e) {
       e.preventDefault();
+      e.stopPropagation();
       var wrap = document.getElementById('recVisualCanvasWrap');
       var container = document.getElementById('recVisualCanvasContainer');
       var w = container ? container.clientWidth : wrap.clientWidth;
       var h = container ? container.clientHeight : wrap.clientHeight;
       
-      if (e.shiftKey) {
+      if (e.ctrlKey) {
         var delta = e.deltaY;
-        var scrollDelta = delta * _recVisualScale * 0.5;
+        var zoomFactor = delta > 0 ? 0.9 : 1.1;
+        var newZoom = _recVisualZoom * zoomFactor;
+        newZoom = Math.max(0.05, Math.min(10, newZoom));
+        var rect = _recVisualCanvas.getBoundingClientRect();
+        var mouseX = e.clientX - rect.left;
+        var mouseY = e.clientY - rect.top;
+        var timelineH = 28;
+        var scrollTime = _recVisualScrollX / _recVisualScale;
+        var timeAtMouse = scrollTime + mouseX / _recVisualScale;
+        _recVisualZoom = newZoom;
+        _recVisualScale = newZoom;
+        _recVisualScrollX = Math.max(0, timeAtMouse * newZoom - mouseX);
+        var visibleWhiteKeys = _recVisualEndTrack - _recVisualStartTrack;
+        var newVisibleKeys = Math.round(visibleWhiteKeys / zoomFactor);
+        newVisibleKeys = Math.max(7, Math.min(_recVisualTotalTracks, newVisibleKeys));
+        var ratio = (mouseY - timelineH) / (h - timelineH);
+        ratio = Math.max(0, Math.min(1, ratio));
+        var centerTrack = _recVisualStartTrack + ratio * visibleWhiteKeys;
+        _recVisualStartTrack = Math.round(centerTrack - ratio * newVisibleKeys);
+        _recVisualStartTrack = Math.max(0, Math.min(_recVisualTotalTracks - newVisibleKeys, _recVisualStartTrack));
+        _recVisualEndTrack = _recVisualStartTrack + newVisibleKeys;
+      } else if (e.shiftKey) {
+        var delta2 = e.deltaY;
+        var scrollDelta = delta2 * _recVisualScale * 0.5;
         var visibleTime = w / _recVisualZoom;
         var maxScroll = Math.max(0, (_recVisualMaxTime - visibleTime) * _recVisualZoom);
         _recVisualScrollX = Math.max(0, Math.min(maxScroll, _recVisualScrollX + scrollDelta));
       } else {
-        var delta = e.deltaY;
-        var visibleTracks = _recVisualEndTrack - _recVisualStartTrack;
-        var maxScrollY = Math.max(0, _recVisualMaxTracks - visibleTracks);
-        var trackDelta = delta * 0.1;
-        var newStartTrack = _recVisualStartTrack + trackDelta;
+        var delta3 = e.deltaY;
+        var visibleWhiteKeys3 = _recVisualEndTrack - _recVisualStartTrack;
+        visibleWhiteKeys3 = Math.max(7, Math.min(_recVisualTotalTracks, visibleWhiteKeys3));
+        var maxScrollY = Math.max(0, _recVisualTotalTracks - visibleWhiteKeys3);
+        var trackDelta = Math.round(delta3 * 0.05);
+        if (trackDelta === 0) trackDelta = delta3 > 0 ? 1 : -1;
+        var newStartTrack = Math.round(_recVisualStartTrack) + trackDelta;
         newStartTrack = Math.max(0, Math.min(maxScrollY, newStartTrack));
         _recVisualStartTrack = newStartTrack;
-        _recVisualEndTrack = _recVisualStartTrack + visibleTracks;
+        _recVisualEndTrack = _recVisualStartTrack + visibleWhiteKeys3;
       }
-      saveVisualEditorSettings();
       renderRecVisual();
       updateRangeBar();
+      updateVScrollbar();
       
-      // 同步琴键滚动位置
       syncPianoScrollImmediate();
-    };
+    }, { passive: false });
+    
+    var canvasContainer = document.getElementById('recVisualCanvasContainer');
+    if (canvasContainer) {
+      canvasContainer.addEventListener('wheel', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var wrap = document.getElementById('recVisualCanvasWrap');
+        var w = canvasContainer.clientWidth;
+        var h = canvasContainer.clientHeight;
+        
+        if (e.ctrlKey) {
+          var delta = e.deltaY;
+          var zoomFactor = delta > 0 ? 0.9 : 1.1;
+          var newZoom = _recVisualZoom * zoomFactor;
+          newZoom = Math.max(0.05, Math.min(10, newZoom));
+          var rect = canvasContainer.getBoundingClientRect();
+          var mouseX = e.clientX - rect.left;
+          var mouseY = e.clientY - rect.top;
+          var timelineH = 28;
+          var scrollTime = _recVisualScrollX / _recVisualScale;
+          var timeAtMouse = scrollTime + mouseX / _recVisualScale;
+          _recVisualZoom = newZoom;
+          _recVisualScale = newZoom;
+          _recVisualScrollX = Math.max(0, timeAtMouse * newZoom - mouseX);
+          var visibleWhiteKeys = _recVisualEndTrack - _recVisualStartTrack;
+          var newVisibleKeys = Math.round(visibleWhiteKeys / zoomFactor);
+          newVisibleKeys = Math.max(7, Math.min(_recVisualTotalTracks, newVisibleKeys));
+          var ratio = (mouseY - timelineH) / (h - timelineH);
+          ratio = Math.max(0, Math.min(1, ratio));
+          var centerTrack = _recVisualStartTrack + ratio * visibleWhiteKeys;
+          _recVisualStartTrack = Math.round(centerTrack - ratio * newVisibleKeys);
+          _recVisualStartTrack = Math.max(0, Math.min(_recVisualTotalTracks - newVisibleKeys, _recVisualStartTrack));
+          _recVisualEndTrack = _recVisualStartTrack + newVisibleKeys;
+        } else if (e.shiftKey) {
+          var delta = e.deltaY;
+          var scrollDelta = delta * _recVisualScale * 0.5;
+          var visibleTime = w / _recVisualZoom;
+          var maxScroll = Math.max(0, (_recVisualMaxTime - visibleTime) * _recVisualZoom);
+          _recVisualScrollX = Math.max(0, Math.min(maxScroll, _recVisualScrollX + scrollDelta));
+        } else {
+          var delta = e.deltaY;
+          var visibleWhiteKeys = _recVisualEndTrack - _recVisualStartTrack;
+          visibleWhiteKeys = Math.max(7, Math.min(_recVisualTotalTracks, visibleWhiteKeys));
+          var maxScrollY = Math.max(0, _recVisualTotalTracks - visibleWhiteKeys);
+          var trackDelta = Math.round(delta * 0.05);
+          if (trackDelta === 0) trackDelta = delta > 0 ? 1 : -1;
+          var newStartTrack = Math.round(_recVisualStartTrack) + trackDelta;
+          newStartTrack = Math.max(0, Math.min(maxScrollY, newStartTrack));
+          _recVisualStartTrack = newStartTrack;
+          _recVisualEndTrack = _recVisualStartTrack + visibleWhiteKeys;
+        }
+        renderRecVisual();
+        updateRangeBar();
+        updateVScrollbar();
+        syncPianoScrollImmediate();
+      }, { passive: false });
+    }
     
     var vThumb = document.getElementById('recVisualVThumb');
     var vHandleTop = document.getElementById('recVisualVHandleTop');
@@ -8121,7 +8278,8 @@ function _noteColor(note) {
       
       var coords = getEventCoords(e);
       var wrap = document.getElementById('recVisualCanvasWrap');
-      var w = wrap.clientWidth;
+      var _cvc = document.getElementById('recVisualCanvasContainer');
+      var w = _cvc ? _cvc.clientWidth : wrap.clientWidth;
       
       // 保存初始数据状态
       var startTime = _recVisualScrollX / _recVisualZoom;
@@ -8337,6 +8495,39 @@ function _noteColor(note) {
   }
 
   setTimeout(renderRecList, 600);
+  
+  // 把可视化编辑器的关键函数和变量暴露到window对象上，方便音阶识别功能调用
+  window.parseTextToVisual = parseTextToVisual;
+  window.parseVisualToText = parseVisualToText;
+  window.renderRecVisual = renderRecVisual;
+  window.saveVisualHistory = saveVisualHistory;
+  window.createRecVisualPiano = createRecVisualPiano;
+  window.updateRangeBar = updateRangeBar;
+  
+  Object.defineProperty(window, '_recVisualPlayTime', {
+    get: function() { return _recVisualPlayTime; },
+    set: function(val) { _recVisualPlayTime = val; }
+  });
+  
+  Object.defineProperty(window, '_recVisualPlaying', {
+    get: function() { return _recVisualPlaying; },
+    set: function(val) { _recVisualPlaying = val; }
+  });
+  
+  Object.defineProperty(window, '_recVisualNotes', {
+    get: function() { return _recVisualNotes; },
+    set: function(val) { _recVisualNotes = val; }
+  });
+  
+  Object.defineProperty(window, '_melodyList', {
+    get: function() { return _melodyList; },
+    set: function(val) { _melodyList = val; }
+  });
+  
+  Object.defineProperty(window, '_recVisualTextTrack', {
+    get: function() { return _recVisualTextTrack; },
+    set: function(val) { _recVisualTextTrack = val; }
+  });
 })();
 
 
@@ -9322,15 +9513,15 @@ window.onload = function(){
     html += '<div class="tone-control-group">';
     html += '<div class="sample-upload-area">';
     html += '<p style="font-size:11px;color:#888;margin-bottom:8px;">单击试听 | 双击上传采样</p>';
+    html += '<div class="sample-octave-grid">';
     
-    // 生成所有音阶的上传框（C1到C7）
     var allNotes = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
     var loadedSamples = typeof SimpleSampler !== 'undefined' ? SimpleSampler.getLoadedSamples(currentToneInst) : [];
     var configSamples = (typeof SimpleSampler !== 'undefined' && SimpleSampler.SAMPLE_CONFIG && SimpleSampler.SAMPLE_CONFIG[currentToneInst]) 
       ? SimpleSampler.SAMPLE_CONFIG[currentToneInst].notes : [];
     
     for (var octave = 1; octave <= 7; octave++) {
-      html += '<div style="display:flex;flex-wrap:nowrap;margin-bottom:4px;">';
+      html += '<div class="sample-octave-row">';
       for (var n = 0; n < allNotes.length; n++) {
         var noteName = allNotes[n] + octave;
         var isLoaded = loadedSamples.indexOf(noteName) !== -1;
@@ -9352,16 +9543,31 @@ window.onload = function(){
       html += '</div>';
     }
     
-    html += '<div style="margin-top:8px;display:flex;gap:8px;">';
-    html += '<button id="batchLoadSamplesBtn" style="flex:1;background:#2a5a8a;border:1px solid #3a6a9a;color:#eee;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:11px;">批量加载采样</button>';
     html += '</div>';
+    
     html += '<input type="file" id="sampleFileInput" accept="audio/*" style="display:none;">';
-    html += '<input type="file" id="batchFileInput" accept="audio/*" multiple style="display:none;">';
     html += '<div id="uploadProgress" style="margin-top:8px;font-size:11px;color:#aaa;"></div>';
     html += '</div>';
     html += '</div>';
     
-    html += '<div class="tone-control-group"><div class="tone-control-group-title">音色调整</div>';
+    html += '<div class="tone-control-group tone-waveform-group">';
+    html += '<div class="tone-waveform-wrap" id="toneWaveformWrap">';
+    html += '<canvas class="tone-waveform-canvas" id="toneWaveformCanvas"></canvas>';
+    html += '<div class="tone-waveform-mask-left" id="toneWaveformMaskLeft"></div>';
+    html += '<div class="tone-waveform-mask-right" id="toneWaveformMaskRight"></div>';
+    html += '<div class="tone-waveform-handle tone-waveform-handle-left" id="toneWaveformHandleLeft" data-side="left">';
+    html += '<div class="tone-waveform-handle-bar"></div>';
+    html += '</div>';
+    html += '<div class="tone-waveform-handle tone-waveform-handle-right" id="toneWaveformHandleRight" data-side="right">';
+    html += '<div class="tone-waveform-handle-bar"></div>';
+    html += '</div>';
+    html += '<div class="tone-waveform-time tone-waveform-time-left" id="toneWaveformTimeLeft">0.00s</div>';
+    html += '<div class="tone-waveform-time tone-waveform-time-right" id="toneWaveformTimeRight">0.00s</div>';
+    html += '</div>';
+    html += '<div class="tone-waveform-info" id="toneWaveformInfo">点击试听或上传采样后显示波形</div>';
+    html += '</div>';
+
+    html += '<div class="tone-control-group">';
     html += createSliderRow('起音', 'attack', params.attack !== undefined ? params.attack : (defaults.attack || 0), 0, 100, 1, '%', '');
     html += createSliderRow('衰减', 'decay', params.decay !== undefined ? params.decay : (defaults.decay || 30), 0, 100, 1, '%', '');
     html += createSliderRow('延音', 'release', params.release || defaults.release || 1.0, 0.1, 15, 0.1, '秒', '');
@@ -9370,6 +9576,349 @@ window.onload = function(){
     
     toneControls.innerHTML = html;
     
+    (function initWaveformEditor() {
+      var wfCanvas = document.getElementById('toneWaveformCanvas');
+      var wfWrap = document.getElementById('toneWaveformWrap');
+      var maskLeft = document.getElementById('toneWaveformMaskLeft');
+      var maskRight = document.getElementById('toneWaveformMaskRight');
+      var handleLeft = document.getElementById('toneWaveformHandleLeft');
+      var handleRight = document.getElementById('toneWaveformHandleRight');
+      var timeLeft = document.getElementById('toneWaveformTimeLeft');
+      var timeRight = document.getElementById('toneWaveformTimeRight');
+      var wfInfo = document.getElementById('toneWaveformInfo');
+      
+      if (!wfCanvas || !wfWrap) return;
+      
+      var wfCtx = wfCanvas.getContext('2d');
+      var trimStart = params.trimStart || 0;
+      var trimEnd = params.trimEnd !== undefined ? params.trimEnd : 1;
+      var cachedWaveData = null;
+      var cachedDuration = 0;
+      var waveformDuration = 0;
+      var canvasW = 0;
+      var canvasH = 0;
+      var rafId = null;
+      
+      function resizeCanvas() {
+        var rect = wfWrap.getBoundingClientRect();
+        var dpr = window.devicePixelRatio || 1;
+        canvasW = rect.width;
+        canvasH = rect.height;
+        wfCanvas.width = canvasW * dpr;
+        wfCanvas.height = canvasH * dpr;
+        wfCanvas.style.width = canvasW + 'px';
+        wfCanvas.style.height = canvasH + 'px';
+        wfCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        fullRedraw();
+      }
+      
+      function loadSampleWaveform() {
+        if (typeof SimpleSampler === 'undefined') {
+          cachedWaveData = null;
+          cachedDuration = 0;
+          resizeCanvas();
+          return;
+        }
+        var buffers = SimpleSampler.getSampleBuffers();
+        var instBufs = buffers[currentToneInst];
+        var audioBuffer = null;
+        if (instBufs) {
+          var keys = Object.keys(instBufs);
+          if (keys.length > 0) {
+            audioBuffer = instBufs[keys[0]];
+          }
+        }
+        if (!audioBuffer) {
+          var pianoBufs = buffers['piano'];
+          if (pianoBufs) {
+            var pKeys = Object.keys(pianoBufs);
+            if (pKeys.length > 0) {
+              audioBuffer = pianoBufs[pKeys[0]];
+            }
+          }
+        }
+        if (audioBuffer && audioBuffer.getChannelData) {
+          cachedWaveData = audioBuffer.getChannelData(0);
+          cachedDuration = audioBuffer.duration;
+        } else {
+          cachedWaveData = null;
+          cachedDuration = 0;
+        }
+        resizeCanvas();
+      }
+      
+      function getEnvelopeParams() {
+        var p2 = toneParams[currentToneInst] || defaultToneParams[currentToneInst] || {};
+        return {
+          attackPct: p2.attack !== undefined ? p2.attack : 0,
+          decayPct: p2.decay !== undefined ? p2.decay : 30,
+          sustainVal: Math.max(0, Math.min(1, p2.sustain || 0.4)),
+          releaseVal: Math.max(0.1, p2.release || 1.0),
+          brightness: p2.brightness !== undefined ? p2.brightness : 0
+        };
+      }
+      
+      function getEnvelopeDuration(env) {
+        return (env.attackPct / 100) * 0.5 + (env.decayPct / 100) * 1 + env.releaseVal + 0.5;
+      }
+      
+      function fullRedraw() {
+        var w = canvasW;
+        var h = canvasH;
+        if (w <= 0 || h <= 0) return;
+        var env = getEnvelopeParams();
+        if (cachedWaveData && cachedWaveData.length > 0) {
+          waveformDuration = cachedDuration;
+          drawSampleWithEnvelope(w, h, env);
+        } else {
+          waveformDuration = getEnvelopeDuration(env);
+          drawEnvelopeOnly(w, h, env);
+        }
+        updateHandles();
+      }
+      
+      function drawBackground(w, h) {
+        wfCtx.fillStyle = '#111';
+        wfCtx.fillRect(0, 0, w, h);
+        wfCtx.strokeStyle = 'rgba(255,255,255,0.05)';
+        wfCtx.lineWidth = 1;
+        for (var gi = 1; gi < 10; gi++) {
+          var gy = (h / 10) * gi;
+          wfCtx.beginPath();
+          wfCtx.moveTo(0, gy);
+          wfCtx.lineTo(w, gy);
+          wfCtx.stroke();
+        }
+      }
+      
+      function drawSampleWithEnvelope(w, h, env) {
+        drawBackground(w, h);
+        var midY = h / 2;
+        wfCtx.beginPath();
+        wfCtx.moveTo(0, midY);
+        wfCtx.lineTo(w, midY);
+        wfCtx.strokeStyle = 'rgba(255,255,255,0.1)';
+        wfCtx.stroke();
+        var step = Math.ceil(cachedWaveData.length / w);
+        var grad = wfCtx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, 'rgba(0,153,255,0.6)');
+        grad.addColorStop(0.5, 'rgba(0,153,255,0.3)');
+        grad.addColorStop(1, 'rgba(0,153,255,0.6)');
+        wfCtx.beginPath();
+        for (var px = 0; px < w; px++) {
+          var startIdx = Math.floor(px * cachedWaveData.length / w);
+          var endIdx = Math.min(startIdx + step, cachedWaveData.length);
+          var maxVal = -1;
+          for (var si = startIdx; si < endIdx; si++) {
+            if (cachedWaveData[si] > maxVal) maxVal = cachedWaveData[si];
+          }
+          var yTop = midY - maxVal * midY;
+          if (px === 0) wfCtx.moveTo(px, yTop);
+          else wfCtx.lineTo(px, yTop);
+        }
+        for (var px2 = w - 1; px2 >= 0; px2--) {
+          var startIdx2 = Math.floor(px2 * cachedWaveData.length / w);
+          var endIdx2 = Math.min(startIdx2 + step, cachedWaveData.length);
+          var minVal = 1;
+          for (var si2 = startIdx2; si2 < endIdx2; si2++) {
+            if (cachedWaveData[si2] < minVal) minVal = cachedWaveData[si2];
+          }
+          var yBot = midY - minVal * midY;
+          wfCtx.lineTo(px2, yBot);
+        }
+        wfCtx.closePath();
+        wfCtx.fillStyle = grad;
+        wfCtx.fill();
+        wfCtx.beginPath();
+        for (var px3 = 0; px3 < w; px3++) {
+          var startIdx3 = Math.floor(px3 * cachedWaveData.length / w);
+          var endIdx3 = Math.min(startIdx3 + step, cachedWaveData.length);
+          var minV = 1, maxV = -1;
+          for (var si3 = startIdx3; si3 < endIdx3; si3++) {
+            if (cachedWaveData[si3] < minV) minV = cachedWaveData[si3];
+            if (cachedWaveData[si3] > maxV) maxV = cachedWaveData[si3];
+          }
+          var yMin = midY - maxV * midY;
+          var yMax = midY - minV * midY;
+          if (px3 === 0) wfCtx.moveTo(px3, yMin);
+          else wfCtx.lineTo(px3, yMin);
+          wfCtx.lineTo(px3, yMax);
+        }
+        wfCtx.strokeStyle = 'rgba(0,153,255,0.5)';
+        wfCtx.lineWidth = 0.5;
+        wfCtx.stroke();
+        drawEnvelopeOverlay(w, h, env, cachedDuration);
+        if (wfInfo) wfInfo.textContent = '采样时长: ' + cachedDuration.toFixed(2) + 's | 包络: A' + env.attackPct + '% D' + env.decayPct + '% S' + Math.round(env.sustainVal * 100) + '% R' + env.releaseVal.toFixed(1) + 's';
+      }
+      
+      function drawEnvelopeOverlay(w, h, env, totalDur) {
+        var attackTime = (env.attackPct / 100) * totalDur * 0.8;
+        var decayTime = (env.decayPct / 100) * totalDur * 0.5;
+        var releaseTime = env.releaseVal;
+        var sustainTime = Math.max(0.01, totalDur - attackTime - decayTime - releaseTime);
+        var points = [];
+        points.push({x: 0, y: h * 0.05});
+        points.push({x: (attackTime / totalDur) * w, y: h * 0.05});
+        points.push({x: ((attackTime + decayTime) / totalDur) * w, y: h * 0.05 + (h * 0.9) * (1 - env.sustainVal)});
+        points.push({x: ((attackTime + decayTime + sustainTime) / totalDur) * w, y: h * 0.05 + (h * 0.9) * (1 - env.sustainVal)});
+        points.push({x: w, y: h * 0.95});
+        var envGrad = wfCtx.createLinearGradient(0, 0, 0, h);
+        envGrad.addColorStop(0, 'rgba(255,180,0,0.15)');
+        envGrad.addColorStop(1, 'rgba(255,180,0,0.02)');
+        wfCtx.beginPath();
+        wfCtx.moveTo(points[0].x, h);
+        for (var pi = 0; pi < points.length; pi++) {
+          wfCtx.lineTo(points[pi].x, points[pi].y);
+        }
+        wfCtx.lineTo(points[points.length - 1].x, h);
+        wfCtx.closePath();
+        wfCtx.fillStyle = envGrad;
+        wfCtx.fill();
+        wfCtx.beginPath();
+        wfCtx.moveTo(points[0].x, points[0].y);
+        for (var pi2 = 1; pi2 < points.length; pi2++) {
+          wfCtx.lineTo(points[pi2].x, points[pi2].y);
+        }
+        wfCtx.strokeStyle = 'rgba(255,180,0,0.8)';
+        wfCtx.lineWidth = 1.5;
+        wfCtx.setLineDash([4, 3]);
+        wfCtx.stroke();
+        wfCtx.setLineDash([]);
+        wfCtx.fillStyle = 'rgba(255,180,0,0.9)';
+        wfCtx.font = '9px monospace';
+        wfCtx.fillText('A', points[0].x + 2, points[0].y + 10);
+        wfCtx.fillText('D', points[1].x + 2, points[1].y + 10);
+        wfCtx.fillText('S', points[2].x + 2, points[2].y - 3);
+        wfCtx.fillText('R', points[3].x + 2, points[3].y - 3);
+      }
+      
+      function drawEnvelopeOnly(w, h, env) {
+        drawBackground(w, h);
+        var totalDur = getEnvelopeDuration(env);
+        var attackTime = (env.attackPct / 100) * 0.5;
+        var decayTime = (env.decayPct / 100) * 1;
+        var sustainTime = Math.max(0.1, totalDur - attackTime - decayTime - env.releaseVal);
+        var points = [];
+        points.push({x: 0, y: h * 0.9});
+        points.push({x: (attackTime / totalDur) * w, y: h * 0.1});
+        points.push({x: ((attackTime + decayTime) / totalDur) * w, y: h * 0.1 + (h * 0.8) * (1 - env.sustainVal)});
+        points.push({x: ((attackTime + decayTime + sustainTime) / totalDur) * w, y: h * 0.1 + (h * 0.8) * (1 - env.sustainVal)});
+        points.push({x: w, y: h * 0.9});
+        var grad = wfCtx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, 'rgba(0,153,255,0.4)');
+        grad.addColorStop(1, 'rgba(0,153,255,0.05)');
+        wfCtx.beginPath();
+        wfCtx.moveTo(points[0].x, h);
+        wfCtx.lineTo(points[0].x, points[0].y);
+        for (var pi = 1; pi < points.length; pi++) {
+          wfCtx.lineTo(points[pi].x, points[pi].y);
+        }
+        wfCtx.lineTo(points[points.length - 1].x, h);
+        wfCtx.closePath();
+        wfCtx.fillStyle = grad;
+        wfCtx.fill();
+        wfCtx.beginPath();
+        wfCtx.moveTo(points[0].x, points[0].y);
+        for (var pi2 = 1; pi2 < points.length; pi2++) {
+          wfCtx.lineTo(points[pi2].x, points[pi2].y);
+        }
+        wfCtx.strokeStyle = '#0099ff';
+        wfCtx.lineWidth = 2;
+        wfCtx.stroke();
+        wfCtx.fillStyle = '#0099ff';
+        for (var pi3 = 0; pi3 < points.length; pi3++) {
+          wfCtx.beginPath();
+          wfCtx.arc(points[pi3].x, points[pi3].y, 3, 0, Math.PI * 2);
+          wfCtx.fill();
+        }
+        wfCtx.fillStyle = 'rgba(255,255,255,0.5)';
+        wfCtx.font = '10px monospace';
+        wfCtx.fillText('A', points[0].x + 4, points[0].y - 4);
+        wfCtx.fillText('D', points[1].x + 4, points[1].y + 12);
+        wfCtx.fillText('S', points[2].x + 4, points[2].y - 4);
+        wfCtx.fillText('R', points[3].x + 4, points[3].y - 4);
+        if (wfInfo) wfInfo.textContent = '合成波形 时长: ' + totalDur.toFixed(2) + 's';
+      }
+      
+      function updateHandles() {
+        var w = canvasW;
+        if (w <= 0) return;
+        var leftPx = trimStart * w;
+        if (maskLeft) maskLeft.style.width = leftPx + 'px';
+        if (maskRight) {
+          maskRight.style.left = (trimEnd * w) + 'px';
+          maskRight.style.width = ((1 - trimEnd) * w) + 'px';
+        }
+        if (handleLeft) handleLeft.style.left = (leftPx - 6) + 'px';
+        if (handleRight) handleRight.style.left = (trimEnd * w - 6) + 'px';
+        if (timeLeft) timeLeft.textContent = (trimStart * waveformDuration).toFixed(2) + 's';
+        if (timeRight) timeRight.textContent = (trimEnd * waveformDuration).toFixed(2) + 's';
+      }
+      
+      function requestRedraw() {
+        if (rafId) return;
+        rafId = requestAnimationFrame(function() {
+          rafId = null;
+          fullRedraw();
+        });
+      }
+      
+      function onHandleDrag(e) {
+        e.preventDefault();
+        var side = e.target.closest('.tone-waveform-handle');
+        if (!side) return;
+        var isLeft = side.dataset.side === 'left';
+        var rect2 = wfWrap.getBoundingClientRect();
+        function onMove(ev) {
+          var clientX = ev.touches ? ev.touches[0].clientX : ev.clientX;
+          var x = clientX - rect2.left;
+          var ratio = Math.max(0, Math.min(1, x / rect2.width));
+          if (isLeft) {
+            trimStart = Math.min(ratio, trimEnd - 0.02);
+            trimStart = Math.max(0, trimStart);
+          } else {
+            trimEnd = Math.max(ratio, trimStart + 0.02);
+            trimEnd = Math.min(1, trimEnd);
+          }
+          if (!toneParams[currentToneInst]) toneParams[currentToneInst] = {};
+          toneParams[currentToneInst].trimStart = trimStart;
+          toneParams[currentToneInst].trimEnd = trimEnd;
+          updateHandles();
+        }
+        function onUp() {
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+          document.removeEventListener('touchmove', onMove);
+          document.removeEventListener('touchend', onUp);
+        }
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+        document.addEventListener('touchmove', onMove, {passive: false});
+        document.addEventListener('touchend', onUp);
+      }
+      
+      if (handleLeft) {
+        handleLeft.addEventListener('mousedown', onHandleDrag);
+        handleLeft.addEventListener('touchstart', onHandleDrag, {passive: false});
+      }
+      if (handleRight) {
+        handleRight.addEventListener('mousedown', onHandleDrag);
+        handleRight.addEventListener('touchstart', onHandleDrag, {passive: false});
+      }
+      
+      setTimeout(function() {
+        loadSampleWaveform();
+      }, 100);
+      
+      window._toneWaveformRedraw = function() {
+        requestRedraw();
+      };
+      
+      window._toneWaveformReload = function() {
+        loadSampleWaveform();
+      };
+    })();
+
     // 控制底部删除按钮的显示/隐藏（仅自定义乐器显示）
     var toneDeleteBtn = document.getElementById('toneDeleteBtn');
     var isCustomInst = customInstruments.some(inst => inst.v === currentToneInst);
@@ -9530,6 +10079,7 @@ window.onload = function(){
                 };
               }
               fileInput.value = '';
+              if (window._toneWaveformReload) window._toneWaveformReload();
             },
             function(err) {
               progressEl.innerHTML = '✗ ' + noteName + ' 加载失败';
@@ -9540,64 +10090,6 @@ window.onload = function(){
       };
     }
     
-    // 批量加载采样
-    var batchBtn = document.getElementById('batchLoadSamplesBtn');
-    var batchInput = document.getElementById('batchFileInput');
-    
-    if (batchBtn && batchInput) {
-      batchBtn.onclick = function() {
-        batchInput.click();
-      };
-      
-      batchInput.onchange = function() {
-        var files = this.files;
-        if (!files || files.length === 0) return;
-        
-        var totalFiles = files.length;
-        var loadedCount = 0;
-        var failedCount = 0;
-        
-        progressEl.innerHTML = '正在加载 ' + totalFiles + ' 个采样...';
-        
-        Array.from(files).forEach(function(file) {
-          var fileName = file.name.replace(/\.[^/.]+$/, '');
-          var noteMatch = fileName.match(/([A-Ga-g][#b]?[0-9])/);
-          var noteName;
-          
-          if (noteMatch) {
-            noteName = noteMatch[0].toUpperCase();
-          } else {
-            failedCount++;
-            return;
-          }
-          
-          if (typeof SimpleSampler !== 'undefined') {
-            SimpleSampler.uploadSample(currentToneInst, noteName, file,
-              function() {
-                loadedCount++;
-                var box = toneControls.querySelector('.sample-note-box[data-note="' + noteName + '"]');
-                if (box) {
-                  box.style.background = 'rgba(100,180,100,0.6)';
-                  box.style.borderColor = 'rgba(100,180,100,0.9)';
-                }
-                progressEl.innerHTML = '已加载 ' + loadedCount + '/' + totalFiles + ' 个采样';
-                if (loadedCount + failedCount === totalFiles) {
-                  progressEl.innerHTML = '✓ 加载完成：成功 ' + loadedCount + ' 个' + (failedCount > 0 ? '，失败 ' + failedCount + ' 个' : '');
-                }
-              },
-              function(err) {
-                failedCount++;
-                if (loadedCount + failedCount === totalFiles) {
-                  progressEl.innerHTML = '加载完成：成功 ' + loadedCount + ' 个，失败 ' + failedCount + ' 个';
-                }
-              }
-            );
-          }
-        });
-        
-        batchInput.value = '';
-      };
-    }
     
     toneControls.querySelectorAll('.tone-control-slider').forEach(slider => {
       slider.oninput = function() {
@@ -9606,6 +10098,7 @@ window.onload = function(){
         if (!toneParams[currentToneInst]) toneParams[currentToneInst] = {};
         toneParams[currentToneInst][param] = value;
         this.nextElementSibling.textContent = formatParamValue(param, value);
+        if (window._toneWaveformRedraw) window._toneWaveformRedraw();
       };
     });
   }
@@ -9641,8 +10134,76 @@ window.onload = function(){
       renderToneControls();
       toneOverlay.classList.add('show');
       settingOverlay.classList.remove('show');
+      setTimeout(function() {
+        if (window._toneWaveformReload) window._toneWaveformReload();
+      }, 50);
     };
   }
+  
+  (function initToneScrollHide() {
+    var toneContent = document.getElementById('toneContent');
+    var toneTabsWrap = document.querySelector('.tone-tabs-wrap');
+    if (!toneContent || !toneTabsWrap) return;
+    
+    var lastScrollTop = 0;
+    var tabsHeight = 0;
+    var isTabsHidden = false;
+    var scrollTicking = false;
+    
+    function updateTabsHeight() {
+      if (!isTabsHidden) {
+        tabsHeight = toneTabsWrap.offsetHeight;
+      }
+    }
+    
+    function showTabs() {
+      if (isTabsHidden) {
+        isTabsHidden = false;
+        toneTabsWrap.style.height = tabsHeight + 'px';
+        toneTabsWrap.style.opacity = '1';
+        toneTabsWrap.style.borderBottomWidth = '1px';
+      }
+    }
+    
+    function hideTabs() {
+      if (!isTabsHidden) {
+        updateTabsHeight();
+        isTabsHidden = true;
+        toneTabsWrap.style.height = '0px';
+        toneTabsWrap.style.opacity = '0';
+        toneTabsWrap.style.borderBottomWidth = '0px';
+      }
+    }
+    
+    toneContent.addEventListener('scroll', function() {
+      if (scrollTicking) return;
+      scrollTicking = true;
+      requestAnimationFrame(function() {
+        scrollTicking = false;
+        var st = toneContent.scrollTop;
+        var delta = st - lastScrollTop;
+        if (delta > 8 && st > 30) {
+          hideTabs();
+        } else if (delta < -5) {
+          showTabs();
+        } else if (st <= 0) {
+          showTabs();
+        }
+        lastScrollTop = st;
+      });
+    });
+    
+    var toneOverlayEl = document.getElementById('toneOverlay');
+    if (toneOverlayEl) {
+      var observer = new MutationObserver(function() {
+        if (!toneOverlayEl.classList.contains('show')) {
+          showTabs();
+          lastScrollTop = 0;
+        }
+      });
+      observer.observe(toneOverlayEl, { attributes: true, attributeFilter: ['class'] });
+    }
+  })();
 
   if (toneCloseBtn) {
     toneCloseBtn.onclick = () => {
@@ -10785,6 +11346,8 @@ window.onload = function(){
     var keyHeight = opt.keyHeight || 40;
     var blackKeyHeight = opt.blackKeyHeight || Math.floor(keyHeight * 0.6);
     var container = opt.container;
+    var whiteKeysOrder = opt.whiteKeysOrder || whiteKeys;
+    var blackKeysOrder = opt.blackKeysOrder || blackKeys;
     
     if (!container) {
       container = document.createElement('div');
@@ -10799,7 +11362,7 @@ window.onload = function(){
     var allKeys = [];
     
     octaveOrder.forEach(function(octNum, octIdx) {
-      whiteKeys.forEach(function(n, i) {
+      whiteKeysOrder.forEach(function(n, i) {
         var k = document.createElement('div');
         k.className = 'key white';
         k.dataset.note = n + octNum;
@@ -10819,7 +11382,7 @@ window.onload = function(){
     });
     
     octaveOrder.forEach(function(octNum, octIdx) {
-      blackKeys.forEach(function(b) {
+      blackKeysOrder.forEach(function(b) {
         var kb = document.createElement('div');
         kb.className = 'key black';
         kb.dataset.note = b.note + octNum;
@@ -11052,6 +11615,9 @@ window.onload = function(){
         const visibleWidth = keysWrap.clientWidth;
         // 计算滚动位置，让目标音域居中显示在屏幕中间
         const scrollLeft = targetOctaveIndex * octaveWidth - (visibleWidth / 2) + (octaveWidth / 2);
+        console.log('[DEBUG] rowIdx=' + rowIdx + ' targetOctaveIndex=' + targetOctaveIndex + ' totalWidth=' + totalWidth + ' octaveWidth=' + octaveWidth + ' visibleWidth=' + visibleWidth + ' scrollLeft=' + scrollLeft + ' clampedScrollLeft=' + Math.max(0, scrollLeft) + ' keysWrap.scrollWidth=' + keysWrap.scrollWidth + ' keysWrap.clientWidth=' + keysWrap.clientWidth + ' row.offsetWidth=' + row.offsetWidth + ' gapRow.offsetWidth=' + gapRow.offsetWidth + ' gapRow.clientWidth=' + gapRow.clientWidth + ' gapRow.scrollWidth=' + gapRow.scrollWidth + ' container.clientWidth=' + container.clientWidth + ' window.innerWidth=' + window.innerWidth);
+        var groups = keysWrap.querySelectorAll('.octave-group');
+        if (groups.length > 0) console.log('[DEBUG-GROUP] rowIdx=' + rowIdx + ' group0.offsetWidth=' + groups[0].offsetWidth + ' group0.style.width=' + groups[0].style.width + ' pianoRow0.offsetWidth=' + (groups[0].querySelector('.piano-row') ? groups[0].querySelector('.piano-row').offsetWidth : 'N/A'));
         keysWrap.scrollLeft = Math.max(0, scrollLeft);
         gapRow.scrollLeft = Math.max(0, scrollLeft);
         // 根据容器宽度和间隙高度设置音域名称样式
@@ -13137,6 +13703,403 @@ window.onload = function(){
   
   // 检测服务器并初始化音频
   checkServerAndInit();
+
+  // ========================================
+  // 实时音阶识别功能 - 使用onset detection（起音检测）
+  // ========================================
+  
+  window.autoCorrelate = function(buffer, sampleRate) {
+    var SIZE = buffer.length;
+    var MAX_SAMPLES = Math.floor(SIZE / 2);
+    var bestOffset = -1;
+    var bestCorrelation = 0;
+    var rms = 0;
+    var foundGoodCorrelation = false;
+    var correlations = new Array(MAX_SAMPLES);
+    for (var i = 0; i < SIZE; i++) {
+      var val = buffer[i];
+      rms += val * val;
+    }
+    rms = Math.sqrt(rms / SIZE);
+    if (rms < 0.015) return -1;
+    var lastCorrelation = 1;
+    for (var offset = 0; offset < MAX_SAMPLES; offset++) {
+      var correlation = 0;
+      for (var i = 0; i < MAX_SAMPLES; i++) {
+        correlation += Math.abs((buffer[i]) - (buffer[i + offset]));
+      }
+      correlation = 1 - (correlation / MAX_SAMPLES);
+      correlations[offset] = correlation;
+      if ((correlation > 0.9) && (correlation > lastCorrelation)) {
+        foundGoodCorrelation = true;
+        if (correlation > bestCorrelation) {
+          bestCorrelation = correlation;
+          bestOffset = offset;
+        }
+      } else if (foundGoodCorrelation) {
+        var shift = (correlations[bestOffset + 1] - correlations[bestOffset - 1]) / correlations[bestOffset];
+        return sampleRate / (bestOffset + (shift / 2));
+      }
+      lastCorrelation = correlation;
+    }
+    if (bestCorrelation > 0.01) {
+      return sampleRate / bestOffset;
+    }
+    return -1;
+  };
+
+  window.frequencyToNote = function(frequency) {
+    var noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    var noteNum = 12 * (Math.log(frequency / 440) / Math.log(2)) + 69;
+    noteNum = Math.round(noteNum);
+    if (noteNum < 24 || noteNum > 107) return null;
+    var octave = Math.floor(noteNum / 12) - 1;
+    var noteIndex = noteNum % 12;
+    return noteNames[noteIndex] + octave;
+  };
+
+  var pitchDetectActive = false;
+  var pitchDetectAudioCtx = null;
+  var pitchDetectAnalyser = null;
+  var pitchDetectSource = null;
+  var pitchDetectStream = null;
+  var pitchDetectRAF = null;
+  var pitchDetectStreamReady = false;
+  
+  // 量化分段参数
+  var PD_QUANTIZE_MS = 150;
+  var PD_MIN_SEMITONE_CHANGE = 2;
+  var PD_MIN_FREQ = 80;
+  var PD_MAX_FREQ = 1000;
+  
+  // 量化分段状态
+  var pdLastQuantizeTime = 0;
+  var pdSegmentPitches = [];
+  var pdSegmentRms = [];
+  var pdCurrentNoteMidi = -1;
+  var pdCurrentNoteName = null;
+  var pdCurrentNoteStartTime = 0;
+  var pdHasNote = false;
+  
+  // 自适应噪声门
+  var pdNoiseFloor = 0.015;
+  var pdNoiseSamples = [];
+  var PD_NOISE_LEARN_FRAMES = 15;
+  var pdNoiseLearned = false;
+  var pdNoiseLearnCount = 0;
+
+  // MIDI转音符名
+  function midiToNoteName(midi) {
+    var noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    if (midi < 24 || midi > 107) return null;
+    var octave = Math.floor(midi / 12) - 1;
+    var noteIndex = midi % 12;
+    return noteNames[noteIndex] + octave;
+  }
+
+  // 频率转MIDI
+  function freqToMidi(freq) {
+    return 69 + 12 * Math.log2(freq / 440);
+  }
+
+  // 自适应噪声门
+  function updateNoiseFloor(rms) {
+    if (pdNoiseLearned) return;
+    pdNoiseSamples.push(rms);
+    pdNoiseLearnCount++;
+    if (pdNoiseLearnCount >= PD_NOISE_LEARN_FRAMES) {
+      var sorted = pdNoiseSamples.slice().sort(function(a, b) { return a - b; });
+      pdNoiseFloor = sorted[Math.floor(sorted.length * 0.75)] * 2.5;
+      if (pdNoiseFloor < 0.008) pdNoiseFloor = 0.008;
+      if (pdNoiseFloor > 0.06) pdNoiseFloor = 0.06;
+      pdNoiseLearned = true;
+      console.log('[音阶识别] 自适应噪声门:', pdNoiseFloor.toFixed(4));
+    }
+  }
+
+  var pitchDetectBtn = document.getElementById('pitchDetectBtn');
+  console.log('[音阶识别] 获取麦克风按钮:', !!pitchDetectBtn);
+
+  function startPitchDetection() {
+    if (pitchDetectActive) return;
+
+    function activateDetection() {
+      pitchDetectActive = true;
+      pdLastQuantizeTime = Date.now();
+      pdSegmentPitches = [];
+      pdSegmentRms = [];
+      pdCurrentNoteMidi = -1;
+      pdCurrentNoteName = null;
+      pdCurrentNoteStartTime = 0;
+      pdHasNote = false;
+      pdNoiseFloor = 0.015;
+      pdNoiseSamples = [];
+      pdNoiseLearned = false;
+      pdNoiseLearnCount = 0;
+      if (pitchDetectBtn) {
+        pitchDetectBtn.style.background = '#0099ff';
+        pitchDetectBtn.style.borderColor = '#0099ff';
+        pitchDetectBtn.innerHTML = '<div class="rec-dot"></div>';
+      }
+      detectPitchLoop();
+    }
+
+    if (pitchDetectStreamReady && pitchDetectStream && pitchDetectAudioCtx) {
+      if (pitchDetectAudioCtx.state === 'suspended') {
+        pitchDetectAudioCtx.resume().then(function() { activateDetection(); });
+      } else {
+        activateDetection();
+      }
+      return;
+    }
+
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(function(stream) {
+        pitchDetectStream = stream;
+        pitchDetectAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        pitchDetectSource = pitchDetectAudioCtx.createMediaStreamSource(stream);
+        pitchDetectAnalyser = pitchDetectAudioCtx.createAnalyser();
+        pitchDetectAnalyser.fftSize = 2048;
+        pitchDetectSource.connect(pitchDetectAnalyser);
+        pitchDetectStreamReady = true;
+        activateDetection();
+      })
+      .catch(function(err) {
+        console.error('麦克风访问失败:', err);
+        if (typeof showAppAlert === 'function') {
+          showAppAlert('无法访问麦克风，请检查权限设置');
+        }
+      });
+  }
+
+  function stopPitchDetection() {
+    pitchDetectActive = false;
+    if (pitchDetectRAF) { cancelAnimationFrame(pitchDetectRAF); pitchDetectRAF = null; }
+    if (pitchDetectAudioCtx && pitchDetectAudioCtx.state === 'running') {
+      pitchDetectAudioCtx.suspend();
+    }
+    if (pitchDetectBtn) {
+      pitchDetectBtn.style.background = '#222';
+      pitchDetectBtn.style.borderColor = '#444';
+      pitchDetectBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0099ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="1" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="17" x2="12" y2="21"/></svg>';
+    }
+    
+    // 关闭麦克风后，恢复所有音量为0的音符为100
+    try {
+      if (typeof window._recVisualNotes !== 'undefined') {
+        var notes = window._recVisualNotes;
+        var changed = false;
+        for (var i = 0; i < notes.length; i++) {
+          if (notes[i].volume === 0) {
+            notes[i].volume = 100;
+            changed = true;
+          }
+        }
+        if (changed) {
+          // 同步文本
+          if (typeof window.parseVisualToText === 'function') {
+            window.parseVisualToText();
+          }
+          // 重新渲染
+          if (typeof window.renderRecVisual === 'function') {
+            window.renderRecVisual();
+          }
+          if (typeof window.updateRangeBar === 'function') {
+            window.updateRangeBar();
+          }
+          console.log('[音阶识别] 已恢复音符音量');
+        }
+      }
+    } catch (e) {
+      console.log('[音阶识别] 恢复音量失败:', e);
+    }
+  }
+
+  function detectPitchLoop() {
+    if (!pitchDetectActive) return;
+    var bufferLength = pitchDetectAnalyser.fftSize;
+    var buffer = new Float32Array(bufferLength);
+    pitchDetectAnalyser.getFloatTimeDomainData(buffer);
+    
+    var now = Date.now();
+    
+    // 计算RMS能量
+    var rms = 0;
+    for (var i = 0; i < buffer.length; i++) { rms += buffer[i] * buffer[i]; }
+    rms = Math.sqrt(rms / buffer.length);
+    
+    // 自适应噪声门学习
+    if (!pdNoiseLearned) {
+      updateNoiseFloor(rms);
+    }
+    
+    // 检测音高（YIN优先，自相关备用）
+    var rawFreq = 0;
+    if (typeof window.yinDetect === 'function') {
+      var yinFreq = window.yinDetect(buffer, pitchDetectAudioCtx.sampleRate);
+      if (yinFreq > 0 && yinFreq >= PD_MIN_FREQ && yinFreq <= PD_MAX_FREQ) {
+        rawFreq = yinFreq;
+      }
+    }
+    if (rawFreq <= 0) {
+      var acFreq = window.autoCorrelate(buffer, pitchDetectAudioCtx.sampleRate);
+      if (acFreq > 0 && acFreq >= PD_MIN_FREQ && acFreq <= PD_MAX_FREQ) {
+        rawFreq = acFreq;
+      }
+    }
+    
+    // 收集到当前段的音高和能量
+    if (rawFreq > 0) {
+      pdSegmentPitches.push(freqToMidi(rawFreq));
+    }
+    pdSegmentRms.push(rms);
+    
+    // 检查是否到达量化间隔
+    if (now - pdLastQuantizeTime < PD_QUANTIZE_MS) {
+      pitchDetectRAF = requestAnimationFrame(detectPitchLoop);
+      return;
+    }
+    
+    // 量化间隔到了，处理这一段的数据
+    pdLastQuantizeTime = now;
+    
+    // 计算这一段的平均能量
+    var segAvgRms = 0;
+    for (var ri = 0; ri < pdSegmentRms.length; ri++) { segAvgRms += pdSegmentRms[ri]; }
+    segAvgRms /= pdSegmentRms.length;
+    
+    // 这一段是否静音
+    var isSilent = segAvgRms < pdNoiseFloor;
+    
+    if (isSilent || pdSegmentPitches.length === 0) {
+      if (pdHasNote) {
+        console.log('[音阶识别] 音符结束（静音）:', pdCurrentNoteName);
+        pdHasNote = false;
+        pdCurrentNoteMidi = -1;
+        pdCurrentNoteName = null;
+      }
+      pdSegmentPitches = [];
+      pdSegmentRms = [];
+      pitchDetectRAF = requestAnimationFrame(detectPitchLoop);
+      return;
+    }
+    
+    // 有声音：取这一段音高的众数
+    var roundedPitches = [];
+    for (var pi = 0; pi < pdSegmentPitches.length; pi++) {
+      roundedPitches.push(Math.round(pdSegmentPitches[pi]));
+    }
+    
+    var pitchCount = {};
+    for (var pi = 0; pi < roundedPitches.length; pi++) {
+      var p = roundedPitches[pi];
+      var matched = false;
+      for (var key in pitchCount) {
+        if (Math.abs(p - parseInt(key)) <= 1) {
+          pitchCount[key]++;
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) {
+        pitchCount[p] = 1;
+      }
+    }
+    
+    var maxCount = 0;
+    var modePitch = -1;
+    for (var key in pitchCount) {
+      if (pitchCount[key] > maxCount) {
+        maxCount = pitchCount[key];
+        modePitch = parseInt(key);
+      }
+    }
+    
+    var noteName = midiToNoteName(modePitch);
+    
+    if (noteName) {
+      var semitoneChange = Math.abs(modePitch - pdCurrentNoteMidi);
+      
+      if (!pdHasNote) {
+        console.log('[音阶识别] 新音符:', noteName, 'MIDI:', modePitch, '众数:', maxCount + '/' + roundedPitches.length);
+        addNoteToEditor(noteName);
+        pdCurrentNoteMidi = modePitch;
+        pdCurrentNoteName = noteName;
+        pdCurrentNoteStartTime = now;
+        pdHasNote = true;
+      } else if (semitoneChange >= PD_MIN_SEMITONE_CHANGE) {
+        console.log('[音阶识别] 音高变化:', noteName, 'MIDI:', modePitch, '变化:', semitoneChange + '半音');
+        addNoteToEditor(noteName);
+        pdCurrentNoteMidi = modePitch;
+        pdCurrentNoteName = noteName;
+        pdCurrentNoteStartTime = now;
+      }
+    }
+    
+    pdSegmentPitches = [];
+    pdSegmentRms = [];
+    
+    pitchDetectRAF = requestAnimationFrame(detectPitchLoop);
+  }
+  
+  function addNoteToEditor(noteName) {
+    var overlay = document.getElementById('recEditOverlay');
+    if (!overlay || !overlay.classList.contains('show')) return;
+    
+    var pianoInstSelect = document.getElementById('recVisualPianoInst');
+    var instEn = pianoInstSelect ? pianoInstSelect.value : 'piano';
+    var instZh = (typeof _INST_ZH_MAP !== 'undefined' && _INST_ZH_MAP[instEn]) ? _INST_ZH_MAP[instEn] : instEn;
+    
+    var scoreTextArea = document.getElementById('recEditScoreText');
+    if (!scoreTextArea) return;
+    
+    // 先从可视化编辑器同步文本，避免恢复已删除的音符
+    try {
+      if (typeof window.parseVisualToText === 'function') {
+        window.parseVisualToText();
+      }
+    } catch (e) {}
+    
+    var currentText = scoreTextArea.value.trim();
+    var currentTime = 0;
+    try {
+      if (typeof window._recVisualPlayTime !== 'undefined') {
+        currentTime = Math.round(window._recVisualPlayTime);
+      }
+    } catch (e) {}
+    
+    var newNoteStr = instZh + '|' + noteName + '|0|500|' + currentTime;
+    if (currentText) { currentText = currentText + '_' + newNoteStr; } else { currentText = newNoteStr; }
+    scoreTextArea.value = currentText;
+    
+    if (typeof window._melodyList !== 'undefined' && window._melodyList.length > 0) {
+      var targetTrackId = 'main';
+      if (typeof window._recVisualTextTrack !== 'undefined') { targetTrackId = window._recVisualTextTrack; }
+      for (var i = 0; i < window._melodyList.length; i++) {
+        if (window._melodyList[i].id === targetTrackId) { window._melodyList[i].text = currentText; break; }
+      }
+      if (i === window._melodyList.length && window._melodyList[0]) { window._melodyList[0].text = currentText; }
+    }
+    
+    try {
+      if (typeof window.parseTextToVisual === 'function') {
+        window.parseTextToVisual();
+        setTimeout(function() {
+          try {
+            if (typeof window.createRecVisualPiano === 'function') window.createRecVisualPiano();
+            if (typeof window.renderRecVisual === 'function') window.renderRecVisual();
+            if (typeof window.updateRangeBar === 'function') window.updateRangeBar();
+          } catch (e) {}
+        }, 100);
+      }
+    } catch (e) {}
+  }
+
+  if (pitchDetectBtn) {
+    pitchDetectBtn.onclick = function() {
+      if (pitchDetectActive) { stopPitchDetection(); } else { startPitchDetection(); }
+    };
+  }
 };
 (function(){
 

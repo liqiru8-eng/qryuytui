@@ -175,11 +175,10 @@
 
 <div class="tone-overlay" id="toneOverlay">
   <div class="tone-container">
-    <div class="tone-header">
-      <div class="tone-title">音色调整</div>
-      <button class="tone-close-btn" id="toneCloseBtn">×</button>
+    <div class="tone-tabs-wrap">
+      <div class="tone-tabs" id="toneTabsContainer"></div>
+      <button class="tone-add-tab" id="toneAddTab">+</button>
     </div>
-    <div class="tone-tabs" id="toneTabsContainer"></div>
     <div class="tone-content" id="toneContent">
       <div class="tone-controls" id="toneControls"></div>
     </div>
@@ -256,6 +255,7 @@
         <button type="button" id="recTextEditBtn" class="rec-top-btn">文本</button>
       </div>
       <div id="recTopBtnRight" style="display:flex;align-items:center;gap:6px;">
+        <button type="button" id="recExportMp3Btn" class="rec-top-btn" title="导出MP3">导出</button>
         <button type="button" id="recEditCancel" class="rec-top-btn">退出</button>
         <button type="button" id="recEditOk" class="rec-top-btn">保存</button>
       </div>
@@ -365,6 +365,12 @@
           </div>
         </div>
       </div>
+    </div>
+    <!-- 右下角麦克风按钮 -->
+    <div id="recEditFloatBtn" style="position:absolute;right:16px;bottom:16px;z-index:100;">
+      <button id="pitchDetectBtn" style="width:44px;height:44px;border-radius:8px;background:#222;border:1px solid #444;color:#0099ff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0099ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="1" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      </button>
     </div>
   </div>
 </div>
@@ -476,6 +482,7 @@
 
 <script src="samples-data.js"></script>
 <script src="simple-sampler.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
 <script src="main.js"></script>
 
 <div id="melodyControlModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:10000;justify-content:center;align-items:center;">

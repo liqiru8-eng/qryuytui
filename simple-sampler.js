@@ -303,7 +303,7 @@ var SimpleSampler = (function() {
     return match[1].toUpperCase() + match[2] + match[3];
   }
 
-  function playNote(instName, midiNote, velocity, duration) {
+  function playNote(instName, midiNote, velocity, duration, trimStart, trimEnd) {
     if (!audioCtx) {
       return null;
     }
@@ -371,7 +371,19 @@ var SimpleSampler = (function() {
     source.buffer = buffer;
     source.playbackRate.value = playbackRate;
     source.connect(audioCtx.destination);
-    source.start();
+    
+    // 应用裁剪参数
+    var bufferDuration = buffer.duration;
+    var actualTrimStart = trimStart || 0;
+    var actualTrimEnd = trimEnd !== undefined ? trimEnd : 1;
+    
+    if (actualTrimStart > 0 || actualTrimEnd < 1) {
+      var startOffset = bufferDuration * actualTrimStart;
+      var playDuration = bufferDuration * (actualTrimEnd - actualTrimStart);
+      source.start(0, startOffset, playDuration);
+    } else {
+      source.start();
+    }
 
     return {
       source: source,
@@ -439,6 +451,7 @@ var SimpleSampler = (function() {
     SAMPLE_CONFIG: SAMPLE_CONFIG,
     uploadSample: uploadSample,
     getLoadedSamples: getLoadedSamples,
+    getSampleBuffers: function() { return sampleBuffers; },
     removeSample: removeSample
   };
 })();
